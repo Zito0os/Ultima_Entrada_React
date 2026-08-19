@@ -1,0 +1,32 @@
+.app-shell { min-height: 100svh; background: #f7f8fc; color: #fff; }
+.topbar { padding: 28px clamp(20px, 5vw, 68px) 34px; background: #267de1; }
+.brand-row { display: flex; align-items: center; justify-content: space-between; max-width: 1080px; margin: 0 auto 22px; }
+.brand-row h1 { color: #fff; font-size: clamp(2.5rem, 6vw, 4.4rem); margin: 0; font-weight: 900; letter-spacing: -3px; }
+.stats { display: flex; gap: clamp(14px, 3vw, 28px); align-items: center; font-size: clamp(1rem, 2vw, 1.35rem); font-weight: 800; }
+.coin-icon { display: inline-grid; place-items: center; width: 30px; height: 30px; margin-right: 5px; border-radius: 50%; color: #f8b900; background: #ffdb41; box-shadow: inset 0 0 0 3px #eeb92a; }
+.trophy-icon { color: #fff; font-size: 1.8em; vertical-align: middle; margin-right: 5px; }
+.daily-challenge { max-width: 1080px; margin: 0 auto; padding: 23px clamp(20px, 4vw, 40px) 15px; border-radius: 25px; background: #20599c; box-sizing: border-box; }
+.eyebrow { margin: 0; color: #ffda3d; font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 900; text-align: center; letter-spacing: 1px; }
+.daily-challenge h2 { margin: 0; color: #fff; font-size: clamp(3.25rem, 8vw, 7rem); font-weight: 950; line-height: .82; letter-spacing: -4px; }
+.challenge-meta { margin-top: 9px; font-size: clamp(.78rem, 1.7vw, 1.1rem); font-weight: 700; }
+.reward { display: flex; gap: 13px; align-items: center; margin: 5px 0 0; color: #83dd42; font-size: .9rem; }
+.challenge-actions { display: flex; gap: 14px; margin-top: 4px; }
+.button { min-height: 58px; border: 0; border-radius: 10px; padding: 12px 28px; color: #fff; background: #0d3767; font: inherit; font-size: clamp(1.25rem, 3vw, 2rem); font-weight: 900; cursor: pointer; transition: transform .2s, filter .2s; }
+.button:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.button:focus-visible, .content-card:focus-visible, .nav-item:focus-visible, .close-button:focus-visible { outline: 3px solid #ffdc45; outline-offset: 3px; }
+.button-primary { flex: 1; color: #080808; background: #ffda3d; }
+.button-secondary { flex: 1; }
+.content-grid { display: grid; gap: 7px; max-width: 1080px; padding: 12px clamp(12px, 2vw, 24px) 100px; margin: 0 auto; box-sizing: border-box; }
+.content-card { position: relative; display: flex; align-items: center; min-height: 146px; overflow: hidden; border: 0; border-radius: 25px; padding: 22px clamp(22px, 5vw, 48px); color: #fff; text-align: left; cursor: pointer; isolation: isolate; transition: transform .2s, filter .2s; }
+.content-card:hover { transform: scale(1.01); filter: saturate(1.1); }
+.card-green { background: #7bd84d; }.card-violet { background: #c45add; }.card-red { background: #ff2f32; }
+.card-copy { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 4px; }
+.card-copy strong { font-size: clamp(2.7rem, 7vw, 5.3rem); font-weight: 950; line-height: .9; letter-spacing: -2px; }
+.card-copy small { font-size: clamp(.75rem, 1.5vw, 1rem); font-weight: 700; opacity: .9; }
+.card-icon { position: absolute; right: 8%; z-index: -1; color: rgba(16, 49, 40, .28); font-size: clamp(8rem, 22vw, 14rem); font-weight: 900; line-height: 1; }
+.card-violet .card-icon { transform: rotate(-17deg); color: rgba(75, 27, 87, .25); }.card-red .card-icon { color: rgba(170, 18, 26, .4); }
+.bottom-nav { position: fixed; right: 0; bottom: 0; left: 0; z-index: 5; display: flex; justify-content: space-around; padding: 8px max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)); background: #14559f; box-shadow: 0 -4px 18px rgba(11, 52, 100, .18); }
+.nav-item { display: flex; flex: 1; flex-direction: column; align-items: center; gap: 1px; border: 0; background: none; color: #07172c; font: inherit; font-size: .68rem; font-weight: 800; cursor: pointer; }
+.nav-icon { display: grid; place-items: center; min-height: 38px; font-size: 2rem; line-height: 1; }.nav-item.is-active { color: #fff; }.nav-item:nth-child(3) .nav-icon { width: 67px; height: 67px; margin-top: -34px; border-radius: 50%; color: #fff; background: #75aef5; font-size: 2.5rem; box-shadow: 0 3px 0 #14559f; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 20px; background: rgba(5, 24, 53, .7); }.challenge-modal { position: relative; width: min(100%, 480px); padding: 38px 30px 30px; border-radius: 24px; color: #fff; background: #20599c; box-shadow: 0 20px 60px rgba(0,0,0,.3); text-align: center; }.modal-kicker { color: #ffda3d; font-weight: 900; }.challenge-modal h2 { margin: 14px 0; color: #fff; font-size: clamp(2rem, 7vw, 3.5rem); line-height: .9; }.challenge-modal p { color: #dbeaff; }.close-button { position: absolute; top: 12px; right: 16px; border: 0; background: none; color: #fff; font-size: 2rem; cursor: pointer; }.modal-action { width: 100%; margin-top: 25px; }
+@media (min-width: 760px) { .topbar { padding-top: 36px; }.content-grid { grid-template-columns: repeat(3, 1fr); padding-bottom: 40px; }.content-card { min-height: 280px; align-items: flex-end; }.card-icon { top: 3%; right: 3%; }.bottom-nav { position: static; max-width: 1080px; margin: 0 auto; padding: 15px 24px; background: #14559f; border-radius: 20px 20px 0 0; }.nav-item:nth-child(3) .nav-icon { margin-top: 0; }.content-grid + .bottom-nav { margin-top: auto; } }
