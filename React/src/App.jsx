@@ -1,8 +1,16 @@
 import { useState } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import './App.css'
+import AR from './AR'
+import EquipoDetalle from './EquipoDetalle'
+import Equipos from './Equipos'
+import BottomNav from './Navigation'
+import Perfil from './Perfil'
+import PageHeader from './PageHeader'
+import Videos from './Videos'
 
-function App() {
+function HomePage() {
   const [activeTab, setActiveTab] = useState('inicio')
   const [isChallengeOpen, setIsChallengeOpen] = useState(false)
 
@@ -12,24 +20,10 @@ function App() {
     { id: 'videos', title: 'VIDEOS', subtitle: 'Aprende jugando', icon: '▶', tone: 'red' },
   ]
 
-  const navigation = [
-    { id: 'inicio', label: 'INICIO', icon: '⌂' },
-    { id: 'equipos', label: 'EQUIPOS', icon: '♟' },
-    { id: 'ar', label: 'AR', icon: '◇' },
-    { id: 'videos', label: 'VIDEOS', icon: '▸' },
-    { id: 'perfil', label: 'PERFIL', icon: '●' },
-  ]
-
   return (
     <main className="app-shell">
       <header className="topbar">
-        <div className="brand-row">
-          <h1>INICIO</h1>
-          <div className="stats" aria-label="Progreso del jugador">
-            <span className="coins"><span className="coin-icon">✦</span> 340</span>
-            <span className="trophies"><span className="trophy-icon">♜</span> 3/24</span>
-          </div>
-        </div>
+        <PageHeader title="INICIO" />
 
         <section className="daily-challenge" aria-labelledby="challenge-title">
           <p className="eyebrow">RETO DE HOY</p>
@@ -52,13 +46,7 @@ function App() {
         ))}
       </section>
 
-      <nav className="bottom-nav" aria-label="Navegación principal">
-        {navigation.map((item) => (
-          <button className={activeTab === item.id ? 'nav-item is-active' : 'nav-item'} type="button" key={item.id} onClick={() => setActiveTab(item.id)} aria-current={activeTab === item.id ? 'page' : undefined}>
-            <span className="nav-icon" aria-hidden="true">{item.icon}</span><span>{item.label}</span>
-          </button>
-        ))}
-      </nav>
+      <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
       {isChallengeOpen && (
         <div className="modal-backdrop" role="presentation" onClick={() => setIsChallengeOpen(false)}>
@@ -72,6 +60,30 @@ function App() {
         </div>
       )}
     </main>
+  )
+}
+
+function AppRoutes() {
+  const location = useLocation()
+
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/ar" element={<AR />} />
+      <Route path="/equipos" element={<Equipos />} />
+      <Route path="/equipos/:teamId" element={<EquipoDetalle />} />
+      <Route path="/perfil" element={<Perfil />} />
+      <Route path="/videos" element={<Videos />} />
+      <Route path="*" element={<Navigate to={location.pathname.startsWith('/equipos') ? '/equipos' : '/'} replace />} />
+    </Routes>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   )
 }
 

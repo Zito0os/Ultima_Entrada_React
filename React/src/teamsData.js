@@ -1,0 +1,43 @@
+export const teams = [
+  {
+    id: 'yankees',
+    name: 'YANKEES',
+    titles: 27,
+    banners: 41,
+    firstTitle: 1923,
+    abbreviation: 'NY',
+    tone: 'navy',
+    stadium: 'YANKEE STADIUM',
+    city: 'BRONX',
+    founded: 1901,
+    history: 'Nacieron en Baltimore como Orioles en 1901 y se mudaron a Nueva York dos años después. La llegada de Babe Ruth en 1920 los convirtió en la franquicia dominante del siglo: conquistaron títulos y una racha de cinco seguidos entre 1949 y 1953.',
+  },
+  {
+    id: 'red-sox',
+    name: 'RED SOX',
+    titles: 9,
+    banners: 14,
+    firstTitle: 1903,
+    abbreviation: 'B',
+    tone: 'red',
+    stadium: 'FENWAY PARK',
+    city: 'BOSTON',
+    founded: 1901,
+    history: 'Una de las franquicias más queridas del béisbol. Su historia está marcada por Fenway Park, grandes remontadas y una afición que acompaña al equipo en cada temporada.',
+  },
+  {
+    id: 'astros',
+    name: 'ASTROS',
+    titles: 2,
+    banners: 2,
+    firstTitle: 2017,
+    abbreviation: 'H',
+    tone: 'orange',
+    stadium: 'DAIKIN PARK',
+    city: 'HOUSTON',
+    founded: 1962,
+    history: 'Desde Houston, los Astros construyeron una identidad propia con generaciones de jugadores destacados y una fuerte presencia en la Liga Americana.',
+  },
+]
+
+export const regions = ['TODAS', 'ESTE', 'OESTE', 'CENTRAL']
