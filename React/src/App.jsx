@@ -5,6 +5,9 @@ import './App.css'
 import AR from './AR'
 import EquipoDetalle from './EquipoDetalle'
 import Equipos from './Equipos'
+import Galeria from './Galeria'
+import Historia from './Historia'
+import HistoriaDetalle from './HistoriaDetalle'
 import BottomNav from './Navigation'
 import Perfil from './Perfil'
 import PageHeader from './PageHeader'
@@ -72,7 +75,11 @@ function AppRoutes() {
       <Route path="/ar" element={<AR />} />
       <Route path="/equipos" element={<Equipos />} />
       <Route path="/equipos/:teamId" element={<EquipoDetalle />} />
+      <Route path="/historia" element={<Historia />} />
+      <Route path="/historia/:eventId" element={<HistoriaDetalle />} />
       <Route path="/perfil" element={<Perfil />} />
+      <Route path="/galeria" element={<Galeria />} />
+      <Route path="/videos/:eventId" element={<Videos />} />
       <Route path="/videos" element={<Videos />} />
       <Route path="*" element={<Navigate to={location.pathname.startsWith('/equipos') ? '/equipos' : '/'} replace />} />
     </Routes>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import BottomNav from './Navigation'
 import PageHeader from './PageHeader'
@@ -12,6 +13,8 @@ const relatedVideos = [
 ]
 
 export default function Videos() {
+  const { eventId } = useParams()
+  const navigate = useNavigate()
   const [activeFilter, setActiveFilter] = useState('PIXELADO')
   const [intensity, setIntensity] = useState(60)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -19,7 +22,7 @@ export default function Videos() {
 
   return (
     <main className="videos-shell">
-      <PageHeader title="VIDEOS" backTo="/" />
+      <PageHeader title="VIDEOS" backTo={eventId ? `/historia/${eventId}` : '/historia'} />
 
       <section className="videos-content" aria-label="Editor de videos">
         <button className={`video-preview ${isPlaying ? 'is-playing' : ''}`} type="button" onClick={() => setIsPlaying((playing) => !playing)} aria-label={isPlaying ? 'Pausar video' : 'Reproducir video'}>
@@ -48,14 +51,14 @@ export default function Videos() {
         <p className="more-videos-heading">MAS VIDEOS</p>
         <section className="related-videos" aria-label="Más videos">
           {relatedVideos.map((video) => (
-            <button className={`related-video related-${video.tone}`} type="button" key={video.id} aria-label={video.title}>
+            <button className={`related-video related-${video.tone}`} type="button" key={video.id} onClick={() => navigate(eventId ? `/videos/${eventId}` : '/videos')} aria-label={video.title}>
               <span className="related-play" aria-hidden="true">▶</span>
             </button>
           ))}
         </section>
       </section>
 
-      <BottomNav activeTab="videos" onTabChange={() => {}} />
+      <BottomNav activeTab="historia" onTabChange={() => {}} />
     </main>
   )
 }

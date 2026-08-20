@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 
-export default function PageHeader({ title, backTo }) {
+export default function PageHeader({ title, backTo, rightLabel }) {
   const navigate = useNavigate()
 
   return (
@@ -12,10 +12,14 @@ export default function PageHeader({ title, backTo }) {
           </button>
         ) : null}
         <h1>{title}</h1>
-        <div className="page-header-stats" aria-label="Progreso del jugador">
-          <span className="coins"><span className="coin-icon">✦</span> 340</span>
-          <span className="trophies"><span className="trophy-icon">♜</span> 3/24</span>
-        </div>
+        {rightLabel ? (
+          <span className="page-header-label">{rightLabel}</span>
+        ) : (
+          <div className="page-header-stats" aria-label="Progreso del jugador">
+            <span className="coins"><span className="coin-icon">✦</span> 340</span>
+            <span className="trophies"><span className="trophy-icon">♜</span> 3/24</span>
+          </div>
+        )}
       </div>
     </header>
   )

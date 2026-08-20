@@ -4,7 +4,7 @@ const navigation = [
   { id: 'inicio', label: 'INICIO', icon: '⌂', path: '/' },
   { id: 'equipos', label: 'EQUIPOS', icon: '♟', path: '/equipos' },
   { id: 'ar', label: 'AR', icon: '◇', path: '/ar' },
-  { id: 'videos', label: 'VIDEOS', icon: '▸', path: '/videos' },
+  { id: 'historia', label: 'HISTORIA', icon: '▤', path: '/historia' },
   { id: 'perfil', label: 'PERFIL', icon: '●', path: '/perfil' },
 ]
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import BottomNav from './Navigation'
 import PageHeader from './PageHeader'
@@ -28,11 +29,18 @@ function TrophyCard({ trophy }) {
 
 export default function Perfil() {
   const [activeFilter, setActiveFilter] = useState('TODOS')
+  const navigate = useNavigate()
+
   return (
     <main className="profile-shell">
       <PageHeader title="MI PERFIL" backTo="/" />
 
       <section className="profile-content" aria-label="Progreso de trofeos">
+        <button className="gallery-entry" type="button" onClick={() => navigate('/galeria')}>
+          <strong>GALERÍA</strong>
+          <span aria-hidden="true">➜</span>
+        </button>
+
         <div className="profile-summary">
           <div>
             <span>TROFEOS</span>
