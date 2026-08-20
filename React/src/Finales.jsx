@@ -2,13 +2,7 @@ import { useNavigate } from 'react-router-dom'
 
 import BottomNav from './Navigation'
 import PageHeader from './PageHeader'
-
-const finals = [
-  { id: '1975', year: '1975', home: 'NY', away: 'BRS', description: 'Cierre del 9° · empate 6-6 · 2 outs', status: 'pending' },
-  { id: '1991', year: '1991', home: 'MIN', away: 'BRS', description: 'Cierre del 10° · 0-0 · trofeo obtenido', status: 'completed' },
-  { id: '1996', year: '1996', home: 'NY', away: 'ATL', description: 'Cierre del 9° · 3-2 · trofeo obtenido', status: 'completed' },
-  { id: '2001', year: '2001', home: 'ARI', away: 'NY', description: 'Cierre del 9° · juego decisivo', status: 'pending' },
-]
+import { finals } from './finalsData'
 
 function TeamMark({ abbreviation }) {
   return <span className={`final-team-mark mark-${abbreviation.toLowerCase()}`}>{abbreviation}</span>

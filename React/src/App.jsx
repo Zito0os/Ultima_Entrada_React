@@ -4,10 +4,14 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from
 import './App.css'
 import AR from './AR'
 import Album from './Album'
+import AbriendoSobre from './Abriendo_sobre'
+import Escudos from './Escudos'
 import EquipoDetalle from './EquipoDetalle'
 import Equipos from './Equipos'
+import DetalleFinal from './Detalle_Final'
 import Finales from './Finales'
 import Galeria from './Galeria'
+import JuegoFinal from './JuegoFinal'
 import Historia from './Historia'
 import HistoriaDetalle from './HistoriaDetalle'
 import MejoresJugadas from './MejoresJugadas'
@@ -15,6 +19,9 @@ import BottomNav from './Navigation'
 import Perfil from './Perfil'
 import PageHeader from './PageHeader'
 import Sobres from './Sobres'
+import Tarjetas from './Tarjetas'
+import Trivia from './Trivia'
+import Resultado from './Resultado'
 import Videos from './Videos'
 
 function HomePage() {
@@ -49,7 +56,7 @@ function HomePage() {
 
       <section className="content-grid" aria-label="Contenido de Zito">
         {contentCards.map((card) => (
-          <button className={`content-card card-${card.tone}`} type="button" key={`${card.id}-${card.title}`} onClick={() => card.id === 'sobres' ? navigate('/sobres') : card.title === 'FINALES' ? navigate('/finales') : card.title === 'MEJORES JUGADAS' ? navigate('/mejores-jugadas') : setActiveTab(card.id)}>
+          <button className={`content-card card-${card.tone}`} type="button" key={`${card.id}-${card.title}`} onClick={() => card.id === 'trivia' ? navigate('/trivia') : card.id === 'sobres' ? navigate('/sobres') : card.title === 'FINALES' ? navigate('/finales') : card.title === 'MEJORES JUGADAS' ? navigate('/mejores-jugadas') : setActiveTab(card.id)}>
             <span className="card-copy"><strong>{card.title}</strong><small>{card.subtitle}</small></span>
             <span className="card-icon" aria-hidden="true">{card.icon}</span>
           </button>
@@ -80,6 +87,10 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/ar" element={<AR />} />
+      <Route path="/ar/escudos" element={<Escudos />} />
+      <Route path="/ar/escudos/anclado" element={<Escudos />} />
+      <Route path="/ar/tarjetas" element={<Tarjetas />} />
+      <Route path="/ar/tarjetas/anclado" element={<Tarjetas />} />
       <Route path="/album" element={<Album />} />
       <Route path="/equipos" element={<Equipos />} />
       <Route path="/equipos/:teamId" element={<EquipoDetalle />} />
@@ -88,7 +99,13 @@ function AppRoutes() {
       <Route path="/perfil" element={<Perfil />} />
       <Route path="/galeria" element={<Galeria />} />
       <Route path="/sobres" element={<Sobres />} />
+      <Route path="/sobres/:packId" element={<AbriendoSobre />} />
       <Route path="/finales" element={<Finales />} />
+      <Route path="/finales/:finalId" element={<DetalleFinal />} />
+      <Route path="/finales/:finalId/jugar" element={<JuegoFinal />} />
+      <Route path="/finales/:finalId/resultado" element={<Resultado />} />
+        <Route path="/trivia" element={<Trivia />} />
+        <Route path="/trivia/:mode" element={<Trivia />} />
       <Route path="/mejores-jugadas" element={<MejoresJugadas />} />
       <Route path="/videos/:eventId" element={<Videos />} />
       <Route path="/videos" element={<Videos />} />
