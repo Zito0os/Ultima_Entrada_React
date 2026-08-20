@@ -40,6 +40,10 @@ export default function Perfil() {
           <strong>GALERÍA</strong>
           <span aria-hidden="true">➜</span>
         </button>
+        <button className="gallery-entry album-entry" type="button" onClick={() => navigate('/album')}>
+          <strong>ALBUM</strong>
+          <span aria-hidden="true">➜</span>
+        </button>
 
         <div className="profile-summary">
           <div>

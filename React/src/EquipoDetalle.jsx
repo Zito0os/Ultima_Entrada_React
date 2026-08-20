@@ -18,7 +18,6 @@ export default function EquipoDetalle() {
   const { teamId } = useParams()
   const [activeTab, setActiveTab] = useState('HISTORIA')
   const team = teams.find((item) => item.id === teamId)
-  const opponent = teams.find((item) => item.id !== teamId) ?? team
 
   if (!team) {
     return <Navigate to="/equipos" replace />
@@ -29,31 +28,11 @@ export default function EquipoDetalle() {
       <PageHeader title={activeTab} backTo="/equipos" />
 
       <section className="team-detail-content" aria-labelledby="team-detail-title">
-        {activeTab === 'HISTORIA' && (
-          <>
-            <div className="team-detail-identity">
-              <TeamBadge team={team} />
-              <h2 id="team-detail-title">{team.name}</h2>
-            </div>
-            <p className="team-location">{team.founded} · {team.stadium} · {team.city}</p>
-          </>
-        )}
-
-        {activeTab === 'ESTADÍSTICAS' && (
-          <section className="statistics-matchup" aria-label="Estadísticas del enfrentamiento">
-            <div className="matchup-logos">
-              <TeamBadge team={team} />
-              <strong>VS</strong>
-              <TeamBadge team={opponent} />
-            </div>
-            <p className="series-title">SERIE MUNDIAL 1996 · JUEGO 6</p>
-            <div className="inning-scoreboard">
-              <p>1 2 3 4 5 6 7 8 9</p>
-              <div><strong>{team.abbreviation}</strong><span>0 0 1 0 0 0 0 0 1</span></div>
-              <div><strong>{opponent.abbreviation}</strong><span>0 0 3 0 0 0 0 0 1</span></div>
-            </div>
-          </section>
-        )}
+        <div className="team-detail-identity">
+          <TeamBadge team={team} />
+          <h2 id="team-detail-title">{team.name}</h2>
+        </div>
+        <p className="team-location">{team.founded} · {team.stadium} · {team.city}</p>
 
         <div className="detail-tabs" role="tablist" aria-label="Información del equipo">
           {detailTabs.map((tab) => (

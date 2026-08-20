@@ -1,26 +1,33 @@
 import { useState } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
 import './App.css'
 import AR from './AR'
+import Album from './Album'
 import EquipoDetalle from './EquipoDetalle'
 import Equipos from './Equipos'
+import Finales from './Finales'
 import Galeria from './Galeria'
 import Historia from './Historia'
 import HistoriaDetalle from './HistoriaDetalle'
+import MejoresJugadas from './MejoresJugadas'
 import BottomNav from './Navigation'
 import Perfil from './Perfil'
 import PageHeader from './PageHeader'
+import Sobres from './Sobres'
 import Videos from './Videos'
 
 function HomePage() {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('inicio')
   const [isChallengeOpen, setIsChallengeOpen] = useState(false)
 
   const contentCards = [
     { id: 'trivia', title: 'TRIVIA', subtitle: 'Pon a prueba tus conocimientos', icon: '?', tone: 'green' },
     { id: 'sobres', title: 'SOBRES', subtitle: 'Descubre premios sorpresa', icon: '✦', tone: 'violet' },
-    { id: 'videos', title: 'VIDEOS', subtitle: 'Aprende jugando', icon: '▶', tone: 'red' },
+    { id: 'videos', title: 'MEJORES JUGADAS', subtitle: 'Aprende jugando', icon: '▶', tone: 'red' },
+    { id: 'videos', title: 'FINALES', subtitle: 'Aprende jugando', icon: '▶', tone: 'green' },
+
   ]
 
   return (
@@ -42,7 +49,7 @@ function HomePage() {
 
       <section className="content-grid" aria-label="Contenido de Zito">
         {contentCards.map((card) => (
-          <button className={`content-card card-${card.tone}`} type="button" key={card.id} onClick={() => setActiveTab(card.id)}>
+          <button className={`content-card card-${card.tone}`} type="button" key={`${card.id}-${card.title}`} onClick={() => card.id === 'sobres' ? navigate('/sobres') : card.title === 'FINALES' ? navigate('/finales') : card.title === 'MEJORES JUGADAS' ? navigate('/mejores-jugadas') : setActiveTab(card.id)}>
             <span className="card-copy"><strong>{card.title}</strong><small>{card.subtitle}</small></span>
             <span className="card-icon" aria-hidden="true">{card.icon}</span>
           </button>
@@ -73,12 +80,16 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/ar" element={<AR />} />
+      <Route path="/album" element={<Album />} />
       <Route path="/equipos" element={<Equipos />} />
       <Route path="/equipos/:teamId" element={<EquipoDetalle />} />
       <Route path="/historia" element={<Historia />} />
       <Route path="/historia/:eventId" element={<HistoriaDetalle />} />
       <Route path="/perfil" element={<Perfil />} />
       <Route path="/galeria" element={<Galeria />} />
+      <Route path="/sobres" element={<Sobres />} />
+      <Route path="/finales" element={<Finales />} />
+      <Route path="/mejores-jugadas" element={<MejoresJugadas />} />
       <Route path="/videos/:eventId" element={<Videos />} />
       <Route path="/videos" element={<Videos />} />
       <Route path="*" element={<Navigate to={location.pathname.startsWith('/equipos') ? '/equipos' : '/'} replace />} />
