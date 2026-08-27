@@ -1,9 +1,69 @@
-:root { font-family: 'Trebuchet MS', 'Arial Narrow', sans-serif; color: #fff; background: #f7f8fc; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+:root {
+  /* Paleta de la propuesta v2 */
+  --azul: #227AE6;
+  --azul-medio: #195CA6;
+  --azul-profundo: #0D3767;
+  --tinta: #0F1A2B;
+  --fondo: #FFFFFF;
+  --superficie: #F4F7FB;
+  --confirmacion: #3E9E74;
+  --alerta: #C8402F;
+  --acento: #F5C64B;
+
+  /* Colores de las tarjetas del menu, tal como estan en los mockups */
+  --tarjeta-verde: #7BD84D;
+  --tarjeta-violeta: #C45ADD;
+  --tarjeta-roja: #FF2F32;
+
+  /* Derivados */
+  --azul-claro: #75AEF5;
+  --gris-bloque: #DEDEDE;
+  --texto-tenue: #A9D1FB;
+
+  --fuente-titulo: 'Clash Display', 'Arial Black', sans-serif;
+  --fuente-texto: 'IBM Plex Sans', system-ui, sans-serif;
+  --fuente-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+  /* La app es solo de celular: todo vive dentro de una columna de este ancho */
+  --ancho-app: 430px;
+
+  font-family: var(--fuente-texto);
+  color: var(--fondo);
+  background: #0A1B33;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
 
 body {
   margin: 0;
   min-width: 320px;
+  background: #0A1B33;
 }
 
-#root { min-height: 100svh; }
+#root {
+  position: relative;
+  max-width: var(--ancho-app);
+  min-height: 100svh;
+  margin: 0 auto;
+  overflow-x: hidden;
+  background: var(--superficie);
+}
+
+/* En pantalla grande la columna se ve como un telefono sobre el fondo */
+@media (min-width: 520px) {
+  #root { box-shadow: 0 0 0 1px rgba(255, 255, 255, .08), 0 24px 70px rgba(0, 0, 0, .55); }
+}
+
+
 button { font-family: inherit; }
+
+h1, h2, h3, .card-copy strong, .final-year { font-family: var(--fuente-titulo); }
+
+/* Los tres estados que pide la propuesta: reposo, presionado y activo */
+button { transition: filter .15s, transform .1s; }
+button:active { transform: scale(.97); filter: brightness(.92); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

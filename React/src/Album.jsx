@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import BottomNav from './Navigation'
 import PageHeader from './PageHeader'
+import Icono from './Icono'
 
 const filters = ['TODAS', 'COMÚN', 'ESPECIAL', 'HOLO']
 
@@ -43,13 +44,13 @@ export default function Album() {
         <section className="album-grid" aria-label="Tarjetas del álbum">
           {cards.map((card) => (
             <button className={card.featured ? 'album-card is-featured' : 'album-card'} type="button" key={card.id} aria-label={`Tarjeta ${card.id}`}>
-              {card.featured && <span className="album-card-mark">✦</span>}
+              {card.featured && <span className="album-card-mark"><Icono nombre="cartas" /></span>}
             </button>
           ))}
         </section>
 
         <button className="ar-card-button" type="button">
-          <span className="ar-card-icon" aria-hidden="true">◯</span>
+          <span className="ar-card-icon"><Icono nombre="ar" /></span>
           VER AR DE LA TARJETA
         </button>
       </section>

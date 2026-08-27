@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 
 import BottomNav from './Navigation'
 import PageHeader from './PageHeader'
+import Icono from './Icono'
+import { leerUsuario } from './cuenta'
 
 const filters = ['TODOS', 'DÉCADA', 'EQUIPO']
 
@@ -21,7 +23,7 @@ const trophies = [
 function TrophyCard({ trophy }) {
   return (
     <article className={trophy.unlocked ? 'trophy-card is-unlocked' : 'trophy-card is-locked'}>
-      <span className="trophy-mark" aria-hidden="true">♜</span>
+      <span className="trophy-mark"><Icono nombre="trofeo" /></span>
       <strong>{trophy.year}</strong>
     </article>
   )
@@ -30,12 +32,18 @@ function TrophyCard({ trophy }) {
 export default function Perfil() {
   const [activeFilter, setActiveFilter] = useState('TODOS')
   const navigate = useNavigate()
+  const usuario = leerUsuario()
 
   return (
     <main className="profile-shell">
       <PageHeader title="MI PERFIL" backTo="/" />
 
       <section className="profile-content" aria-label="Progreso de trofeos">
+        <button className="gallery-entry cuenta-entry" type="button" onClick={() => navigate(usuario ? '/registro' : '/entrar')}>
+          <strong>CUENTA</strong>
+          <span className="cuenta-valor">{usuario || 'INICIAR SESIÓN'}</span>
+        </button>
+
         <button className="gallery-entry" type="button" onClick={() => navigate('/galeria')}>
           <strong>GALERÍA</strong>
           <span aria-hidden="true">➜</span>

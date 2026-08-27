@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 
+import Icono from './Icono'
+
 export default function PageHeader({ title, backTo, rightLabel }) {
   const navigate = useNavigate()
 
@@ -17,7 +19,7 @@ export default function PageHeader({ title, backTo, rightLabel }) {
         ) : (
           <div className="page-header-stats" aria-label="Progreso del jugador">
             <span className="coins"><span className="coin-icon">✦</span> 340</span>
-            <span className="trophies"><span className="trophy-icon">♜</span> 3/24</span>
+            <span className="trophies"><span className="trophy-icon"><Icono nombre="trofeo" /></span> 3/24</span>
           </div>
         )}
       </div>

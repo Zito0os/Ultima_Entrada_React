@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 
+import Icono from './Icono'
 import { finals } from './finalsData'
 
 export default function Resultado() {
@@ -16,7 +17,7 @@ export default function Resultado() {
       <section className="result-content-final" aria-labelledby="result-title">
         <p className="result-kicker">TROFEO</p>
         <h1 id="result-title">DESBLOQUEADO</h1>
-        <div className="result-trophy" aria-hidden="true">♜</div>
+        <div className="result-trophy"><Icono nombre="trofeo" /></div>
 
         <div className="result-final-summary">
           <h2>SERIE MUNDIAL<br />{final.year}</h2>
