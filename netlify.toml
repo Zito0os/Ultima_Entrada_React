@@ -1,0 +1,11 @@
+# La app vive en la subcarpeta React
+[build]
+  base = "React"
+  command = "npm run build"
+  publish = "dist"
+
+# El router necesita que cualquier ruta devuelva la app
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Suspense, lazy, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
 import './App.css'
@@ -28,6 +28,11 @@ import Tarjetas from './Tarjetas'
 import Trivia from './Trivia'
 import Resultado from './Resultado'
 import Videos from './Videos'
+
+// three.js solo se descarga al entrar a la prueba 3D
+const PruebaEscudo = lazy(() => import('./PruebaEscudo'))
+const CompilarMarcador = lazy(() => import('./CompilarMarcador'))
+const VerEscudoAR = lazy(() => import('./VerEscudoAR'))
 
 const CLAVE_CARGA = 'ue_carga_vista'
 
@@ -130,8 +135,10 @@ function AppRoutes() {
       <Route path="/entrar" element={<Entrar />} />
       <Route path="/registro" element={<Registro />} />
       <Route path="/ar" element={<AR />} />
+      <Route path="/ar/compilar" element={<Suspense fallback={<p className="prueba-cargando">Cargando el compilador...</p>}><CompilarMarcador /></Suspense>} />
+      <Route path="/ar/prueba" element={<Suspense fallback={<p className="prueba-cargando">Cargando el motor 3D...</p>}><PruebaEscudo /></Suspense>} />
       <Route path="/ar/escudos" element={<Escudos />} />
-      <Route path="/ar/escudos/anclado" element={<Escudos />} />
+      <Route path="/ar/ver/:escudoId" element={<Suspense fallback={<p className="prueba-cargando">Encendiendo la camara...</p>}><VerEscudoAR /></Suspense>} />
       <Route path="/ar/tarjetas" element={<Tarjetas />} />
       <Route path="/ar/tarjetas/anclado" element={<Tarjetas />} />
       <Route path="/album" element={<Album />} />
