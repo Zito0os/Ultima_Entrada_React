@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
+import Icono from './Icono'
 import { buscarEscudo } from './escudosData'
+import { componerCaptura, crearEfectos } from './efectosAR'
 import { cargarSVG, extruirDesdeSVG } from './extruirEscudo'
 
 // La extrusion mide 100 unidades y el marcador de MindAR mide 1
@@ -11,8 +13,12 @@ export default function VerEscudoAR() {
   const { escudoId } = useParams()
   const navigate = useNavigate()
   const contenedor = useRef(null)
+  const motor = useRef(null)
   const [estado, setEstado] = useState('preparando')
   const [anclado, setAnclado] = useState(false)
+  const [girando, setGirando] = useState(true)
+  const [efectos, setEfectos] = useState(false)
+  const [aviso, setAviso] = useState('')
   const [error, setError] = useState('')
 
   const escudo = buscarEscudo(escudoId)
@@ -53,13 +59,25 @@ export default function VerEscudoAR() {
         const { objeto } = extruirDesdeSVG(datos, { profundidad: 16, bisel: 1.5, segmentos: 4, separacion: 6, color: escudo.color })
         objeto.scale.multiplyScalar(ESCALA)
 
-        const giro = new THREE.Group()
-        giro.add(objeto)
+        // Una ancla por cada variante del escudo dentro del .mind
+        const giros = []
+        const animaciones = []
+        for (let indice = 0; indice < (escudo.marcadores || 1); indice += 1) {
+          const giro = new THREE.Group()
+          giro.add(indice === 0 ? objeto : objeto.clone())
 
-        const ancla = mindar.addAnchor(0)
-        ancla.group.add(giro)
-        ancla.onTargetFound = () => setAnclado(true)
-        ancla.onTargetLost = () => setAnclado(false)
+          const efecto = crearEfectos(THREE)
+          giro.add(efecto.particulas)
+          animaciones.push(efecto)
+
+          const ancla = mindar.addAnchor(indice)
+          ancla.group.add(giro)
+          ancla.onTargetFound = () => setAnclado(true)
+          ancla.onTargetLost = () => setAnclado(false)
+          giros.push(giro)
+        }
+
+        motor.current = { mindar, giros, animaciones, renderer, scene, camera, girando: true }
 
         setEstado('encendiendo')
         await mindar.start()
@@ -69,7 +87,10 @@ export default function VerEscudoAR() {
         setEstado('buscando')
 
         renderer.setAnimationLoop(() => {
-          giro.rotation.y += 0.02
+          if (motor.current?.girando !== false) {
+            giros.forEach((giro) => { giro.rotation.y += 0.02 })
+          }
+          animaciones.forEach((efecto) => efecto.animar())
           renderer.render(scene, camera)
         })
       } catch (fallo) {
@@ -102,24 +123,87 @@ export default function VerEscudoAR() {
           // la camara ya estaba apagada
         }
       }
+      motor.current = null
     }
   }, [escudo])
+
+  useEffect(() => {
+    if (motor.current) {
+      motor.current.girando = girando
+    }
+  }, [girando])
+
+  useEffect(() => {
+    motor.current?.animaciones.forEach((efecto) => {
+      efecto.particulas.visible = efectos
+    })
+  }, [efectos])
+
+  const tomarFoto = useCallback(() => {
+    const actual = motor.current
+    if (!actual) {
+      return
+    }
+    // Hay que redibujar justo antes de leer el lienzo o sale vacio
+    actual.renderer.render(actual.scene, actual.camera)
+    const compuesta = componerCaptura(actual.mindar.video, actual.renderer.domElement)
+
+    compuesta.toBlob((blob) => {
+      const enlace = document.createElement('a')
+      enlace.href = URL.createObjectURL(blob)
+      enlace.download = `ultima-entrada-${escudo.id}.png`
+      enlace.click()
+      setAviso('Foto guardada con el escudo incluido.')
+      setTimeout(() => setAviso(''), 3000)
+    }, 'image/png')
+  }, [escudo])
+
+  const rotulo = estado === 'error' ? 'ERROR'
+    : anclado ? 'ANCLADO'
+      : estado === 'buscando' ? 'BUSCANDO ESCUDO...'
+        : estado === 'encendiendo' ? 'ENCENDIENDO CÁMARA...' : 'PREPARANDO...'
 
   return (
     <main className="ar-ver-shell">
       <div className="ar-ver-camara" ref={contenedor} />
 
-      <div className="ar-ver-marco" aria-hidden="true">
-        <span /><span /><span /><span />
-      </div>
+      {!anclado && (
+        <div className="ar-ver-marco" aria-hidden="true">
+          <span /><span /><span /><span />
+        </div>
+      )}
 
       <header className="ar-ver-barra">
-        <button className="ar-ver-atras" type="button" onClick={() => navigate('/ar/escudos')} aria-label="Salir del escaneo">←</button>
-        <span className={anclado ? 'ar-ver-estado is-anclado' : 'ar-ver-estado'}>
-          {estado === 'error' ? 'ERROR' : anclado ? 'ANCLADO' : estado === 'buscando' ? 'BUSCANDO ESCUDO...' : estado === 'encendiendo' ? 'ENCENDIENDO CÁMARA...' : 'PREPARANDO...'}
-        </span>
+        <button className="ar-ver-atras" type="button" onClick={() => navigate('/ar/escudos')} aria-label="Salir del escaneo"><Icono nombre="flecha" /></button>
+        <span className={anclado ? 'ar-ver-estado is-anclado' : 'ar-ver-estado'}>{rotulo}</span>
         <span className="ar-ver-equipo">{escudo.nombre}</span>
       </header>
+
+      {estado === 'buscando' && !anclado && (
+        <p className="ar-ver-pista">Apunta al escudo impreso a unos 30 cm, con buena luz</p>
+      )}
+
+      {aviso && <p className="ar-ver-aviso" role="status">{aviso}</p>}
+
+      <footer className="ar-ver-controles">
+        <div className="ar-ver-acciones">
+          <button className={girando ? 'ar-ver-accion is-activa' : 'ar-ver-accion'} type="button" onClick={() => setGirando((g) => !g)} aria-pressed={girando}>
+            <Icono nombre="cubo" /><span>GIRAR</span>
+          </button>
+          <button className={efectos ? 'ar-ver-accion is-activa' : 'ar-ver-accion'} type="button" onClick={() => setEfectos((e) => !e)} aria-pressed={efectos}>
+            <Icono nombre="trofeo" /><span>EFECTOS</span>
+          </button>
+          <button className="ar-ver-accion" type="button" onClick={tomarFoto} disabled={estado !== 'buscando'}>
+            <Icono nombre="escudo" /><span>FOTO</span>
+          </button>
+        </div>
+
+        {escudo.equipo && (
+          <button className="ar-ver-ficha" type="button" onClick={() => navigate(`/equipos/${escudo.equipo}`)}>
+            VER FICHA COMPLETA DEL EQUIPO
+          </button>
+        )}
+      </footer>
 
       {error && (
         <div className="ar-ver-error" role="alert">

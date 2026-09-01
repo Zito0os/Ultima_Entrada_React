@@ -46,11 +46,11 @@ export default function Perfil() {
 
         <button className="gallery-entry" type="button" onClick={() => navigate('/galeria')}>
           <strong>GALERÍA</strong>
-          <span aria-hidden="true">➜</span>
+          <span className="flecha-avance"><Icono nombre="flecha" /></span>
         </button>
         <button className="gallery-entry album-entry" type="button" onClick={() => navigate('/album')}>
           <strong>ALBUM</strong>
-          <span aria-hidden="true">➜</span>
+          <span className="flecha-avance"><Icono nombre="flecha" /></span>
         </button>
 
         <div className="profile-summary">

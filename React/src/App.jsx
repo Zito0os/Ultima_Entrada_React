@@ -18,6 +18,7 @@ import JuegoFinal from './JuegoFinal'
 import Historia from './Historia'
 import HistoriaDetalle from './HistoriaDetalle'
 import MejoresJugadas from './MejoresJugadas'
+import Icono from './Icono'
 import BottomNav from './Navigation'
 import PantallaCarga from './PantallaCarga'
 import Perfil from './Perfil'
@@ -60,7 +61,7 @@ function HomePage() {
 
   const contentCards = [
     { id: 'trivia', title: 'TRIVIA', subtitle: 'Pon a prueba tus conocimientos', icon: '?', tone: 'green', path: '/trivia' },
-    { id: 'sobres', title: 'SOBRES', subtitle: 'Descubre premios sorpresa', icon: '✦', tone: 'violet', path: '/sobres' },
+    { id: 'sobres', title: 'SOBRES', subtitle: 'Descubre premios sorpresa', icono: 'cartas', tone: 'violet', path: '/sobres' },
     { id: 'videos', title: 'VIDEOS', subtitle: 'Las mejores jugadas de la historia', icon: '▶', tone: 'red', path: '/mejores-jugadas' },
     { id: 'finales', title: 'FINALES', subtitle: 'Batea la última entrada', icon: '◆', tone: 'green', path: '/finales' },
   ]
@@ -86,7 +87,7 @@ function HomePage() {
         {contentCards.map((card) => (
           <button className={`content-card card-${card.tone}`} type="button" key={card.title} onClick={() => navigate(card.path)}>
             <span className="card-copy"><strong>{card.title}</strong><small>{card.subtitle}</small></span>
-            <span className="card-icon" aria-hidden="true">{card.icon}</span>
+            <span className="card-icon" aria-hidden="true">{card.icono ? <Icono nombre={card.icono} /> : card.icon}</span>
           </button>
         ))}
       </section>

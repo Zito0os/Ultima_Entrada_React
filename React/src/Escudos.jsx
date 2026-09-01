@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 
 import BottomNav from './Navigation'
+import Icono from './Icono'
 import PageHeader from './PageHeader'
 import { escudos } from './escudosData'
 
@@ -21,7 +22,7 @@ export default function Escudos() {
             <button className="escudo-opcion" type="button" onClick={() => navigate(`/ar/ver/${escudo.id}`)} key={escudo.id}>
               <img src={`${import.meta.env.BASE_URL}${escudo.svg}`} alt="" aria-hidden="true" />
               <strong>{escudo.nombre}</strong>
-              <span aria-hidden="true">→</span>
+              <span className="flecha-avance"><Icono nombre="flecha" /></span>
             </button>
           ))}
         </div>

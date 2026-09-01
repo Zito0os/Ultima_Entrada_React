@@ -194,3 +194,31 @@
 .ar-ver-error strong { display: block; font-family: var(--fuente-titulo); font-size: 1.2rem; }
 .ar-ver-error p { margin: 8px 0 14px; color: var(--texto-tenue); font-family: var(--fuente-mono); font-size: .64rem; line-height: 1.4; word-break: break-word; }
 .ar-ver-error button { min-height: 38px; padding: 0 20px; border: 0; border-radius: 9px; color: var(--tinta); background: var(--acento); font-family: var(--fuente-titulo); font-weight: 700; cursor: pointer; }
+
+/* Iconos nuevos: flecha propia, escudo, cubo y bate */
+.page-header-back { background: transparent; }
+.page-header-back svg { width: 30px; height: 30px; }
+.flecha-avance { display: grid; place-items: center; }
+.flecha-avance svg { width: 30px; height: 30px; transform: scaleX(-1); }
+.gallery-entry .flecha-avance { width: auto; height: auto; border-radius: 0; background: transparent; color: var(--acento); }
+.escudo-opcion .flecha-avance svg { width: 26px; height: 26px; }
+.ar-ver-atras { background: transparent; filter: drop-shadow(0 2px 6px rgba(0,0,0,.7)); }
+.ar-ver-atras svg { width: 32px; height: 32px; }
+.mode-back { background: transparent; border: 0; color: #fff; cursor: pointer; }
+.mode-back svg { width: 26px; height: 26px; }
+.ar-mode-choice span svg { width: 44px; height: 44px; }
+.model-choice { background: var(--azul-profundo); }
+.card-icon svg { width: 1em; height: 1em; }
+.herramienta-bate svg { width: 24px; height: 24px; color: var(--azul-claro); }
+
+/* Controles de la ventana AR */
+.ar-ver-pista { position: absolute; right: 20px; bottom: 42%; left: 20px; z-index: 4; margin: 0; color: #fff; font-family: var(--fuente-mono); font-size: .64rem; font-weight: 700; text-align: center; text-shadow: 0 2px 6px rgba(0,0,0,.8); }
+.ar-ver-aviso { position: absolute; right: 20px; bottom: 34%; left: 20px; z-index: 6; margin: 0; padding: 8px 12px; border-radius: 9px; color: #fff; background: var(--confirmacion); font-family: var(--fuente-mono); font-size: .66rem; font-weight: 700; text-align: center; }
+.ar-ver-controles { position: absolute; right: 0; bottom: 0; left: 0; z-index: 5; padding: 14px 12px max(16px, env(safe-area-inset-bottom)); }
+.ar-ver-acciones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ar-ver-accion { display: flex; min-height: 58px; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 0; border-radius: 12px; color: #fff; background: rgba(13,55,103,.82); font-family: var(--fuente-mono); font-size: .56rem; font-weight: 700; cursor: pointer; }
+.ar-ver-accion svg { width: 22px; height: 22px; }
+.ar-ver-accion.is-activa { color: var(--tinta); background: var(--acento); }
+.ar-ver-accion:disabled { opacity: .4; cursor: not-allowed; }
+.ar-ver-accion:focus-visible, .ar-ver-ficha:focus-visible { outline: 3px solid var(--acento); outline-offset: 3px; }
+.ar-ver-ficha { width: 100%; min-height: 46px; margin-top: 8px; border: 0; border-radius: 11px; color: #fff; background: var(--alerta); font-family: var(--fuente-titulo); font-size: 1.05rem; font-weight: 700; cursor: pointer; }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import BottomNav from './Navigation'
+import Icono from './Icono'
 import PageHeader from './PageHeader'
 
 export default function Tarjetas() {
@@ -15,7 +16,7 @@ export default function Tarjetas() {
         <PageHeader title="AR" backTo="/ar" />
         <section className="ar-scan-content" aria-label="Escáner de tarjetas">
           <div className="scan-mode-toolbar">
-            <button className="mode-back" type="button" onClick={() => navigate('/ar')} aria-label="Volver a seleccionar modo">←</button>
+            <button className="mode-back" type="button" onClick={() => navigate('/ar')} aria-label="Volver a seleccionar modo"><Icono nombre="flecha" /></button>
             <span className="mode-chip is-active">TARJETAS</span>
             <span className="mode-chip">5 TARJETAS</span>
           </div>
@@ -39,7 +40,7 @@ export default function Tarjetas() {
       <PageHeader title="AR" backTo="/ar" />
       <section className="ar-mode-content card-mode-content" aria-label="Tarjeta holográfica en realidad aumentada">
         <div className="ar-mode-toolbar">
-          <button className="mode-back" type="button" onClick={() => navigate('/ar')} aria-label="Volver a seleccionar modo">←</button>
+          <button className="mode-back" type="button" onClick={() => navigate('/ar')} aria-label="Volver a seleccionar modo"><Icono nombre="flecha" /></button>
           <span className="mode-chip is-active">ANCLADO</span>
           <span className="mode-chip">TARJETA HOLOGRÁFICA</span>
         </div>
@@ -51,7 +52,7 @@ export default function Tarjetas() {
 
         <div className="card-tools" aria-label="Herramientas de tarjeta">
           <button type="button" onClick={() => setCardSide('front')}>⟳</button>
-          <button type="button">💡</button>
+          <button className="herramienta-bate" type="button" aria-label="Animar el bateo"><Icono nombre="bate" /></button>
           <button type="button">●</button>
           <button type="button">▣</button>
         </div>

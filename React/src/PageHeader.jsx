@@ -10,7 +10,7 @@ export default function PageHeader({ title, backTo, rightLabel }) {
       <div className="page-header-inner">
         {backTo ? (
           <button className="page-header-back" type="button" onClick={() => navigate(backTo)} aria-label="Regresar">
-            ←
+            <Icono nombre="flecha" />
           </button>
         ) : null}
         <h1>{title}</h1>
