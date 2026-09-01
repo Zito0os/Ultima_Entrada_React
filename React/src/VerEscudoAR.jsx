@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import Icono from './Icono'
+import { filtroDeEstabilidad, leerConfig } from './configEscudos'
 import { buscarEscudo } from './escudosData'
 import { componerCaptura, crearEfectos } from './efectosAR'
 import { cargarSVG, extruirDesdeSVG } from './extruirEscudo'
@@ -22,6 +23,8 @@ export default function VerEscudoAR() {
   const [error, setError] = useState('')
 
   const escudo = buscarEscudo(escudoId)
+  // Sin memoizar, cada render devolveria otro objeto y reiniciaria la camara
+  const config = useMemo(() => leerConfig(escudoId), [escudoId])
 
   useEffect(() => {
     const nodo = contenedor.current
@@ -45,6 +48,9 @@ export default function VerEscudoAR() {
           uiScanning: 'no',
           uiLoading: 'no',
           uiError: 'no',
+          missTolerance: 12,
+          warmupTolerance: 3,
+          ...filtroDeEstabilidad(config.estabilidad),
         })
 
         const { renderer, scene, camera } = mindar
@@ -56,8 +62,8 @@ export default function VerEscudoAR() {
         relleno.position.set(-2, -1, 2)
         scene.add(relleno)
 
-        const { objeto } = extruirDesdeSVG(datos, { profundidad: 16, bisel: 1.5, segmentos: 4, separacion: 6, color: escudo.color })
-        objeto.scale.multiplyScalar(ESCALA)
+        const { objeto } = extruirDesdeSVG(datos, { ...config, color: escudo.color })
+        objeto.scale.multiplyScalar(ESCALA * (config.escala / 100))
 
         // Una ancla por cada variante del escudo dentro del .mind
         const giros = []
@@ -88,7 +94,7 @@ export default function VerEscudoAR() {
 
         renderer.setAnimationLoop(() => {
           if (motor.current?.girando !== false) {
-            giros.forEach((giro) => { giro.rotation.y += 0.02 })
+            giros.forEach((giro) => { giro.rotation.y += config.velocidad / 1000 })
           }
           animaciones.forEach((efecto) => efecto.animar())
           renderer.render(scene, camera)
@@ -125,7 +131,7 @@ export default function VerEscudoAR() {
       }
       motor.current = null
     }
-  }, [escudo])
+  }, [escudo, config])
 
   useEffect(() => {
     if (motor.current) {
@@ -198,11 +204,9 @@ export default function VerEscudoAR() {
           </button>
         </div>
 
-        {escudo.equipo && (
-          <button className="ar-ver-ficha" type="button" onClick={() => navigate(`/equipos/${escudo.equipo}`)}>
-            VER FICHA COMPLETA DEL EQUIPO
-          </button>
-        )}
+        <button className="ar-ver-ficha" type="button" onClick={() => navigate(escudo.equipo ? `/equipos/${escudo.equipo}` : '/equipos')}>
+          {escudo.equipo ? 'VER FICHA COMPLETA DEL EQUIPO' : 'VER TODOS LOS EQUIPOS'}
+        </button>
       </footer>
 
       {error && (

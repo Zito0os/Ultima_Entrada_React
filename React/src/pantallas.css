@@ -6,7 +6,7 @@
 .splash-stage { position: relative; display: grid; width: min(100%, 420px); min-height: 360px; place-items: center; }
 .splash-batter { position: absolute; inset: 0; display: grid; place-items: center; }
 .splash-batter img { grid-area: 1 / 1; width: min(86%, 330px); max-height: 340px; object-fit: contain; opacity: 0; filter: brightness(0); animation: bateo 1.8s steps(1, end) infinite; animation-delay: calc(var(--pose) * .6s); }
-.splash-title { position: relative; margin: 0; color: #fff; font-family: var(--fuente-titulo); font-size: clamp(3rem, 15vw, 5.5rem); font-weight: 700; line-height: .82; letter-spacing: -3px; text-align: center; text-shadow: 0 6px 24px rgba(13, 55, 103, .5); }
+.splash-title { position: relative; margin: 0; color: #fff; font-family: var(--fuente-titulo); font-size: clamp(3rem, 15vw, 5.5rem); font-weight: 700; line-height: .82; letter-spacing: -1px; text-align: center; text-shadow: 0 6px 24px rgba(13, 55, 103, .5); }
 .splash-progress { width: min(100%, 260px); height: 8px; overflow: hidden; border-radius: 999px; background: rgba(255, 255, 255, .28); }
 .splash-progress span { display: block; width: 100%; height: 100%; border-radius: inherit; background: var(--acento); transform-origin: left; animation: carga 2.6s ease-out forwards; }
 .splash-note { margin: 0; color: var(--acento); font-family: var(--fuente-mono); font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-align: center; }
@@ -16,7 +16,7 @@
 /* A-02 inicio de sesion y A-03 registro */
 .acceso-shell { display: flex; min-height: 100svh; flex-direction: column; justify-content: center; background: var(--fondo); }
 .acceso-content { display: flex; width: min(100%, 420px); flex-direction: column; gap: 14px; padding: 32px 20px 40px; margin: 0 auto; box-sizing: border-box; }
-.acceso-marca { margin: 0 0 6px; color: var(--azul); font-family: var(--fuente-titulo); font-size: clamp(2.4rem, 12vw, 3.6rem); font-weight: 700; line-height: .84; letter-spacing: -2px; text-align: center; }
+.acceso-marca { margin: 0 0 6px; color: var(--azul); font-family: var(--fuente-titulo); font-size: clamp(2.4rem, 12vw, 3.6rem); font-weight: 700; line-height: .84; letter-spacing: -.5px; text-align: center; }
 .acceso-panel { overflow: hidden; border-radius: 12px; }
 .acceso-titulo { margin: 0; padding: 11px; color: var(--acento); background: var(--azul-medio); font-family: var(--fuente-mono); font-size: .95rem; font-weight: 700; letter-spacing: .08em; text-align: center; }
 .acceso-campos { display: grid; gap: 9px; padding: 14px 16px 18px; background: var(--superficie); }
@@ -222,3 +222,25 @@
 .ar-ver-accion:disabled { opacity: .4; cursor: not-allowed; }
 .ar-ver-accion:focus-visible, .ar-ver-ficha:focus-visible { outline: 3px solid var(--acento); outline-offset: 3px; }
 .ar-ver-ficha { width: 100%; min-height: 46px; margin-top: 8px; border: 0; border-radius: 11px; color: #fff; background: var(--alerta); font-family: var(--fuente-titulo); font-size: 1.05rem; font-weight: 700; cursor: pointer; }
+
+/* Tipografia: mas aire entre letras en general */
+body { letter-spacing: .015em; }
+.acceso-titulo, .compilar-copia small, .prueba-controles span, .ar-ver-estado, .ar-ver-equipo { letter-spacing: .06em; }
+
+/* Los rotulos de boton usan la tipografia de titulos, como el resto */
+.video-filter, .prueba-chip, .album-filter, .gallery-filter, .plays-filter, .profile-filter,
+.region-filter, .detail-tab, .statistics-subtab, .ar-region, .mode-chip, .gallery-action,
+.ar-ver-accion, .compilar-descarga, .trivia-mode, .ar-selector-prueba, .editor-volver, .cuenta-valor {
+  font-family: var(--fuente-titulo); letter-spacing: .04em;
+}
+.ar-ver-accion span { font-family: var(--fuente-titulo); letter-spacing: .05em; }
+
+/* Personalizador */
+.prueba-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 9px; }
+.prueba-acciones .prueba-boton { margin-top: 0; }
+.prueba-boton.is-secundario { color: #fff; background: var(--azul-medio); }
+.prueba-boton.is-fantasma { color: var(--azul-medio); background: transparent; border: 2px solid var(--azul-medio); }
+.prueba-aviso { margin: 9px 0 0; padding: 8px 11px; border-radius: 9px; color: #fff; background: var(--confirmacion); font-family: var(--fuente-mono); font-size: .66rem; font-weight: 700; text-align: center; }
+.prueba-controles { max-height: 250px; overflow-y: auto; }
+.onboarding-modal { text-align: left; }
+.onboarding-modal h2 { text-align: center; }

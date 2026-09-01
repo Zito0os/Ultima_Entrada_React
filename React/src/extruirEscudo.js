@@ -4,7 +4,17 @@ import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js'
 const TAMANO = 100
 
 // Convierte un SVG en un grupo 3D: cada trazo se extruye con su color y su capa
-export function extruirDesdeSVG(datos, { profundidad = 16, bisel = 1.5, segmentos = 4, separacion = 6, color = null } = {}) {
+export function extruirDesdeSVG(datos, opciones = {}) {
+  const {
+    profundidad = 16,
+    bisel = 1.5,
+    segmentos = 4,
+    separacion = 6,
+    color = null,
+    metalico = 25,
+    aspereza = 45,
+  } = opciones
+
   const grupo = new THREE.Group()
   let triangulos = 0
   let capa = 0
@@ -31,8 +41,8 @@ export function extruirDesdeSVG(datos, { profundidad = 16, bisel = 1.5, segmento
 
     const malla = new THREE.Mesh(geometria, new THREE.MeshStandardMaterial({
       color: color ? new THREE.Color(color) : (trazo.color ?? new THREE.Color('#227AE6')),
-      metalness: 0.25,
-      roughness: 0.45,
+      metalness: metalico / 100,
+      roughness: aspereza / 100,
       side: THREE.DoubleSide,
     }))
     malla.position.z = capa * separacion

@@ -3,19 +3,34 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 import PageHeader from './PageHeader'
+import { CONFIG_BASE, borrarConfig, guardarConfig, leerConfig, marcarOnboardingVisto, onboardingVisto, tieneConfig } from './configEscudos'
 import { escudos } from './escudosData'
 import { cargarSVG, extruirDesdeSVG } from './extruirEscudo'
+
+const controles = [
+  { id: 'profundidad', nombre: 'PROFUNDIDAD', min: 1, max: 40 },
+  { id: 'bisel', nombre: 'BISEL', min: 0, max: 6, paso: 0.5 },
+  { id: 'segmentos', nombre: 'SEGMENTOS DE CURVA', min: 2, max: 24 },
+  { id: 'separacion', nombre: 'SEPARACIÓN DE CAPAS', min: 0, max: 30 },
+  { id: 'metalico', nombre: 'ACABADO METÁLICO', min: 0, max: 100, unidad: '%' },
+  { id: 'aspereza', nombre: 'ASPEREZA', min: 0, max: 100, unidad: '%' },
+  { id: 'escala', nombre: 'TAMAÑO EN AR', min: 40, max: 200, unidad: '%' },
+  { id: 'velocidad', nombre: 'VELOCIDAD DE GIRO', min: 0, max: 60 },
+  { id: 'estabilidad', nombre: 'ESTABILIDAD EN AR', min: 0, max: 100, unidad: '%' },
+]
 
 export default function PruebaEscudo() {
   const contenedor = useRef(null)
   const escena = useRef(null)
   const [escudoId, setEscudoId] = useState('mlb')
-  const [profundidad, setProfundidad] = useState(16)
-  const [bisel, setBisel] = useState(1.5)
-  const [segmentos, setSegmentos] = useState(4)
-  const [separacion, setSeparacion] = useState(6)
+  const [config, setConfig] = useState(() => leerConfig('mlb'))
   const [girando, setGirando] = useState(true)
   const [medidas, setMedidas] = useState({ triangulos: 0, trazos: 0 })
+  const [guardado, setGuardado] = useState(() => tieneConfig('mlb'))
+  const [aviso, setAviso] = useState('')
+  const [onboarding, setOnboarding] = useState(() => !onboardingVisto())
+
+  const escudo = escudos.find((item) => item.id === escudoId)
 
   useEffect(() => {
     const nodo = contenedor.current
@@ -38,9 +53,8 @@ export default function PruebaEscudo() {
     borde.position.set(0, 40, -220)
     scene.add(borde)
 
-    const controles = new OrbitControls(camara, renderer.domElement)
-    controles.enableDamping = true
-    controles.autoRotateSpeed = 4.5
+    const orbita = new OrbitControls(camara, renderer.domElement)
+    orbita.enableDamping = true
 
     const grupo = new THREE.Group()
     scene.add(grupo)
@@ -61,18 +75,21 @@ export default function PruebaEscudo() {
       if (!vivo) {
         return
       }
-      controles.update()
+      if (escena.current?.girando !== false) {
+        grupo.rotation.y += (escena.current?.velocidad ?? 20) / 1000
+      }
+      orbita.update()
       renderer.render(scene, camara)
       requestAnimationFrame(animar)
     }
     animar()
 
-    escena.current = { grupo, controles }
+    escena.current = { grupo, orbita, girando: true, velocidad: CONFIG_BASE.velocidad }
 
     return () => {
       vivo = false
       observador.disconnect()
-      controles.dispose()
+      orbita.dispose()
       renderer.dispose()
       nodo.removeChild(renderer.domElement)
     }
@@ -83,14 +100,13 @@ export default function PruebaEscudo() {
       return
     }
     const { grupo } = escena.current
-    const escudo = escudos.find((item) => item.id === escudoId)
     let cancelado = false
 
     cargarSVG(`${import.meta.env.BASE_URL}${escudo.svg}`).then((datos) => {
       if (cancelado) {
         return
       }
-      const { objeto, triangulos, trazos } = extruirDesdeSVG(datos, { profundidad, bisel, segmentos, separacion, color: escudo.color })
+      const { objeto, triangulos, trazos } = extruirDesdeSVG(datos, { ...config, color: escudo.color })
       grupo.clear()
       grupo.add(objeto)
       setMedidas({ triangulos, trazos })
@@ -99,25 +115,55 @@ export default function PruebaEscudo() {
     return () => {
       cancelado = true
     }
-  }, [escudoId, profundidad, bisel, segmentos, separacion])
+  }, [escudo, config])
 
   useEffect(() => {
     if (escena.current) {
-      escena.current.controles.autoRotate = girando
+      escena.current.girando = girando
+      escena.current.velocidad = config.velocidad
     }
-  }, [girando])
+  }, [girando, config.velocidad])
+
+  const cambiarEscudo = (id) => {
+    setEscudoId(id)
+    setConfig(leerConfig(id))
+    setGuardado(tieneConfig(id))
+    setAviso('')
+  }
+
+  const cambiar = (id, valor) => setConfig((actual) => ({ ...actual, [id]: Number(valor) }))
+
+  const guardar = () => {
+    const ok = guardarConfig(escudoId, config)
+    setGuardado(ok)
+    setAviso(ok ? 'Guardado. Así se va a ver en AR.' : 'No se pudo guardar en este navegador.')
+    setTimeout(() => setAviso(''), 3200)
+  }
+
+  const restaurar = () => {
+    borrarConfig(escudoId)
+    setConfig({ ...CONFIG_BASE })
+    setGuardado(false)
+    setAviso('Volvió a los valores de fábrica.')
+    setTimeout(() => setAviso(''), 3200)
+  }
+
+  const cerrarOnboarding = () => {
+    marcarOnboardingVisto()
+    setOnboarding(false)
+  }
 
   const dentro = medidas.triangulos <= 2000
 
   return (
     <main className="prueba-shell">
-      <PageHeader title="PRUEBA 3D" backTo="/ar" rightLabel="ESCUDOS" />
+      <PageHeader title="MODELOS" backTo="/ar" rightLabel={guardado ? 'GUARDADO' : 'DE FÁBRICA'} />
 
-      <section className="prueba-content" aria-label="Prueba de extrusión de escudos">
+      <section className="prueba-content" aria-label="Personalizar el escudo 3D">
         <div className="prueba-escudos" role="tablist" aria-label="Elegir escudo">
-          {escudos.map((escudo) => (
-            <button className={escudoId === escudo.id ? 'prueba-chip is-active' : 'prueba-chip'} type="button" role="tab" aria-selected={escudoId === escudo.id} onClick={() => setEscudoId(escudo.id)} key={escudo.id}>
-              {escudo.nombre}
+          {escudos.map((item) => (
+            <button className={escudoId === item.id ? 'prueba-chip is-active' : 'prueba-chip'} type="button" role="tab" aria-selected={escudoId === item.id} onClick={() => cambiarEscudo(item.id)} key={item.id}>
+              {item.nombre}
             </button>
           ))}
         </div>
@@ -133,29 +179,40 @@ export default function PruebaEscudo() {
         </div>
 
         <div className="prueba-controles">
-          <label>
-            <span>PROFUNDIDAD<b>{profundidad}</b></span>
-            <input type="range" min="1" max="40" value={profundidad} onChange={(e) => setProfundidad(Number(e.target.value))} />
-          </label>
-          <label>
-            <span>BISEL<b>{bisel}</b></span>
-            <input type="range" min="0" max="6" step="0.5" value={bisel} onChange={(e) => setBisel(Number(e.target.value))} />
-          </label>
-          <label>
-            <span>SEGMENTOS DE CURVA<b>{segmentos}</b></span>
-            <input type="range" min="2" max="24" value={segmentos} onChange={(e) => setSegmentos(Number(e.target.value))} />
-          </label>
-          <label>
-            <span>SEPARACIÓN DE CAPAS<b>{separacion}</b></span>
-            <input type="range" min="0" max="30" value={separacion} onChange={(e) => setSeparacion(Number(e.target.value))} />
-          </label>
+          {controles.map((control) => (
+            <label key={control.id}>
+              <span>{control.nombre}<b>{config[control.id]}{control.unidad || ''}</b></span>
+              <input type="range" min={control.min} max={control.max} step={control.paso || 1} value={config[control.id]} onChange={(e) => cambiar(control.id, e.target.value)} />
+            </label>
+          ))}
         </div>
 
-        <button className="prueba-boton" type="button" onClick={() => setGirando((g) => !g)} aria-pressed={girando}>
+        {aviso && <p className="prueba-aviso" role="status">{aviso}</p>}
+
+        <div className="prueba-acciones">
+          <button className="prueba-boton" type="button" onClick={guardar}>GUARDAR</button>
+          <button className="prueba-boton is-secundario" type="button" onClick={restaurar}>RESTAURAR</button>
+        </div>
+        <button className="prueba-boton is-fantasma" type="button" onClick={() => setGirando((g) => !g)} aria-pressed={girando}>
           {girando ? 'DETENER GIRO' : 'GIRAR'}
         </button>
         <p className="prueba-nota">Arrastra para orbitar y rueda para acercar.</p>
       </section>
+
+      {onboarding && (
+        <div className="modal-backdrop" role="presentation" onClick={cerrarOnboarding}>
+          <section className="challenge-modal onboarding-modal" role="dialog" aria-modal="true" aria-labelledby="onboarding-titulo" onClick={(event) => event.stopPropagation()}>
+            <span className="modal-kicker">MODELOS 3D</span>
+            <h2 id="onboarding-titulo">ARMA TU<br />ESCUDO</h2>
+            <ol className="rules-list">
+              <li>Elige un escudo y muévele a los controles para cambiar su grosor, acabado y color.</li>
+              <li>El contador te dice cuántos triángulos lleva, para que no se ponga pesado.</li>
+              <li>Al guardar, ese mismo escudo es el que aparece cuando lo escaneas con la cámara.</li>
+            </ol>
+            <button className="button button-primary modal-action" type="button" onClick={cerrarOnboarding}>ENTENDIDO</button>
+          </section>
+        </div>
+      )}
     </main>
   )
 }

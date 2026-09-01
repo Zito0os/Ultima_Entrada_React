@@ -30,9 +30,6 @@ export default function Escudos() {
         <p className="ar-selector-nota">
           Apunta la cámara al escudo impreso. El modelo aparece encima girando.
         </p>
-        <button className="ar-selector-prueba" type="button" onClick={() => navigate('/ar/prueba')}>
-          VER LOS MODELOS SIN CÁMARA
-        </button>
       </section>
 
       <BottomNav activeTab="ar" onTabChange={() => {}} />
