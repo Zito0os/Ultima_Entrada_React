@@ -1,11 +1,11 @@
-// Cinco preguntas por equipo. La propuesta contempla setenta y cinco en total,
-// una vez que esten cargados los quince clubes.
+// Cinco preguntas por equipo, setenta y cinco en total. Lo que se pregunta sale
+// de teamsData.js: si un dato cambia ahi, hay que cambiarlo aqui tambien.
 export const triviaPorEquipo = {
   yankees: [
     {
       pregunta: '¿En qué año ganaron los Yankees su primera Serie Mundial?',
-      opciones: ['1918', '1923', '1927', '1932'],
-      correcta: 1,
+      opciones: ['1903', '1912', '1918', '1923'],
+      correcta: 3,
       nota: 'Vencieron a los Giants en seis juegos, el mismo año que inauguró el Yankee Stadium.',
     },
     {
@@ -54,8 +54,8 @@ export const triviaPorEquipo = {
     },
     {
       pregunta: '¿Qué jugador es el líder histórico de jonrones del club?',
-      opciones: ['David Ortiz', 'Ted Williams', 'Carl Yastrzemski', 'Jim Rice'],
-      correcta: 1,
+      opciones: ['David Ortiz', 'Carl Yastrzemski', 'Jim Rice', 'Ted Williams'],
+      correcta: 3,
       nota: 'Ted Williams conectó 521 jonrones, todos con Boston.',
     },
     {
@@ -63,6 +63,262 @@ export const triviaPorEquipo = {
       opciones: ['Yankees', 'Astros', 'Dodgers', 'Cubs'],
       correcta: 0,
       nota: 'Boston contra Nueva York es la rivalidad más antigua de la Liga Americana.',
+    },
+  ],
+  'blue-jays': [
+    {
+      pregunta: '¿Qué hace únicos a los Blue Jays entre los campeones?',
+      opciones: ['Nunca han perdido una Serie Mundial', 'Son el único club fuera de Estados Unidos que ha ganado', 'Ganaron sin estadio propio', 'Fueron el primer equipo con techo'],
+      correcta: 1,
+      nota: 'Toronto es la única ciudad fuera de Estados Unidos que ha levantado la Serie Mundial.',
+    },
+    {
+      pregunta: '¿En qué años ganaron sus dos Series Mundiales?',
+      opciones: ['1985 y 1986', '1992 y 1993', '1993 y 1994', '1991 y 1992'],
+      correcta: 1,
+      nota: 'Las ganaron seguidas, y son las únicas dos de la franquicia.',
+    },
+    {
+      pregunta: '¿Quién cerró la Serie Mundial de 1993 con un jonrón?',
+      opciones: ['Joe Carter', 'Roberto Alomar', 'Paul Molitor', 'Devon White'],
+      correcta: 0,
+      nota: 'Su jonrón en el sexto juego terminó la serie ante Filadelfia.',
+    },
+    {
+      pregunta: '¿Quién es el líder histórico de jonrones del club?',
+      opciones: ['José Bautista', 'Vernon Wells', 'Carlos Delgado', 'Joe Carter'],
+      correcta: 2,
+      nota: 'Carlos Delgado conectó 336 jonrones con Toronto.',
+    },
+    {
+      pregunta: '¿En qué año entró la franquicia a Grandes Ligas?',
+      opciones: ['1961', '1969', '1972', '1977'],
+      correcta: 3,
+      nota: 'Entraron en 1977, el mismo año que los Mariners de Seattle.',
+    },
+  ],
+  rays: [
+    {
+      pregunta: '¿En qué año entraron los Rays a Grandes Ligas?',
+      opciones: ['1969', '1977', '1993', '1998'],
+      correcta: 3,
+      nota: 'Son la franquicia más joven de la Liga Americana.',
+    },
+    {
+      pregunta: '¿Cuántas Series Mundiales han ganado los Rays?',
+      opciones: ['Ninguna', 'Una', 'Dos', 'Tres'],
+      correcta: 0,
+      nota: 'Llevan dos banderines de liga, pero todavía ningún título.',
+    },
+    {
+      pregunta: '¿En qué años llegaron a la Serie Mundial?',
+      opciones: ['2008 y 2020', '2010 y 2013', '2008 y 2011', '2019 y 2021'],
+      correcta: 0,
+      nota: 'Las dos veces con una de las nóminas más bajas del béisbol.',
+    },
+    {
+      pregunta: '¿Cómo se llamó el club durante su primera década?',
+      opciones: ['Tampa Bay Sting Rays', 'Tampa Bay Devil Rays', 'Florida Rays', 'St. Petersburg Rays'],
+      correcta: 1,
+      nota: 'Dejaron de ser Devil Rays y se quedaron solo como Rays a partir de 2008.',
+    },
+    {
+      pregunta: '¿Quién es el líder histórico de jonrones del club?',
+      opciones: ['Carl Crawford', 'Ben Zobrist', 'Evan Longoria', 'Randy Arozarena'],
+      correcta: 2,
+      nota: 'Evan Longoria conectó 261 jonrones con Tampa Bay.',
+    },
+  ],
+  orioles: [
+    {
+      pregunta: '¿Cuántos juegos seguidos jugó Cal Ripken Jr.?',
+      opciones: ['1,307', '2,130', '2,632', '3,001'],
+      correcta: 2,
+      nota: 'Dieciséis temporadas sin faltar a un solo juego.',
+    },
+    {
+      pregunta: '¿En qué año llegó la franquicia a Baltimore?',
+      opciones: ['1901', '1920', '1935', '1954'],
+      correcta: 3,
+      nota: 'Antes fueron los Browns de San Luis; el nombre Orioles llegó con la mudanza.',
+    },
+    {
+      pregunta: '¿En qué año ganaron su primera Serie Mundial?',
+      opciones: ['1954', '1961', '1966', '1970'],
+      correcta: 2,
+      nota: 'Barrieron a los Dodgers en cuatro juegos.',
+    },
+    {
+      pregunta: '¿Quién es el líder histórico de jonrones del club?',
+      opciones: ['Eddie Murray', 'Cal Ripken Jr.', 'Boog Powell', 'Brooks Robinson'],
+      correcta: 1,
+      nota: 'Cal Ripken Jr. conectó 431 jonrones, todos con Baltimore.',
+    },
+    {
+      pregunta: '¿Cómo se llama el estadio de los Orioles?',
+      opciones: ['Oriole Park', 'Progressive Field', 'Comerica Park', 'Target Field'],
+      correcta: 0,
+      nota: 'Oriole Park at Camden Yards abrió en 1992 y marcó el estilo de los estadios modernos.',
+    },
+  ],
+  guardians: [
+    {
+      pregunta: '¿Cómo se llamaba la franquicia antes de ser Guardians?',
+      opciones: ['Naps', 'Indios', 'Spiders', 'Blues'],
+      correcta: 1,
+      nota: 'Fueron Indios de Cleveland durante más de un siglo antes del cambio.',
+    },
+    {
+      pregunta: '¿En qué años ganaron sus dos Series Mundiales?',
+      opciones: ['1920 y 1948', '1948 y 1954', '1920 y 1954', '1954 y 1995'],
+      correcta: 0,
+      nota: 'Desde 1948 cargan una de las sequías más largas del béisbol.',
+    },
+    {
+      pregunta: '¿Quién es el líder histórico de victorias del club?',
+      opciones: ['Early Wynn', 'Mel Harder', 'Bob Feller', 'Corey Kluber'],
+      correcta: 2,
+      nota: 'Bob Feller ganó 266 juegos pese a perder tres temporadas por la guerra.',
+    },
+    {
+      pregunta: '¿Quién es el líder histórico de jonrones del club?',
+      opciones: ['Manny Ramírez', 'Albert Belle', 'José Ramírez', 'Jim Thome'],
+      correcta: 3,
+      nota: 'Jim Thome conectó 337 jonrones con Cleveland.',
+    },
+    {
+      pregunta: '¿Cómo se llama el estadio de los Guardians?',
+      opciones: ['Progressive Field', 'Rate Field', 'Kauffman Stadium', 'Angel Stadium'],
+      correcta: 0,
+      nota: 'Abrió en 1994 y se llamó Jacobs Field durante sus primeros trece años.',
+    },
+  ],
+  tigers: [
+    {
+      pregunta: '¿En qué año ganaron los Tigers su primera Serie Mundial?',
+      opciones: ['1907', '1909', '1934', '1935'],
+      correcta: 3,
+      nota: 'Habían perdido las tres finales anteriores antes de ganar en 1935.',
+    },
+    {
+      pregunta: '¿Cuántas Series Mundiales tienen los Tigers?',
+      opciones: ['2', '3', '4', '6'],
+      correcta: 2,
+      nota: 'Ganaron en 1935, 1945, 1968 y 1984.',
+    },
+    {
+      pregunta: '¿Qué jugador definió la primera era de los Tigers?',
+      opciones: ['Al Kaline', 'Ty Cobb', 'Hank Greenberg', 'Miguel Cabrera'],
+      correcta: 1,
+      nota: 'Ty Cobb jugó veintidós temporadas en Detroit y marcó el estilo de su época.',
+    },
+    {
+      pregunta: '¿Quién es el líder histórico de jonrones del club?',
+      opciones: ['Miguel Cabrera', 'Norm Cash', 'Al Kaline', 'Hank Greenberg'],
+      correcta: 2,
+      nota: 'Al Kaline conectó 399 jonrones, todos con Detroit.',
+    },
+    {
+      pregunta: '¿Cómo se llama el estadio de los Tigers?',
+      opciones: ['Tiger Stadium', 'Comerica Park', 'Rate Field', 'Progressive Field'],
+      correcta: 1,
+      nota: 'Comerica Park abrió en 2000 y sustituyó al viejo Tiger Stadium.',
+    },
+  ],
+  royals: [
+    {
+      pregunta: '¿En qué año ganaron los Royals su primera Serie Mundial?',
+      opciones: ['1976', '1980', '1985', '1990'],
+      correcta: 2,
+      nota: 'Remontaron dos series desde abajo antes de levantar el título.',
+    },
+    {
+      pregunta: '¿Qué jugador llevó a los Royals al título de 1985?',
+      opciones: ['George Brett', 'Bo Jackson', 'Frank White', 'Willie Wilson'],
+      correcta: 0,
+      nota: 'George Brett pasó sus veintiuna temporadas en Kansas City.',
+    },
+    {
+      pregunta: '¿En qué año llegó su segundo título?',
+      opciones: ['2011', '2013', '2014', '2015'],
+      correcta: 3,
+      nota: 'Lo ganaron con un equipo armado sobre defensa y bullpen, no sobre jonrones.',
+    },
+    {
+      pregunta: '¿En qué año se fundó la franquicia?',
+      opciones: ['1955', '1961', '1968', '1969'],
+      correcta: 3,
+      nota: 'Entraron en la expansión de 1969, junto con otros tres equipos.',
+    },
+    {
+      pregunta: '¿Cómo se llama el estadio de los Royals?',
+      opciones: ['Kauffman Stadium', 'Globe Life Field', 'Target Field', 'Comerica Park'],
+      correcta: 0,
+      nota: 'Lleva el nombre de Ewing Kauffman, el fundador del club.',
+    },
+  ],
+  twins: [
+    {
+      pregunta: '¿En qué ciudad nació la franquicia de los Twins?',
+      opciones: ['Minneapolis', 'Washington', 'Milwaukee', 'San Luis'],
+      correcta: 1,
+      nota: 'Fueron los Senadores de Washington desde 1901.',
+    },
+    {
+      pregunta: '¿En qué año se mudaron a Minnesota?',
+      opciones: ['1901', '1954', '1960', '1961'],
+      correcta: 3,
+      nota: 'Con la mudanza tomaron el nombre de Twins, por las ciudades gemelas.',
+    },
+    {
+      pregunta: '¿Quién lanzó completo el séptimo juego de 1991?',
+      opciones: ['Bert Blyleven', 'Kevin Tapani', 'Frank Viola', 'Jack Morris'],
+      correcta: 3,
+      nota: 'Diez entradas sin permitir carrera, en uno de los mejores juegos que se han jugado.',
+    },
+    {
+      pregunta: '¿Quién es el líder histórico de jonrones del club?',
+      opciones: ['Kirby Puckett', 'Joe Mauer', 'Harmon Killebrew', 'Tony Oliva'],
+      correcta: 2,
+      nota: 'Harmon Killebrew conectó 559 jonrones con la franquicia.',
+    },
+    {
+      pregunta: '¿Cuántas Series Mundiales tienen los Twins?',
+      opciones: ['1', '2', '3', '5'],
+      correcta: 2,
+      nota: 'Una como Senadores en 1924 y dos como Twins, en 1987 y 1991.',
+    },
+  ],
+  'white-sox': [
+    {
+      pregunta: '¿En qué año terminó la sequía de los White Sox?',
+      opciones: ['1993', '2000', '2005', '2008'],
+      correcta: 2,
+      nota: 'Barrieron la Serie Mundial tras ochenta y ocho años sin ganarla.',
+    },
+    {
+      pregunta: '¿Qué pasó con ocho jugadores del club en 1919?',
+      opciones: ['Cambiaron de equipo', 'Fueron expulsados de por vida', 'Fundaron otra liga', 'Se retiraron juntos'],
+      correcta: 1,
+      nota: 'El escándalo marcó a la franquicia durante décadas.',
+    },
+    {
+      pregunta: '¿En qué año ganaron su primera Serie Mundial?',
+      opciones: ['1901', '1903', '1905', '1906'],
+      correcta: 3,
+      nota: 'Ganaron con tan poca ofensiva que los apodaron los sin batazos.',
+    },
+    {
+      pregunta: '¿Quién es el líder histórico de jonrones del club?',
+      opciones: ['Paul Konerko', 'Harold Baines', 'Frank Thomas', 'José Abreu'],
+      correcta: 2,
+      nota: 'Frank Thomas conectó 448 jonrones con Chicago.',
+    },
+    {
+      pregunta: '¿Cómo se llama hoy el estadio de los White Sox?',
+      opciones: ['Rate Field', 'Wrigley Field', 'Comiskey Park', 'Progressive Field'],
+      correcta: 0,
+      nota: 'El mismo parque ha cambiado de nombre varias veces desde que abrió en 1991.',
     },
   ],
   astros: [
@@ -74,8 +330,8 @@ export const triviaPorEquipo = {
     },
     {
       pregunta: '¿En qué año se fundó la franquicia?',
-      opciones: ['1954', '1962', '1969', '1977'],
-      correcta: 1,
+      opciones: ['1954', '1958', '1961', '1962'],
+      correcta: 3,
       nota: 'Nacieron como los Colt .45s y cambiaron de nombre en 1965.',
     },
     {
@@ -95,6 +351,134 @@ export const triviaPorEquipo = {
       opciones: ['Minute Maid Park', 'Daikin Park', 'Astrodome', 'Enron Field'],
       correcta: 1,
       nota: 'El mismo parque ha llevado cuatro nombres distintos desde el año 2000.',
+    },
+  ],
+  angels: [
+    {
+      pregunta: '¿En qué año ganaron los Angels su única Serie Mundial?',
+      opciones: ['1979', '1986', '1995', '2002'],
+      correcta: 3,
+      nota: 'Remontaron desde abajo en el sexto juego y ganaron el séptimo en casa.',
+    },
+    {
+      pregunta: '¿Cuánto tardaron en llegar a su primera Serie Mundial?',
+      opciones: ['Veinte años', 'Treinta y tres años', 'Cuarenta y un años', 'Cincuenta años'],
+      correcta: 2,
+      nota: 'Llegaron a la primera en 2002 y la ganaron de inmediato.',
+    },
+    {
+      pregunta: '¿Qué jugador ha pasado toda su carrera con los Angels?',
+      opciones: ['Mike Trout', 'Vladimir Guerrero', 'Nolan Ryan', 'Albert Pujols'],
+      correcta: 0,
+      nota: 'Mike Trout es además el líder histórico de jonrones del club.',
+    },
+    {
+      pregunta: '¿En qué año se fundó la franquicia?',
+      opciones: ['1954', '1958', '1961', '1969'],
+      correcta: 2,
+      nota: 'Entraron como Los Angeles Angels y han cambiado de nombre varias veces.',
+    },
+    {
+      pregunta: '¿Cómo se llama el estadio de los Angels?',
+      opciones: ['Angel Stadium', 'Dodger Stadium', 'Petco Park', 'Oracle Park'],
+      correcta: 0,
+      nota: 'Está en Anaheim y abrió en 1966.',
+    },
+  ],
+  athletics: [
+    {
+      pregunta: '¿En cuántas ciudades distintas ha jugado la franquicia?',
+      opciones: ['Una', 'Dos', 'Tres', 'Cuatro'],
+      correcta: 3,
+      nota: 'Filadelfia, Kansas City, Oakland y ahora Sacramento.',
+    },
+    {
+      pregunta: '¿Cuántas Series Mundiales seguidas ganaron en los setenta?',
+      opciones: ['Dos', 'Tres', 'Cuatro', 'Cinco'],
+      correcta: 1,
+      nota: 'Ganaron en 1972, 1973 y 1974 con el mismo grupo de jugadores.',
+    },
+    {
+      pregunta: '¿Qué estrategia hicieron famosa en 2002?',
+      opciones: ['El bateador designado', 'La rotación de cuatro', 'El bullpen abierto', 'El Moneyball'],
+      correcta: 3,
+      nota: 'Compitieron con la nómina más baja de la liga usando estadística para fichar.',
+    },
+    {
+      pregunta: '¿Cuántas Series Mundiales tienen los Athletics?',
+      opciones: ['5', '7', '9', '11'],
+      correcta: 2,
+      nota: 'Es la segunda cifra más alta de la Liga Americana, detrás de los Yankees.',
+    },
+    {
+      pregunta: '¿Quién es el líder histórico de jonrones del club?',
+      opciones: ['Jimmie Foxx', 'Reggie Jackson', 'Mark McGwire', 'José Canseco'],
+      correcta: 2,
+      nota: 'Mark McGwire conectó 363 jonrones con la franquicia.',
+    },
+  ],
+  mariners: [
+    {
+      pregunta: '¿Cuántos juegos ganaron los Mariners en 2001?',
+      opciones: ['108', '112', '116', '120'],
+      correcta: 2,
+      nota: 'Récord empatado de la era moderna, y aun así se quedaron fuera de la Serie Mundial.',
+    },
+    {
+      pregunta: '¿Cuántas Series Mundiales han jugado los Mariners?',
+      opciones: ['Ninguna', 'Una', 'Dos', 'Tres'],
+      correcta: 0,
+      nota: 'Son el único club de Grandes Ligas que nunca ha llegado a una.',
+    },
+    {
+      pregunta: '¿Quién es el líder histórico de jonrones del club?',
+      opciones: ['Edgar Martínez', 'Ken Griffey Jr.', 'Jay Buhner', 'Alex Rodríguez'],
+      correcta: 1,
+      nota: 'Ken Griffey Jr. conectó 417 jonrones en sus dos etapas en Seattle.',
+    },
+    {
+      pregunta: '¿En qué año entró la franquicia a Grandes Ligas?',
+      opciones: ['1961', '1969', '1972', '1977'],
+      correcta: 3,
+      nota: 'Entraron en 1977, el mismo año que los Blue Jays de Toronto.',
+    },
+    {
+      pregunta: '¿Cómo se llama el estadio de los Mariners?',
+      opciones: ['T-Mobile Park', 'Kingdome', 'Oracle Park', 'Coors Field'],
+      correcta: 0,
+      nota: 'Abrió en 1999 y se llamó Safeco Field durante sus primeros veinte años.',
+    },
+  ],
+  rangers: [
+    {
+      pregunta: '¿En qué año ganaron los Rangers su primera Serie Mundial?',
+      opciones: ['2010', '2011', '2016', '2023'],
+      correcta: 3,
+      nota: 'Llegó en la temporada sesenta y tres de la franquicia.',
+    },
+    {
+      pregunta: '¿En qué años perdieron dos Series Mundiales seguidas?',
+      opciones: ['1996 y 1997', '2010 y 2011', '2011 y 2012', '2015 y 2016'],
+      correcta: 1,
+      nota: 'La de 2011 la perdieron estando a un strike de ganarla.',
+    },
+    {
+      pregunta: '¿Qué hicieron en la postemporada de 2023?',
+      opciones: ['Ganaron los once juegos como visitante', 'No perdieron ningún juego', 'Barrieron las tres series', 'Jugaron todo en casa'],
+      correcta: 0,
+      nota: 'Once victorias seguidas fuera de casa, algo que nadie había hecho.',
+    },
+    {
+      pregunta: '¿Quién es el líder histórico de jonrones del club?',
+      opciones: ['Iván Rodríguez', 'Rafael Palmeiro', 'Juan González', 'Adrián Beltré'],
+      correcta: 2,
+      nota: 'Juan González conectó 372 jonrones con Texas.',
+    },
+    {
+      pregunta: '¿Cómo se llama el estadio de los Rangers?',
+      opciones: ['Globe Life Field', 'Daikin Park', 'Angel Stadium', 'T-Mobile Park'],
+      correcta: 0,
+      nota: 'Abrió en 2020 en Arlington, con techo retráctil.',
     },
   ],
 }

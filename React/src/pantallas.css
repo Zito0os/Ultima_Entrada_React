@@ -276,3 +276,27 @@ body { letter-spacing: .015em; }
 .opening-card strong, .opening-card small { text-align: center; }
 .prueba-aviso.is-alerta { background: var(--alerta); }
 .trophy-card strong { padding: 0 4px; font-family: var(--fuente-mono); font-size: .5rem; letter-spacing: .04em; line-height: 1.2; }
+
+.prueba-secciones { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 5px; margin-top: 12px; }
+.prueba-seccion { min-height: 34px; padding: 0 4px; border: 2px solid var(--azul-medio); border-radius: 8px; color: var(--azul-medio); background: transparent; font-family: var(--fuente-mono); font-size: .6rem; font-weight: 900; letter-spacing: .04em; cursor: pointer; }
+.prueba-seccion.is-active { color: var(--tinta); border-color: var(--acento); background: var(--acento); }
+.prueba-seccion:focus-visible { outline: 3px solid var(--azul-medio); outline-offset: 3px; }
+.prueba-boton:disabled { opacity: .4; cursor: not-allowed; }
+
+.capas-panel { margin-top: 10px; padding: 12px; border-radius: 13px; background: var(--azul-medio); }
+.capas-ayuda, .capas-vacio { margin: 0 0 9px; color: #fff; font-family: var(--fuente-mono); font-size: .62rem; font-weight: 700; line-height: 1.35; }
+.capas-vacio { margin: 0; }
+.capas-pila { display: grid; gap: 5px; max-height: 168px; overflow-y: auto; }
+.capa-chip { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center; min-height: 38px; padding: 0 9px; border: 2px solid transparent; border-radius: 8px; color: var(--tinta); background: #fff; font-family: var(--fuente-mono); text-align: left; cursor: pointer; }
+.capa-chip.is-active { border-color: var(--acento); }
+.capa-chip:focus-visible { outline: 3px solid var(--acento); outline-offset: 2px; }
+.capa-muestra { width: 22px; height: 22px; border: 1px solid rgba(15, 26, 43, .25); border-radius: 5px; }
+.capa-nombre { font-size: .66rem; font-weight: 900; text-transform: uppercase; }
+.capa-chip small { color: var(--azul-medio); font-size: .56rem; font-weight: 700; }
+.capa-apagada { grid-column: 1 / -1; color: var(--alerta); font-size: .55rem; font-weight: 900; }
+.capa-orden { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; margin-top: 9px; }
+.capa-orden .prueba-boton { margin-top: 0; color: #fff; border-color: #fff; }
+.capa-ajustes .prueba-controles { max-height: none; margin-top: 9px; padding: 0 2px; overflow: visible; background: transparent; }
+.capa-color { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin-top: 9px; color: #fff; font-family: var(--fuente-mono); font-size: .62rem; font-weight: 700; }
+.capa-color input { width: 46px; height: 30px; padding: 0; border: 2px solid #fff; border-radius: 6px; background: transparent; cursor: pointer; }
+.capa-color-limpiar { grid-column: 1 / -1; min-height: 30px; border: 2px solid #fff; border-radius: 8px; color: #fff; background: transparent; font-family: var(--fuente-mono); font-size: .58rem; font-weight: 900; cursor: pointer; }

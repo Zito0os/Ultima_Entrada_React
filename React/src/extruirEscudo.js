@@ -1,5 +1,8 @@
 import * as THREE from 'three'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js'
+
+import { CAPA_BASE } from './configEscudos'
 
 // Los colores del SVG vienen en sRGB. Sin esto three los trata como lineales y
 // el azul marino de los logos sale como azul cielo.
@@ -12,6 +15,29 @@ const NIVELES = 8
 // Cuanto se abre el escudo al pedir CAPAS, en unidades del modelo
 const RECORRIDO = 170
 
+// El acabado metalico se ve por lo que refleja. Sin entorno, subir METALICO solo
+// apaga el color base y el modelo queda gris en vez de brillante.
+export function crearEntorno(renderer) {
+  const generador = new THREE.PMREMGenerator(renderer)
+  const entorno = generador.fromScene(new RoomEnvironment(), 0.04).texture
+  generador.dispose()
+  return entorno
+}
+
+// El orden guardado tiene que ser una permutacion exacta de las capas que hay.
+// Si el SVG cambio de trazos, se ignora y se vuelve al orden de dibujo.
+function ordenValido(guardado, total) {
+  const natural = Array.from({ length: total }, (_, indice) => indice)
+  if (!Array.isArray(guardado) || guardado.length !== total) {
+    return natural
+  }
+  const enteros = guardado.every((valor) => Number.isInteger(valor) && valor >= 0 && valor < total)
+  if (!enteros || new Set(guardado).size !== total) {
+    return natural
+  }
+  return guardado
+}
+
 // Convierte un SVG en un grupo 3D de capas, respetando el orden de dibujo
 export function extruirDesdeSVG(datos, opciones = {}) {
   const {
@@ -22,13 +48,18 @@ export function extruirDesdeSVG(datos, opciones = {}) {
     color = null,
     metalico = 25,
     aspereza = 45,
+    reflejo = 60,
+    emision = 0,
+    facetado = 0,
+    orden: ordenGuardado = [],
+    capas: ajustes = {},
   } = opciones
 
   const rellenos = datos.paths.filter((trazo) => trazo.userData?.style?.fill !== 'none')
   const porColor = rellenos.length > NIVELES
 
   // Se juntan primero para saber cuantas capas van a salir
-  const orden = []
+  const claves = []
   const juntas = new Map()
   let trazos = 0
 
@@ -40,37 +71,56 @@ export function extruirDesdeSVG(datos, opciones = {}) {
     trazos += 1
     const clave = porColor ? (trazo.userData?.style?.fill || 'sin-color') : `trazo-${indice}`
     if (!juntas.has(clave)) {
-      orden.push(clave)
-      juntas.set(clave, { color: trazo.color, formas: [] })
+      claves.push(clave)
+      juntas.set(clave, { color: trazo.color, formas: [], trazos: 0 })
     }
-    juntas.get(clave).formas.push(...formas)
+    const junta = juntas.get(clave)
+    junta.formas.push(...formas)
+    junta.trazos += 1
   })
 
+  const secuencia = ordenValido(ordenGuardado, claves.length)
   const grupo = new THREE.Group()
   const capas = []
   let triangulos = 0
 
-  orden.forEach((clave, nivel) => {
-    const junta = juntas.get(clave)
+  secuencia.forEach((original, nivel) => {
+    const junta = juntas.get(claves[original])
+    const ajuste = { ...CAPA_BASE, ...(ajustes[original] || {}) }
+    const grosor = Math.max(1, (profundidad * ajuste.grosor) / 100)
+
     const geometria = new THREE.ExtrudeGeometry(junta.formas, {
-      depth: profundidad,
+      depth: grosor,
       curveSegments: segmentos,
       bevelEnabled: bisel > 0,
       bevelThickness: bisel,
       bevelSize: bisel,
       bevelSegments: Math.max(1, Math.round(segmentos / 3)),
     })
-    triangulos += geometria.index ? geometria.index.count / 3 : geometria.attributes.position.count / 3
+    const propios = geometria.index ? geometria.index.count / 3 : geometria.attributes.position.count / 3
+    if (ajuste.visible) {
+      triangulos += propios
+    }
 
+    const tinte = ajuste.color || color
+    const tono = tinte ? new THREE.Color(tinte) : (junta.color ?? new THREE.Color('#227AE6'))
     const malla = new THREE.Mesh(geometria, new THREE.MeshStandardMaterial({
-      color: color ? new THREE.Color(color) : (junta.color ?? new THREE.Color('#227AE6')),
+      color: tono,
       metalness: metalico / 100,
       roughness: aspereza / 100,
+      envMapIntensity: reflejo / 50,
+      emissive: tono,
+      emissiveIntensity: emision / 100,
+      flatShading: facetado === 1,
       side: THREE.DoubleSide,
     }))
+    malla.visible = Boolean(ajuste.visible)
 
     const capa = new THREE.Group()
     capa.position.z = nivel * separacion
+    // El grupo se voltea en Y mas abajo, asi que aqui el signo va invertido
+    capa.position.x = ajuste.x
+    capa.position.y = -ajuste.y
     capa.add(malla)
     grupo.add(capa)
     capas.push(capa)
@@ -79,7 +129,8 @@ export function extruirDesdeSVG(datos, opciones = {}) {
   // El eje Y del SVG apunta al reves que el de three
   grupo.scale.set(1, -1, 1)
 
-  // Centrar y llevar todos los logos al mismo tamano, sin importar su viewBox
+  // Centrar y llevar todos los logos al mismo tamano, sin importar su viewBox.
+  // La caja incluye las capas ocultas para que el modelo no salte al apagarlas.
   const caja = new THREE.Box3().setFromObject(grupo)
   const centro = caja.getCenter(new THREE.Vector3())
   const medida = caja.getSize(new THREE.Vector3())
@@ -96,6 +147,16 @@ export function extruirDesdeSVG(datos, opciones = {}) {
     triangulos: Math.round(triangulos),
     trazos,
     agrupado: porColor,
+    secuencia,
+    // Las capas en su orden original, para pintar el selector del personalizador
+    info: claves.map((clave, indice) => {
+      const junta = juntas.get(clave)
+      return {
+        indice,
+        color: `#${(junta.color ?? new THREE.Color('#227AE6')).getHexString()}`,
+        trazos: junta.trazos,
+      }
+    }),
   }
 }
 

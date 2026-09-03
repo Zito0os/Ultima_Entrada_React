@@ -137,11 +137,23 @@
 .history-period-card strong { display: block; color: var(--acento); font-size: 1.25rem; line-height: 1; }
 .history-period-card h1 { margin: 8px 0 0; font-size: clamp(1.8rem, 8vw, 2.8rem); font-weight: 950; line-height: .95; }
 .history-detail-description { margin: 5px 0 13px; padding: 10px; border-radius: 6px; color: #fff; background: var(--azul-profundo); font-family: var(--fuente-mono); font-size: .72rem; font-weight: 700; line-height: 1.3; }
-.milestones-section h2, .era-videos h2 { margin: 0 4px 7px; color: var(--tinta); font-family: var(--fuente-mono); font-size: .72rem; font-weight: 900; }
+.milestones-section h2, .era-videos h2, .figuras-section h2 { margin: 0 4px 7px; color: var(--tinta); font-family: var(--fuente-mono); font-size: .72rem; font-weight: 900; }
+.history-texto { margin: 0 0 14px; }
+.history-texto p { margin: 0 0 9px; color: var(--tinta); font-family: var(--fuente-texto); font-size: .84rem; line-height: 1.5; }
 .milestones-list { display: grid; }
-.milestone { display: grid; grid-template-columns: 66px 1fr; gap: 5px; align-items: center; min-height: 35px; border-bottom: 2px solid var(--azul-profundo); font-family: var(--fuente-mono); }
+.milestone { display: grid; width: 100%; grid-template-columns: 66px 1fr 18px; gap: 5px; align-items: center; min-height: 35px; padding: 4px 0; border: 0; border-bottom: 2px solid var(--azul-profundo); background: transparent; font-family: var(--fuente-mono); text-align: left; cursor: pointer; }
 .milestone strong { color: var(--acento); font-size: 1.35rem; font-weight: 950; }
 .milestone span { color: var(--tinta); font-size: .7rem; font-weight: 700; }
+.milestone b { color: var(--azul); font-size: 1.1rem; text-align: center; }
+.milestone.is-abierto { border-bottom-color: var(--acento); }
+.milestone:focus-visible { outline: 3px solid var(--acento); outline-offset: -3px; }
+.milestone-nota { margin: 0; padding: 9px 10px 10px 66px; border-bottom: 2px solid var(--azul-profundo); color: #fff; background: var(--azul-profundo); font-family: var(--fuente-mono); font-size: .68rem; font-weight: 700; line-height: 1.4; }
+.figuras-section { margin-top: 14px; }
+.figuras-list { display: grid; gap: 7px; }
+.figura { padding: 9px 10px; border-radius: 6px; background: var(--superficie); }
+.figura strong { display: block; color: var(--tinta); font-family: var(--fuente-mono); font-size: .8rem; font-weight: 950; }
+.figura span { display: block; margin-bottom: 4px; color: var(--azul-medio); font-family: var(--fuente-mono); font-size: .64rem; font-weight: 700; }
+.figura p { margin: 0; color: var(--tinta); font-family: var(--fuente-texto); font-size: .78rem; line-height: 1.4; }
 .era-videos { margin-top: 13px; }
 .era-video-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .era-video { display: grid; height: 50px; place-items: center; border: 0; border-radius: 6px; color: #000; background: var(--azul); cursor: pointer; }

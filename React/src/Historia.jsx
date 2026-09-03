@@ -12,7 +12,7 @@ function HistoryEvent({ event, onOpen }) {
         <div className="history-event-card">
           <h3>{event.title}</h3>
           <p>{event.description}</p>
-          {event.videos > 0 && <span>{event.videos} videos</span>}
+          <span>{event.milestones.length} hitos · {event.figuras.length} figuras · {event.videos} videos</span>
         </div>
       </div>
     </button>

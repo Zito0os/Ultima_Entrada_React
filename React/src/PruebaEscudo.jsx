@@ -3,42 +3,34 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 import PageHeader from './PageHeader'
-import { CONFIG_BASE, configDe } from './configEscudos'
+import { CONFIG_BASE, CONTROLES_CAPA, SECCIONES, capaDe, configDe, moverCapa, ordenDe } from './configEscudos'
 import { useJugador } from './almacen/useJugador'
 import { crearEfectos } from './efectosAR'
 import { escudos, rutaEscudo } from './escudosData'
-import { cargarSVG, crearExplosion, extruirDesdeSVG } from './extruirEscudo'
+import { cargarSVG, crearEntorno, crearExplosion, extruirDesdeSVG } from './extruirEscudo'
 
 // Lo que aguanta un celular de gama media sin que baje la fluidez
 const TOPE_TRIANGULOS = 20000
-
-const controles = [
-  { id: 'profundidad', nombre: 'PROFUNDIDAD', min: 1, max: 40 },
-  { id: 'bisel', nombre: 'BISEL', min: 0, max: 6, paso: 0.5 },
-  { id: 'segmentos', nombre: 'SEGMENTOS DE CURVA', min: 2, max: 24 },
-  { id: 'separacion', nombre: 'SEPARACIÓN DE CAPAS', min: 0, max: 30 },
-  { id: 'metalico', nombre: 'ACABADO METÁLICO', min: 0, max: 100, unidad: '%' },
-  { id: 'aspereza', nombre: 'ASPEREZA', min: 0, max: 100, unidad: '%' },
-  { id: 'escala', nombre: 'TAMAÑO EN AR', min: 40, max: 200, unidad: '%' },
-  { id: 'velocidad', nombre: 'VELOCIDAD DE GIRO', min: 0, max: 60 },
-  { id: 'estabilidad', nombre: 'ESTABILIDAD EN AR', min: 0, max: 100, unidad: '%' },
-]
 
 export default function PruebaEscudo() {
   const contenedor = useRef(null)
   const escena = useRef(null)
   const { perfil, acciones } = useJugador()
   const [escudoId, setEscudoId] = useState(escudos[0].id)
-  const [config, setConfig] = useState(() => configDe(perfil.escudos, escudos[0].id))
+  const [config, setConfig] = useState(() => configDe(perfil.escudos, escudos[0].id, escudos[0].config))
   const [girando, setGirando] = useState(true)
   const [efectos, setEfectos] = useState(false)
   const [medidas, setMedidas] = useState({ triangulos: 0, trazos: 0 })
+  const [capasInfo, setCapasInfo] = useState([])
+  const [capaActiva, setCapaActiva] = useState(0)
+  const [seccion, setSeccion] = useState('capas')
   const [aviso, setAviso] = useState('')
   const [onboarding, setOnboarding] = useState(() => !perfil.preferencias.onboardingModelos)
 
   const guardado = Boolean(perfil.escudos[escudoId])
-
   const escudo = escudos.find((item) => item.id === escudoId) || escudos[0]
+  const orden = ordenDe(config, capasInfo.length)
+  const capa = capaDe(config, capaActiva)
 
   useEffect(() => {
     const nodo = contenedor.current
@@ -50,6 +42,11 @@ export default function PruebaEscudo() {
     nodo.appendChild(renderer.domElement)
 
     const scene = new THREE.Scene()
+    // Sin esto el control de ACABADO METALICO solo apaga el color, porque un
+    // material metalico se ve por lo que refleja y no habia nada que reflejar
+    const entorno = crearEntorno(renderer)
+    scene.environment = entorno
+
     const camara = new THREE.PerspectiveCamera(45, 1, 1, 2000)
     camara.position.set(90, 60, 175)
 
@@ -106,6 +103,7 @@ export default function PruebaEscudo() {
       vivo = false
       observador.disconnect()
       orbita.dispose()
+      entorno.dispose()
       renderer.dispose()
       nodo.removeChild(renderer.domElement)
     }
@@ -122,11 +120,12 @@ export default function PruebaEscudo() {
       if (cancelado) {
         return
       }
-      const { objeto, capas, triangulos, trazos } = extruirDesdeSVG(datos, { ...config, color: escudo.color })
+      const { objeto, capas, triangulos, trazos, info } = extruirDesdeSVG(datos, { ...config, color: escudo.color })
       grupo.clear()
       grupo.add(objeto)
       escena.current.explosion = crearExplosion(capas)
       setMedidas({ triangulos, trazos })
+      setCapasInfo(info)
     })
 
     return () => {
@@ -148,12 +147,29 @@ export default function PruebaEscudo() {
   }, [efectos])
 
   const cambiarEscudo = (id) => {
+    const elegido = escudos.find((item) => item.id === id)
     setEscudoId(id)
-    setConfig(configDe(perfil.escudos, id))
+    setConfig(configDe(perfil.escudos, id, elegido?.config))
+    setCapaActiva(0)
     setAviso('')
   }
 
   const cambiar = (id, valor) => setConfig((actual) => ({ ...actual, [id]: Number(valor) }))
+
+  const alternar = (id) => setConfig((actual) => ({ ...actual, [id]: actual[id] ? 0 : 1 }))
+
+  const cambiarCapa = (campo, valor) => setConfig((actual) => ({
+    ...actual,
+    capas: {
+      ...actual.capas,
+      [capaActiva]: { ...capaDe(actual, capaActiva), [campo]: valor },
+    },
+  }))
+
+  const mover = (direccion) => setConfig((actual) => ({
+    ...actual,
+    orden: moverCapa(ordenDe(actual, capasInfo.length), capaActiva, direccion),
+  }))
 
   const guardar = () => {
     acciones.guardarEscudo(escudoId, config)
@@ -163,7 +179,8 @@ export default function PruebaEscudo() {
 
   const restaurar = () => {
     acciones.borrarEscudo(escudoId)
-    setConfig({ ...CONFIG_BASE })
+    setConfig({ ...CONFIG_BASE, ...(escudo.config || {}) })
+    setCapaActiva(0)
     setAviso('Volvió a los valores de fábrica.')
     setTimeout(() => setAviso(''), 3200)
   }
@@ -174,6 +191,8 @@ export default function PruebaEscudo() {
   }
 
   const dentro = medidas.triangulos <= TOPE_TRIANGULOS
+  const posicion = orden.indexOf(capaActiva)
+  const info = capasInfo[capaActiva]
 
   return (
     <main className="prueba-shell">
@@ -211,14 +230,113 @@ export default function PruebaEscudo() {
           </button>
         </div>
 
-        <div className="prueba-controles">
-          {controles.map((control) => (
-            <label key={control.id}>
-              <span>{control.nombre}<b>{config[control.id]}{control.unidad || ''}</b></span>
-              <input type="range" min={control.min} max={control.max} step={control.paso || 1} value={config[control.id]} onChange={(e) => cambiar(control.id, e.target.value)} />
-            </label>
+        <div className="prueba-secciones" role="tablist" aria-label="Grupos de ajustes">
+          {[{ id: 'capas', nombre: 'CAPAS' }, ...SECCIONES].map((item) => (
+            <button className={seccion === item.id ? 'prueba-seccion is-active' : 'prueba-seccion'} type="button" role="tab" aria-selected={seccion === item.id} onClick={() => setSeccion(item.id)} key={item.id}>
+              {item.nombre}
+            </button>
           ))}
         </div>
+
+        {seccion === 'capas' && (
+          <div className="capas-panel">
+            {capasInfo.length < 2 ? (
+              <p className="capas-vacio">Este escudo es de una sola capa, así que no hay nada que reordenar.</p>
+            ) : (
+              <>
+                <p className="capas-ayuda">La de arriba es la que va al frente. Toca una para editarla.</p>
+                <div className="capas-pila" role="tablist" aria-label="Capas del escudo">
+                  {[...orden].reverse().map((indice) => {
+                    const datos = capasInfo[indice]
+                    const ajuste = capaDe(config, indice)
+                    return (
+                      <button
+                        className={capaActiva === indice ? 'capa-chip is-active' : 'capa-chip'}
+                        type="button"
+                        role="tab"
+                        aria-selected={capaActiva === indice}
+                        onClick={() => setCapaActiva(indice)}
+                        key={indice}
+                      >
+                        <span className="capa-muestra" style={{ background: ajuste.color || datos.color }} aria-hidden="true" />
+                        <span className="capa-nombre">{ajuste.color || datos.color}</span>
+                        <small>{datos.trazos} {datos.trazos === 1 ? 'trazo' : 'trazos'}</small>
+                        {!ajuste.visible && <b className="capa-apagada">OCULTA</b>}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="capa-orden">
+                  <button className="prueba-boton is-fantasma" type="button" onClick={() => mover(1)} disabled={posicion >= orden.length - 1}>
+                    TRAER AL FRENTE
+                  </button>
+                  <button className="prueba-boton is-fantasma" type="button" onClick={() => mover(-1)} disabled={posicion <= 0}>
+                    MANDAR ATRÁS
+                  </button>
+                </div>
+
+                <div className="capa-ajustes">
+                  <button
+                    className={capa.visible ? 'prueba-boton is-secundario' : 'prueba-boton is-fantasma'}
+                    type="button"
+                    onClick={() => cambiarCapa('visible', !capa.visible)}
+                    aria-pressed={capa.visible}
+                  >
+                    {capa.visible ? 'CAPA VISIBLE' : 'CAPA OCULTA'}
+                  </button>
+
+                  <label className="capa-color">
+                    <span>COLOR DE LA CAPA</span>
+                    <input type="color" value={capa.color || info?.color || '#227AE6'} onChange={(event) => cambiarCapa('color', event.target.value)} />
+                    {capa.color && (
+                      <button className="capa-color-limpiar" type="button" onClick={() => cambiarCapa('color', null)}>
+                        USAR EL DEL LOGO
+                      </button>
+                    )}
+                  </label>
+
+                  <div className="prueba-controles">
+                    {CONTROLES_CAPA.map((control) => (
+                      <label key={control.id}>
+                        <span>{control.nombre}<b>{capa[control.id]}{control.unidad || ''}</b></span>
+                        <input type="range" min={control.min} max={control.max} value={capa[control.id]} onChange={(event) => cambiarCapa(control.id, Number(event.target.value))} />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {SECCIONES.filter((item) => item.id === seccion).map((item) => (
+          <div key={item.id}>
+            <div className="prueba-controles">
+              {item.controles.map((control) => (
+                <label key={control.id}>
+                  <span>{control.nombre}<b>{config[control.id]}{control.unidad || ''}</b></span>
+                  <input type="range" min={control.min} max={control.max} step={control.paso || 1} value={config[control.id]} onChange={(event) => cambiar(control.id, event.target.value)} />
+                </label>
+              ))}
+            </div>
+            {item.interruptores && (
+              <div className="prueba-acciones">
+                {item.interruptores.map((interruptor) => (
+                  <button
+                    className={config[interruptor.id] ? 'prueba-boton is-secundario' : 'prueba-boton is-fantasma'}
+                    type="button"
+                    onClick={() => alternar(interruptor.id)}
+                    aria-pressed={Boolean(config[interruptor.id])}
+                    key={interruptor.id}
+                  >
+                    {interruptor.nombre}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
 
         {aviso && <p className="prueba-aviso" role="status">{aviso}</p>}
 
@@ -236,6 +354,7 @@ export default function PruebaEscudo() {
             <h2 id="onboarding-titulo">ARMA TU<br />ESCUDO</h2>
             <ol className="rules-list">
               <li>Elige un escudo y muévele a los controles para cambiar su grosor, acabado y color.</li>
+              <li>En CAPAS puedes reordenarlas, ocultarlas o recolorearlas una por una.</li>
               <li>El contador te dice cuántos triángulos lleva, para que no se ponga pesado.</li>
               <li>Al guardar, ese mismo escudo es el que aparece cuando lo escaneas con la cámara.</li>
             </ol>

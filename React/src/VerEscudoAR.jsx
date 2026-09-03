@@ -6,7 +6,7 @@ import { configDe, filtroDeEstabilidad } from './configEscudos'
 import { useJugador } from './almacen/useJugador'
 import { buscarEscudo } from './escudosData'
 import { componerCaptura, crearEfectos } from './efectosAR'
-import { cargarSVG, crearExplosion, extruirDesdeSVG } from './extruirEscudo'
+import { cargarSVG, crearEntorno, crearExplosion, extruirDesdeSVG } from './extruirEscudo'
 
 // La extrusion mide 100 unidades y el marcador de MindAR mide 1
 const ESCALA = 0.006
@@ -26,7 +26,7 @@ export default function VerEscudoAR() {
   const { perfil, acciones } = useJugador()
   const escudo = buscarEscudo(escudoId)
   // Sin memoizar, cada render devolveria otro objeto y reiniciaria la camara
-  const config = useMemo(() => configDe(perfil.escudos, escudoId), [perfil.escudos, escudoId])
+  const config = useMemo(() => configDe(perfil.escudos, escudoId, escudo.config), [perfil.escudos, escudoId, escudo.config])
   // En un ref para que las acciones no entren en las dependencias del efecto
   // que enciende la camara: cambiarlas la reiniciaria
   const registrar = useRef(acciones.registrarEscaneo)
@@ -38,6 +38,7 @@ export default function VerEscudoAR() {
   useEffect(() => {
     const nodo = contenedor.current
     let mindar = null
+    let entorno = null
     let vivo = true
 
     const arrancar = async () => {
@@ -63,6 +64,10 @@ export default function VerEscudoAR() {
         })
 
         const { renderer, scene, camera } = mindar
+        // El mismo entorno que el visor de MODELOS, o el acabado metalico se ve
+        // distinto aqui que donde se configuro
+        entorno = crearEntorno(renderer)
+        scene.environment = entorno
         scene.add(new THREE.AmbientLight(0xffffff, 0.6))
         const clave = new THREE.DirectionalLight(0xffffff, 0.9)
         clave.position.set(1, 2, 3)
@@ -144,6 +149,7 @@ export default function VerEscudoAR() {
           // la camara ya estaba apagada
         }
       }
+      entorno?.dispose()
       motor.current = null
     }
   }, [escudo, config])

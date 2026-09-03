@@ -9,7 +9,9 @@ const ajustes = {
   astros: { marcadores: 3 },
   athletics: { marcadores: 5 },
   'blue-jays': { marcadores: 2 },
-  guardians: { marcadores: 3 },
+  // El SVG dibuja la pelota blanca hasta el final, asi que en 3D quedaba
+  // delante y tapaba la costura. Se manda al medio: azul, pelota, costura.
+  guardians: { marcadores: 3, config: { orden: [0, 2, 1] } },
   mariners: { marcadores: 3 },
   orioles: { marcadores: 4 },
   rangers: { marcadores: 3 },
