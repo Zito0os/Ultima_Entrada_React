@@ -2,8 +2,12 @@ import * as THREE from 'three'
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js'
 
 const TAMANO = 100
+// Los logos detallados traen 100 trazos; sin este tope el escudo se estiraria
+// cientos de unidades hacia el frente y la explosion mandaria las piezas fuera.
+const NIVELES = 8
 
-// Convierte un SVG en un grupo 3D: cada trazo se extruye con su color y su capa
+// Convierte un SVG en un grupo 3D: cada trazo se extruye con su color y se
+// reparte en niveles de profundidad respetando el orden de dibujo del SVG.
 export function extruirDesdeSVG(datos, opciones = {}) {
   const {
     profundidad = 16,
@@ -15,15 +19,29 @@ export function extruirDesdeSVG(datos, opciones = {}) {
     aspereza = 45,
   } = opciones
 
+  const rellenos = datos.paths.filter((trazo) => trazo.userData?.style?.fill !== 'none')
   const grupo = new THREE.Group()
+  const capas = []
   let triangulos = 0
-  let capa = 0
+  let trazos = 0
 
-  datos.paths.forEach((trazo) => {
-    if (trazo.userData?.style?.fill === 'none') {
-      return
+  // separacion es el grosor total del sandwich, no el salto entre dos capas:
+  // asi un logo de 2 trazos y uno de 90 quedan igual de gruesos
+  const usados = Math.min(rellenos.length, NIVELES)
+  const salto = usados > 1 ? separacion / (usados - 1) : 0
+
+  const capaDe = (indice) => {
+    const nivel = rellenos.length <= NIVELES ? indice : Math.floor((indice * NIVELES) / rellenos.length)
+    if (!capas[nivel]) {
+      const capa = new THREE.Group()
+      capa.position.z = nivel * salto
+      capas[nivel] = capa
+      grupo.add(capa)
     }
+    return capas[nivel]
+  }
 
+  rellenos.forEach((trazo, indice) => {
     const formas = SVGLoader.createShapes(trazo)
     if (!formas.length) {
       return
@@ -45,9 +63,8 @@ export function extruirDesdeSVG(datos, opciones = {}) {
       roughness: aspereza / 100,
       side: THREE.DoubleSide,
     }))
-    malla.position.z = capa * separacion
-    grupo.add(malla)
-    capa += 1
+    capaDe(indice).add(malla)
+    trazos += 1
   })
 
   // El eje Y del SVG apunta al reves que el de three
@@ -66,9 +83,9 @@ export function extruirDesdeSVG(datos, opciones = {}) {
 
   return {
     objeto: contenedor,
-    capas: grupo.children,
+    capas: capas.filter(Boolean),
     triangulos: Math.round(triangulos),
-    trazos: grupo.children.length,
+    trazos,
   }
 }
 
@@ -78,19 +95,19 @@ export function cargarSVG(url) {
   })
 }
 
-// Separa los trazos en profundidad y los regresa, para que se vea que el
+// Separa las capas en profundidad y las regresa, para que se vea que el
 // escudo esta hecho de capas y no de una sola pieza.
 export function crearExplosion(capas, separacion = 6) {
-  const base = capas.map((malla) => malla.position.z)
-  const giroBase = capas.map((malla) => malla.rotation.z)
+  const base = capas.map((capa) => capa.position.z)
+  const giroBase = capas.map((capa) => capa.rotation.z)
   const recorrido = Math.max(separacion, 6) * 7
   let avance = 0
   let activa = false
 
   const colocar = (factor) => {
-    capas.forEach((malla, indice) => {
-      malla.position.z = base[indice] + recorrido * factor * (indice + 1)
-      malla.rotation.z = giroBase[indice] + factor * 0.12 * (indice % 2 ? -1 : 1)
+    capas.forEach((capa, indice) => {
+      capa.position.z = base[indice] + recorrido * factor * ((indice + 1) / capas.length)
+      capa.rotation.z = giroBase[indice] + factor * 0.12 * (indice % 2 ? -1 : 1)
     })
   }
 

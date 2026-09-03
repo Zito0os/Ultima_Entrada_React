@@ -1,9 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 
 import Icono from './Icono'
+import { TROFEOS_TOTAL } from './almacen/esquema'
+import { useJugador } from './almacen/useJugador'
 
 export default function PageHeader({ title, backTo, rightLabel }) {
   const navigate = useNavigate()
+  const { perfil } = useJugador()
 
   return (
     <header className="page-header">
@@ -18,8 +21,8 @@ export default function PageHeader({ title, backTo, rightLabel }) {
           <span className="page-header-label">{rightLabel}</span>
         ) : (
           <div className="page-header-stats" aria-label="Progreso del jugador">
-            <span className="coins"><span className="coin-icon">✦</span> 340</span>
-            <span className="trophies"><span className="trophy-icon"><Icono nombre="trofeo" /></span> 3/24</span>
+            <span className="coins"><span className="coin-icon">✦</span> {perfil.monedas}</span>
+            <span className="trophies"><span className="trophy-icon"><Icono nombre="trofeo" /></span> {perfil.trofeos.length}/{TROFEOS_TOTAL}</span>
           </div>
         )}
       </div>

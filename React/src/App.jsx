@@ -1,9 +1,11 @@
-import { Suspense, lazy, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
 import './App.css'
 import './pantallas.css'
 import AR from './AR'
+import { JugadorProvider } from './almacen/JugadorProvider'
+import { useJugador } from './almacen/useJugador'
 import Album from './Album'
 import AbriendoSobre from './Abriendo_sobre'
 import Entrar from './Entrar'
@@ -129,6 +131,11 @@ function HomePage() {
 
 function AppRoutes() {
   const location = useLocation()
+  const { acciones } = useJugador()
+
+  useEffect(() => {
+    acciones.registrarVisita()
+  }, [acciones])
 
   return (
     <Routes>
@@ -181,7 +188,9 @@ function App() {
 
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <AppRoutes />
+      <JugadorProvider>
+        <AppRoutes />
+      </JugadorProvider>
     </BrowserRouter>
   )
 }

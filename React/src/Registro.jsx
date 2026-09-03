@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { guardarUsuario } from './cuenta'
+import { cartaAlAzar } from './cartasData'
+import { useJugador } from './almacen/useJugador'
 
 export default function Registro() {
   const navigate = useNavigate()
+  const { acciones } = useJugador()
   const [correo, setCorreo] = useState('')
   const [contrasena, setContrasena] = useState('')
   const [confirmar, setConfirmar] = useState('')
@@ -25,7 +27,8 @@ export default function Registro() {
       setAviso('Las dos contraseñas no coinciden.')
       return
     }
-    guardarUsuario(correo.split('@')[0])
+    acciones.iniciarSesion(correo.split('@')[0], correo)
+    acciones.agregarCartas([cartaAlAzar(), cartaAlAzar('especial')])
     setAviso('')
     setCreada(true)
   }

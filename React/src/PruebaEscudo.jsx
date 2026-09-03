@@ -3,10 +3,14 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 import PageHeader from './PageHeader'
-import { CONFIG_BASE, borrarConfig, guardarConfig, leerConfig, marcarOnboardingVisto, onboardingVisto, tieneConfig } from './configEscudos'
+import { CONFIG_BASE, configDe } from './configEscudos'
+import { useJugador } from './almacen/useJugador'
 import { crearEfectos } from './efectosAR'
-import { escudos } from './escudosData'
+import { escudos, rutaEscudo } from './escudosData'
 import { cargarSVG, crearExplosion, extruirDesdeSVG } from './extruirEscudo'
+
+// Lo que aguanta un celular de gama media sin que baje la fluidez
+const TOPE_TRIANGULOS = 20000
 
 const controles = [
   { id: 'profundidad', nombre: 'PROFUNDIDAD', min: 1, max: 40 },
@@ -23,14 +27,16 @@ const controles = [
 export default function PruebaEscudo() {
   const contenedor = useRef(null)
   const escena = useRef(null)
+  const { perfil, acciones } = useJugador()
   const [escudoId, setEscudoId] = useState(escudos[0].id)
-  const [config, setConfig] = useState(() => leerConfig(escudos[0].id))
+  const [config, setConfig] = useState(() => configDe(perfil.escudos, escudos[0].id))
   const [girando, setGirando] = useState(true)
   const [efectos, setEfectos] = useState(false)
   const [medidas, setMedidas] = useState({ triangulos: 0, trazos: 0 })
-  const [guardado, setGuardado] = useState(() => tieneConfig(escudos[0].id))
   const [aviso, setAviso] = useState('')
-  const [onboarding, setOnboarding] = useState(() => !onboardingVisto())
+  const [onboarding, setOnboarding] = useState(() => !perfil.preferencias.onboardingModelos)
+
+  const guardado = Boolean(perfil.escudos[escudoId])
 
   const escudo = escudos.find((item) => item.id === escudoId) || escudos[0]
 
@@ -140,34 +146,31 @@ export default function PruebaEscudo() {
 
   const cambiarEscudo = (id) => {
     setEscudoId(id)
-    setConfig(leerConfig(id))
-    setGuardado(tieneConfig(id))
+    setConfig(configDe(perfil.escudos, id))
     setAviso('')
   }
 
   const cambiar = (id, valor) => setConfig((actual) => ({ ...actual, [id]: Number(valor) }))
 
   const guardar = () => {
-    const ok = guardarConfig(escudoId, config)
-    setGuardado(ok)
-    setAviso(ok ? 'Guardado. Así se va a ver en AR.' : 'No se pudo guardar en este navegador.')
+    acciones.guardarEscudo(escudoId, config)
+    setAviso('Guardado. Así se va a ver en AR.')
     setTimeout(() => setAviso(''), 3200)
   }
 
   const restaurar = () => {
-    borrarConfig(escudoId)
+    acciones.borrarEscudo(escudoId)
     setConfig({ ...CONFIG_BASE })
-    setGuardado(false)
     setAviso('Volvió a los valores de fábrica.')
     setTimeout(() => setAviso(''), 3200)
   }
 
   const cerrarOnboarding = () => {
-    marcarOnboardingVisto()
+    acciones.marcarPreferencia('onboardingModelos', true)
     setOnboarding(false)
   }
 
-  const dentro = medidas.triangulos <= 2000
+  const dentro = medidas.triangulos <= TOPE_TRIANGULOS
 
   return (
     <main className="prueba-shell">
@@ -176,8 +179,9 @@ export default function PruebaEscudo() {
       <section className="prueba-content" aria-label="Personalizar el escudo 3D">
         <div className="prueba-escudos" role="tablist" aria-label="Elegir escudo">
           {escudos.map((item) => (
-            <button className={escudoId === item.id ? 'prueba-chip is-active' : 'prueba-chip'} type="button" role="tab" aria-selected={escudoId === item.id} onClick={() => cambiarEscudo(item.id)} key={item.id}>
-              {item.nombre}
+            <button className={escudoId === item.id ? 'prueba-carta is-active' : 'prueba-carta'} type="button" role="tab" aria-selected={escudoId === item.id} onClick={() => cambiarEscudo(item.id)} key={item.id}>
+              <img src={rutaEscudo(item.id)} alt="" aria-hidden="true" loading="lazy" />
+              <span>{item.nombre}</span>
             </button>
           ))}
         </div>
@@ -188,7 +192,7 @@ export default function PruebaEscudo() {
           <div><strong>{medidas.triangulos.toLocaleString('es-MX')}</strong><span>TRIÁNGULOS</span></div>
           <div><strong>{medidas.trazos}</strong><span>TRAZOS</span></div>
           <div className={dentro ? 'prueba-veredicto is-ok' : 'prueba-veredicto is-alto'}>
-            <strong>{dentro ? 'OK' : 'ALTO'}</strong><span>TOPE 2000</span>
+            <strong>{dentro ? 'OK' : 'ALTO'}</strong><span>TOPE {TOPE_TRIANGULOS / 1000}K</span>
           </div>
         </div>
 

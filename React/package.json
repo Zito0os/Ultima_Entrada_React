@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "marcadores": "node scripts/revisar-marcadores.mjs"
   },
   "dependencies": {
     "mind-ar": "^1.2.5",

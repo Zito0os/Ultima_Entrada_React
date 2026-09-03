@@ -2,9 +2,25 @@ import { teams } from './teamsData'
 
 // Cada equipo tiene su logo en SVG, que se extruye a 3D, y su archivo .mind
 // con las variantes que la camara puede reconocer. Los dos comparten el id.
+// "marcadores" es cuantas imagenes trae ese .mind: sale de `npm run marcadores`
+// y hay que actualizarlo cuando se recompile un marcador.
 const ajustes = {
+  angels: { marcadores: 4 },
+  astros: { marcadores: 3 },
+  athletics: { marcadores: 5 },
+  'blue-jays': { marcadores: 2 },
+  guardians: { marcadores: 3 },
+  mariners: { marcadores: 3 },
+  orioles: { marcadores: 4 },
+  rangers: { marcadores: 3 },
+  rays: { marcadores: 2 },
+  'red-sox': { marcadores: 3 },
+  royals: { marcadores: 4 },
+  tigers: { marcadores: 3 },
+  twins: { marcadores: 3 },
+  'white-sox': { marcadores: 2 },
   // El monograma de los Yankees viene en negro: se pinta con el color del club
-  yankees: { color: '#142448' },
+  yankees: { marcadores: 4, color: '#142448' },
 }
 
 export const escudos = teams.map((team) => ({

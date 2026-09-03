@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import Icono from './Icono'
-import { filtroDeEstabilidad, leerConfig } from './configEscudos'
+import { configDe, filtroDeEstabilidad } from './configEscudos'
+import { useJugador } from './almacen/useJugador'
 import { buscarEscudo } from './escudosData'
 import { componerCaptura, crearEfectos } from './efectosAR'
 import { cargarSVG, crearExplosion, extruirDesdeSVG } from './extruirEscudo'
@@ -22,9 +23,17 @@ export default function VerEscudoAR() {
   const [aviso, setAviso] = useState('')
   const [error, setError] = useState('')
 
+  const { perfil, acciones } = useJugador()
   const escudo = buscarEscudo(escudoId)
   // Sin memoizar, cada render devolveria otro objeto y reiniciaria la camara
-  const config = useMemo(() => leerConfig(escudoId), [escudoId])
+  const config = useMemo(() => configDe(perfil.escudos, escudoId), [perfil.escudos, escudoId])
+  // En un ref para que las acciones no entren en las dependencias del efecto
+  // que enciende la camara: cambiarlas la reiniciaria
+  const registrar = useRef(acciones.registrarEscaneo)
+
+  useEffect(() => {
+    registrar.current = acciones.registrarEscaneo
+  }, [acciones])
 
   useEffect(() => {
     const nodo = contenedor.current
@@ -80,7 +89,10 @@ export default function VerEscudoAR() {
 
           const ancla = mindar.addAnchor(indice)
           ancla.group.add(giro)
-          ancla.onTargetFound = () => setAnclado(true)
+          ancla.onTargetFound = () => {
+            setAnclado(true)
+            registrar.current(escudo.id)
+          }
           ancla.onTargetLost = () => setAnclado(false)
           giros.push(giro)
         }
@@ -162,10 +174,16 @@ export default function VerEscudoAR() {
       enlace.href = URL.createObjectURL(blob)
       enlace.download = `ultima-entrada-${escudo.id}.png`
       enlace.click()
+      acciones.agregarFotos([{
+        id: `foto-${Date.now()}`,
+        nombre: `${escudo.nombre} en AR`,
+        editada: false,
+        creada: new Date().toISOString(),
+      }])
       setAviso('Foto guardada con el escudo incluido.')
       setTimeout(() => setAviso(''), 3000)
     }, 'image/png')
-  }, [escudo])
+  }, [escudo, acciones])
 
   const rotulo = estado === 'error' ? 'ERROR'
     : anclado ? 'ANCLADO'

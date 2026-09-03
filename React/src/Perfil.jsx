@@ -4,45 +4,50 @@ import { useNavigate } from 'react-router-dom'
 import BottomNav from './Navigation'
 import PageHeader from './PageHeader'
 import Icono from './Icono'
-import { leerUsuario } from './cuenta'
+import { TROFEOS_TOTAL } from './almacen/esquema'
+import { trofeos } from './trofeosData'
+import { useJugador } from './almacen/useJugador'
 
-const filters = ['TODOS', 'DÉCADA', 'EQUIPO']
-
-const trophies = [
-  { year: 1975, unlocked: true },
-  { year: 1986, unlocked: true },
-  { year: 1991, unlocked: true },
-  { year: 1991, unlocked: true },
-  { year: 1991, unlocked: true },
-  { year: 1991, unlocked: false },
-  { year: 1991, unlocked: false },
-  { year: 1991, unlocked: false },
-  { year: 1991, unlocked: false },
+const filtros = [
+  { id: 'todos', nombre: 'TODOS' },
+  { id: 'trivia', nombre: 'TRIVIA' },
+  { id: 'final', nombre: 'FINALES' },
+  { id: 'logro', nombre: 'LOGROS' },
 ]
 
-function TrophyCard({ trophy }) {
+function TarjetaTrofeo({ trofeo, ganado }) {
   return (
-    <article className={trophy.unlocked ? 'trophy-card is-unlocked' : 'trophy-card is-locked'}>
+    <article className={ganado ? 'trophy-card is-unlocked' : 'trophy-card is-locked'} title={trofeo.pista}>
       <span className="trophy-mark"><Icono nombre="trofeo" /></span>
-      <strong>{trophy.year}</strong>
+      <strong>{trofeo.nombre}</strong>
     </article>
   )
 }
 
 export default function Perfil() {
-  const [activeFilter, setActiveFilter] = useState('TODOS')
   const navigate = useNavigate()
-  const usuario = leerUsuario()
+  const { perfil, acciones } = useJugador()
+  const [filtro, setFiltro] = useState('todos')
+
+  const ganados = perfil.trofeos.length
+  const visibles = trofeos.filter((trofeo) => filtro === 'todos' || trofeo.tipo === filtro)
 
   return (
     <main className="profile-shell">
       <PageHeader title="MI PERFIL" backTo="/" />
 
       <section className="profile-content" aria-label="Progreso de trofeos">
-        <button className="gallery-entry cuenta-entry" type="button" onClick={() => navigate(usuario ? '/registro' : '/entrar')}>
+        <button className="gallery-entry cuenta-entry" type="button" onClick={() => navigate(perfil.cuenta.invitado ? '/entrar' : '/perfil')}>
           <strong>CUENTA</strong>
-          <span className="cuenta-valor">{usuario || 'INICIAR SESIÓN'}</span>
+          <span className="cuenta-valor">{perfil.cuenta.usuario || 'INICIAR SESIÓN'}</span>
         </button>
+
+        {!perfil.cuenta.invitado && (
+          <button className="gallery-entry" type="button" onClick={() => acciones.cerrarSesion()}>
+            <strong>CERRAR SESIÓN</strong>
+            <span className="flecha-avance"><Icono nombre="flecha" /></span>
+          </button>
+        )}
 
         <button className="gallery-entry" type="button" onClick={() => navigate('/galeria')}>
           <strong>GALERÍA</strong>
@@ -56,28 +61,28 @@ export default function Perfil() {
         <div className="profile-summary">
           <div>
             <span>TROFEOS</span>
-            <strong>9<span>/24</span></strong>
+            <strong>{ganados}<span>/{TROFEOS_TOTAL}</span></strong>
           </div>
           <div className="streak-summary">
             <span>RACHA</span>
-            <strong>4</strong>
+            <strong>{perfil.racha.dias}</strong>
           </div>
-          <div className="progress-track" aria-label="9 de 24 trofeos desbloqueados">
-            <span />
+          <div className="progress-track" aria-label={`${ganados} de ${TROFEOS_TOTAL} trofeos desbloqueados`}>
+            <span style={{ width: `${(ganados / TROFEOS_TOTAL) * 100}%` }} />
           </div>
         </div>
 
         <div className="profile-filters" role="tablist" aria-label="Filtrar trofeos">
-          {filters.map((filter) => (
-            <button className={activeFilter === filter ? 'profile-filter is-active' : 'profile-filter'} type="button" role="tab" aria-selected={activeFilter === filter} onClick={() => setActiveFilter(filter)} key={filter}>
-              {filter}
+          {filtros.map((item) => (
+            <button className={filtro === item.id ? 'profile-filter is-active' : 'profile-filter'} type="button" role="tab" aria-selected={filtro === item.id} onClick={() => setFiltro(item.id)} key={item.id}>
+              {item.nombre}
             </button>
           ))}
         </div>
 
         <section className="trophy-grid" aria-label="Colección de trofeos">
-          {trophies.map((trophy, index) => (
-            <TrophyCard trophy={trophy} key={`${trophy.year}-${index}`} />
+          {visibles.map((trofeo) => (
+            <TarjetaTrofeo trofeo={trofeo} ganado={perfil.trofeos.includes(trofeo.id)} key={trofeo.id} />
           ))}
         </section>
       </section>

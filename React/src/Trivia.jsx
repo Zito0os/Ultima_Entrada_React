@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import BottomNav from './Navigation'
@@ -6,12 +6,14 @@ import PageHeader from './PageHeader'
 import { rutaEscudo } from './escudosData'
 import { teams } from './teamsData'
 import { triviaPorEquipo } from './triviaData'
+import { useJugador } from './almacen/useJugador'
 
 const SEGUNDOS = 12
 const letras = ['A', 'B', 'C', 'D']
 
 function Menu() {
   const navigate = useNavigate()
+  const { perfil } = useJugador()
 
   return (
     <main className="trivia-shell">
@@ -22,11 +24,12 @@ function Menu() {
         <div className="trivia-modes">
           {teams.map((team) => {
             const total = triviaPorEquipo[team.id]?.length || 0
+            const hecho = perfil.trivia[team.id]
             return (
               <button className={total ? 'trivia-mode' : 'trivia-mode is-pendiente'} type="button" disabled={!total} onClick={() => navigate(`/trivia/${team.id}`)} key={team.id}>
                 <img src={rutaEscudo(team.id)} alt="" aria-hidden="true" />
                 <span>{team.name}</span>
-                <small>{total ? `${total} preguntas` : 'próximamente'}</small>
+                <small>{!total ? 'próximamente' : hecho ? `mejor ${hecho.mejor}/${total}` : `${total} preguntas`}</small>
               </button>
             )
           })}
@@ -39,7 +42,18 @@ function Menu() {
 
 function Resumen({ team, aciertos, total, onRepetir }) {
   const navigate = useNavigate()
+  const { acciones } = useJugador()
   const perfecta = aciertos === total
+  const pagado = useRef(false)
+
+  // El premio se paga al llegar al resumen, no al responder cada pregunta
+  useEffect(() => {
+    if (pagado.current) {
+      return
+    }
+    pagado.current = true
+    acciones.guardarTrivia(team.id, aciertos, total)
+  }, [acciones, team.id, aciertos, total])
 
   return (
     <main className="trivia-shell">

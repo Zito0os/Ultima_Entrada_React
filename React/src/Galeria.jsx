@@ -3,80 +3,77 @@ import { useNavigate } from 'react-router-dom'
 
 import BottomNav from './Navigation'
 import PageHeader from './PageHeader'
+import { useJugador } from './almacen/useJugador'
 
-const filters = ['TODOS', 'EDITADO', 'ORIGINAL']
-
-const initialPhotos = [
-  { id: 1, edited: true },
-  { id: 2 },
-  { id: 3 },
-  { id: 4 },
-  { id: 5 },
-  { id: 6 },
-  { id: 7 },
-  { id: 8, edited: true },
-  { id: 9 },
-  { id: 10 },
-  { id: 11 },
-  { id: 12 },
-]
+const filtros = ['TODOS', 'EDITADO', 'ORIGINAL']
 
 export default function Galeria() {
   const navigate = useNavigate()
   const selector = useRef(null)
-  const [activeFilter, setActiveFilter] = useState('TODOS')
-  const [photos, setPhotos] = useState(initialPhotos)
-  const [selectedPhotos, setSelectedPhotos] = useState([])
+  const { perfil, acciones } = useJugador()
+  const [filtro, setFiltro] = useState('TODOS')
+  const [elegidas, setElegidas] = useState([])
 
-  const visibles = photos.filter((photo) => activeFilter === 'TODOS'
-    || (activeFilter === 'EDITADO' ? photo.edited : !photo.edited))
+  const fotos = perfil.galeria
+  const visibles = fotos.filter((foto) => filtro === 'TODOS'
+    || (filtro === 'EDITADO' ? foto.editada : !foto.editada))
 
-  const togglePhoto = (photoId) => {
-    setSelectedPhotos((currentPhotos) => currentPhotos.includes(photoId)
-      ? currentPhotos.filter((id) => id !== photoId)
-      : [...currentPhotos, photoId])
+  const alternar = (fotoId) => {
+    setElegidas((actuales) => actuales.includes(fotoId)
+      ? actuales.filter((id) => id !== fotoId)
+      : [...actuales, fotoId])
   }
 
+  // Solo se guardan los datos de la foto. El archivo se sube a Storage cuando
+  // entre la base de datos: en localStorage no cabe.
   const importar = (event) => {
     const archivos = Array.from(event.target.files || [])
     if (!archivos.length) {
       return
     }
-    setPhotos((actuales) => [
-      ...archivos.map((archivo, indice) => ({ id: Date.now() + indice, nombre: archivo.name })),
-      ...actuales,
-    ])
+    acciones.agregarFotos(archivos.map((archivo, indice) => ({
+      id: `foto-${Date.now()}-${indice}`,
+      nombre: archivo.name,
+      editada: false,
+      creada: new Date().toISOString(),
+    })))
     event.target.value = ''
+  }
+
+  const borrar = () => {
+    elegidas.forEach((fotoId) => acciones.borrarFoto(fotoId))
+    setElegidas([])
   }
 
   return (
     <main className="gallery-shell">
-      <PageHeader title="GALERÍA" backTo="/perfil" rightLabel={`${photos.length} FOTOS`} />
+      <PageHeader title="GALERÍA" backTo="/perfil" rightLabel={`${fotos.length} FOTOS`} />
 
       <section className="gallery-content" aria-label="Galería de fotos">
         <div className="gallery-filters" role="tablist" aria-label="Filtrar fotos">
-          {filters.map((filter) => (
-            <button className={activeFilter === filter ? 'gallery-filter is-active' : 'gallery-filter'} type="button" role="tab" aria-selected={activeFilter === filter} onClick={() => setActiveFilter(filter)} key={filter}>
-              {filter}
+          {filtros.map((item) => (
+            <button className={filtro === item ? 'gallery-filter is-active' : 'gallery-filter'} type="button" role="tab" aria-selected={filtro === item} onClick={() => setFiltro(item)} key={item}>
+              {item}
             </button>
           ))}
         </div>
 
         <section className="photo-grid" aria-label="Fotos guardadas">
-          {visibles.map((photo) => (
-            <button className={selectedPhotos.includes(photo.id) ? 'photo-placeholder is-selected' : 'photo-placeholder'} type="button" key={photo.id} onClick={() => togglePhoto(photo.id)} aria-pressed={selectedPhotos.includes(photo.id)} aria-label={`Foto ${photo.id}`}>
-              {photo.edited && <span>EDITADA</span>}
+          {visibles.map((foto) => (
+            <button className={elegidas.includes(foto.id) ? 'photo-placeholder is-selected' : 'photo-placeholder'} type="button" key={foto.id} onClick={() => alternar(foto.id)} aria-pressed={elegidas.includes(foto.id)} aria-label={foto.nombre}>
+              {foto.editada && <span>EDITADA</span>}
             </button>
           ))}
         </section>
 
-        {!visibles.length && <p className="gallery-vacia">No hay fotos con ese filtro.</p>}
+        {!visibles.length && <p className="gallery-vacia">{fotos.length ? 'No hay fotos con ese filtro.' : 'Todavía no guardas fotos. Importa una o toma una desde el AR.'}</p>}
 
         <div className="gallery-actions">
           <input type="file" accept="image/*" multiple ref={selector} onChange={importar} hidden />
           <button className="gallery-action" type="button" onClick={() => selector.current?.click()}>IMPORTAR</button>
-          <button className="gallery-action is-principal" type="button" disabled={!selectedPhotos.length} onClick={() => navigate(`/galeria/${selectedPhotos[0]}`)}>
-            SELECCIONAR{selectedPhotos.length ? ` (${selectedPhotos.length})` : ''}
+          <button className="gallery-action" type="button" disabled={!elegidas.length} onClick={borrar}>BORRAR</button>
+          <button className="gallery-action is-principal" type="button" disabled={!elegidas.length} onClick={() => navigate(`/galeria/${elegidas[0]}`)}>
+            EDITAR{elegidas.length ? ` (${elegidas.length})` : ''}
           </button>
         </div>
       </section>

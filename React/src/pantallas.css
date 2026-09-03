@@ -141,10 +141,15 @@
 .prueba-nota { margin: 9px 0 0; color: var(--azul-medio); font-family: var(--fuente-mono); font-size: .64rem; font-weight: 700; text-align: center; }
 .prueba-cargando { padding: 140px 20px; color: var(--azul-medio); font-family: var(--fuente-mono); font-size: .78rem; font-weight: 700; text-align: center; }
 
-.prueba-escudos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 9px; }
-.prueba-chip { min-height: 26px; padding: 4px 11px; border: 0; border-radius: 7px; color: var(--acento); background: var(--azul-medio); font-family: var(--fuente-mono); font-size: .64rem; font-weight: 700; cursor: pointer; }
-.prueba-chip.is-active { color: var(--azul-medio); background: var(--acento); }
-.prueba-chip:focus-visible { outline: 3px solid var(--acento); outline-offset: 3px; }
+.prueba-escudos { display: flex; gap: 8px; margin-bottom: 9px; padding-bottom: 6px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+.prueba-escudos::-webkit-scrollbar { height: 4px; }
+.prueba-escudos::-webkit-scrollbar-thumb { border-radius: 4px; background: var(--azul-medio); }
+.prueba-carta { display: flex; width: 92px; flex: 0 0 92px; flex-direction: column; align-items: center; gap: 6px; padding: 9px 6px 8px; border: 2px solid transparent; border-radius: 11px; background: var(--azul-medio); scroll-snap-align: start; cursor: pointer; }
+.prueba-carta img { width: 100%; height: 48px; object-fit: contain; }
+.prueba-carta span { color: #fff; font-family: var(--fuente-mono); font-size: .55rem; font-weight: 700; letter-spacing: .05em; line-height: 1.2; text-align: center; }
+.prueba-carta.is-active { border-color: var(--acento); background: var(--azul-profundo); }
+.prueba-carta.is-active span { color: var(--acento); }
+.prueba-carta:focus-visible { outline: 3px solid var(--acento); outline-offset: 3px; }
 
 /* Compilador de marcadores */
 .compilar-intro { margin: 0 0 12px; color: var(--tinta); font-family: var(--fuente-mono); font-size: .7rem; font-weight: 700; line-height: 1.4; }
@@ -228,7 +233,7 @@ body { letter-spacing: .015em; }
 .acceso-titulo, .compilar-copia small, .prueba-controles span, .ar-ver-estado, .ar-ver-equipo { letter-spacing: .06em; }
 
 /* Los rotulos de boton usan la tipografia de titulos, como el resto */
-.video-filter, .prueba-chip, .album-filter, .gallery-filter, .plays-filter, .profile-filter,
+.video-filter, .album-filter, .gallery-filter, .plays-filter, .profile-filter,
 .region-filter, .detail-tab, .statistics-subtab, .ar-region, .mode-chip, .gallery-action,
 .ar-ver-accion, .compilar-descarga, .trivia-mode, .ar-selector-prueba, .editor-volver, .cuenta-valor {
   font-family: var(--fuente-titulo); letter-spacing: .04em;
@@ -257,3 +262,17 @@ body { letter-spacing: .015em; }
 .team-detail-identity .team-badge img { width: 88%; height: 88%; }
 .trivia-mode.is-pendiente { opacity: .5; cursor: not-allowed; }
 .equipos-vacio { grid-column: 1 / -1; margin: 26px 0; color: var(--tinta); font-family: var(--fuente-mono); font-size: .74rem; font-weight: 700; text-align: center; }
+
+.album-card img { width: 76%; height: 76%; margin: 12%; object-fit: contain; }
+.album-card.is-bloqueada { background: var(--gris-bloque); opacity: .55; }
+.album-card.is-bloqueada .album-card-mark { position: static; display: block; color: #6d757f; font-family: var(--fuente-titulo); font-size: 1.6rem; }
+.album-card.is-especial { background: #d9e3f2; box-shadow: inset 0 0 0 2px var(--azul-medio); }
+.album-card.is-holo { background: linear-gradient(135deg, #ffe9a8 0%, #d6f0ff 50%, #f3d0ff 100%); box-shadow: inset 0 0 0 2px var(--acento); }
+.album-card-repetida { position: absolute; right: 4px; bottom: 4px; padding: 1px 5px; border-radius: 6px; color: #fff; background: var(--azul-profundo); font-family: var(--fuente-mono); font-size: .5rem; }
+.album-progress span, .progress-track span { width: 0; transition: width .25s ease; }
+.card-progress span:nth-child(-n + 3) { background: var(--azul-profundo); }
+.card-progress span.is-hecha { background: var(--confirmacion); }
+.opening-card img { width: 96px; height: 96px; margin: 0 auto 10px; object-fit: contain; }
+.opening-card strong, .opening-card small { text-align: center; }
+.prueba-aviso.is-alerta { background: var(--alerta); }
+.trophy-card strong { padding: 0 4px; font-family: var(--fuente-mono); font-size: .5rem; letter-spacing: .04em; line-height: 1.2; }

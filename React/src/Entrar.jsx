@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { guardarUsuario } from './cuenta'
+import { useJugador } from './almacen/useJugador'
 
 export default function Entrar() {
   const navigate = useNavigate()
+  const { acciones } = useJugador()
   const [usuario, setUsuario] = useState('')
   const [contrasena, setContrasena] = useState('')
   const [aviso, setAviso] = useState('')
@@ -15,7 +16,7 @@ export default function Entrar() {
       setAviso('Escribe tu usuario y tu contraseña para continuar.')
       return
     }
-    guardarUsuario(usuario.trim())
+    acciones.iniciarSesion(usuario.trim())
     navigate('/')
   }
 
