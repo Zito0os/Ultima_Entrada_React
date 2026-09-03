@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 import PageHeader from './PageHeader'
-import { CONFIG_BASE, CONTROLES_CAPA, SECCIONES, capaDe, configDe, moverCapa, ordenDe } from './configEscudos'
+import { CONFIG_BASE, CONTROLES_CAPA, CONTROLES_TONO, PALETA_CAPAS, SECCIONES, capaDe, configDe, esDeLaPaleta, hexAHsl, hslAHex, moverCapa, ordenDe } from './configEscudos'
 import { useJugador } from './almacen/useJugador'
 import { crearEfectos } from './efectosAR'
 import { escudos, rutaEscudo } from './escudosData'
@@ -24,6 +24,8 @@ export default function PruebaEscudo() {
   const [capasInfo, setCapasInfo] = useState([])
   const [capaActiva, setCapaActiva] = useState(0)
   const [seccion, setSeccion] = useState('capas')
+  const [tonoAbierto, setTonoAbierto] = useState(false)
+  const [hsl, setHsl] = useState({ h: 210, s: 80, l: 52 })
   const [aviso, setAviso] = useState('')
   const [onboarding, setOnboarding] = useState(() => !perfil.preferencias.onboardingModelos)
 
@@ -31,6 +33,8 @@ export default function PruebaEscudo() {
   const escudo = escudos.find((item) => item.id === escudoId) || escudos[0]
   const orden = ordenDe(config, capasInfo.length)
   const capa = capaDe(config, capaActiva)
+  // Un color que no esta en la paleta salio del selector propio
+  const esPropio = Boolean(capa.color) && !esDeLaPaleta(capa.color)
 
   useEffect(() => {
     const nodo = contenedor.current
@@ -151,6 +155,7 @@ export default function PruebaEscudo() {
     setEscudoId(id)
     setConfig(configDe(perfil.escudos, id, elegido?.config))
     setCapaActiva(0)
+    setTonoAbierto(false)
     setAviso('')
   }
 
@@ -165,6 +170,26 @@ export default function PruebaEscudo() {
       [capaActiva]: { ...capaDe(actual, capaActiva), [campo]: valor },
     },
   }))
+
+  // Arranca el selector propio desde el color que la capa tiene ahora, para que
+  // no salte de golpe al abrirlo
+  const abrirPropio = () => {
+    const partida = hexAHsl(capa.color || info?.color || '#227AE6')
+    setHsl(partida)
+    setTonoAbierto(true)
+    cambiarCapa('color', hslAHex(partida))
+  }
+
+  const cambiarHsl = (campo, valor) => {
+    const nuevo = { ...hsl, [campo]: Number(valor) }
+    setHsl(nuevo)
+    cambiarCapa('color', hslAHex(nuevo))
+  }
+
+  const elegirCapa = (indice) => {
+    setCapaActiva(indice)
+    setTonoAbierto(false)
+  }
 
   const mover = (direccion) => setConfig((actual) => ({
     ...actual,
@@ -181,6 +206,7 @@ export default function PruebaEscudo() {
     acciones.borrarEscudo(escudoId)
     setConfig({ ...CONFIG_BASE, ...(escudo.config || {}) })
     setCapaActiva(0)
+    setTonoAbierto(false)
     setAviso('Volvió a los valores de fábrica.')
     setTimeout(() => setAviso(''), 3200)
   }
@@ -255,7 +281,7 @@ export default function PruebaEscudo() {
                         type="button"
                         role="tab"
                         aria-selected={capaActiva === indice}
-                        onClick={() => setCapaActiva(indice)}
+                        onClick={() => elegirCapa(indice)}
                         key={indice}
                       >
                         <span className="capa-muestra" style={{ background: ajuste.color || datos.color }} aria-hidden="true" />
@@ -286,15 +312,63 @@ export default function PruebaEscudo() {
                     {capa.visible ? 'CAPA VISIBLE' : 'CAPA OCULTA'}
                   </button>
 
-                  <label className="capa-color">
-                    <span>COLOR DE LA CAPA</span>
-                    <input type="color" value={capa.color || info?.color || '#227AE6'} onChange={(event) => cambiarCapa('color', event.target.value)} />
-                    {capa.color && (
-                      <button className="capa-color-limpiar" type="button" onClick={() => cambiarCapa('color', null)}>
-                        USAR EL DEL LOGO
+                  <div className="capa-color" role="group" aria-label="Color de la capa">
+                    <p className="capa-color-titulo">COLOR DE LA CAPA</p>
+                    <div className="capa-paleta">
+                      <button
+                        className={capa.color ? 'capa-tono es-original' : 'capa-tono es-original is-active'}
+                        type="button"
+                        onClick={() => { cambiarCapa('color', null); setTonoAbierto(false) }}
+                        aria-pressed={!capa.color}
+                        title="El color que trae el logo"
+                      >
+                        <span style={{ background: info?.color || '#227AE6' }} aria-hidden="true" />
+                        <small>DEL LOGO</small>
                       </button>
+                      {PALETA_CAPAS.map((tono) => (
+                        <button
+                          className={capa.color?.toUpperCase() === tono.valor ? 'capa-tono is-active' : 'capa-tono'}
+                          type="button"
+                          onClick={() => { cambiarCapa('color', tono.valor); setTonoAbierto(false) }}
+                          aria-pressed={capa.color?.toUpperCase() === tono.valor}
+                          title={tono.nombre}
+                          key={tono.valor}
+                        >
+                          <span style={{ background: tono.valor }} aria-hidden="true" />
+                          <small>{tono.nombre}</small>
+                        </button>
+                      ))}
+                      <button
+                        className={esPropio ? 'capa-tono es-propio is-active' : 'capa-tono es-propio'}
+                        type="button"
+                        onClick={abrirPropio}
+                        aria-pressed={esPropio}
+                        aria-expanded={tonoAbierto}
+                        title="Elegir cualquier otro color"
+                      >
+                        <span style={esPropio ? { background: capa.color } : undefined} aria-hidden="true" />
+                        <small>OTRO</small>
+                      </button>
+                    </div>
+
+                    {tonoAbierto && (
+                      <div className="capa-propio">
+                        <div className="capa-propio-muestra">
+                          <span style={{ background: hslAHex(hsl) }} aria-hidden="true" />
+                          <strong>{hslAHex(hsl)}</strong>
+                          <button className="capa-propio-cerrar" type="button" onClick={() => setTonoAbierto(false)}>CERRAR</button>
+                        </div>
+                        <div className="prueba-controles">
+                          {CONTROLES_TONO.map((control) => (
+                            <label key={control.id}>
+                              <span>{control.nombre}<b>{hsl[control.id]}{control.unidad || ''}</b></span>
+                              <input type="range" min={control.min} max={control.max} value={hsl[control.id]} onChange={(event) => cambiarHsl(control.id, event.target.value)} />
+                            </label>
+                          ))}
+                        </div>
+                      </div>
                     )}
-                  </label>
+                  </div>
 
                   <div className="prueba-controles">
                     {CONTROLES_CAPA.map((control) => (

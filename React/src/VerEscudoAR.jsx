@@ -79,14 +79,18 @@ export default function VerEscudoAR() {
         const { objeto, capas } = extruirDesdeSVG(datos, { ...config, color: escudo.color })
         objeto.scale.multiplyScalar(ESCALA * (config.escala / 100))
 
-        const explosion = crearExplosion(capas)
-
         // Una ancla por cada variante del escudo dentro del .mind
         const giros = []
         const animaciones = []
+        // Cada copia trae sus propias capas: sin esto la explosion solo movia
+        // las del original y el boton no hacia nada en las demas variantes
+        const porCopia = []
         for (let indice = 0; indice < (escudo.marcadores || 1); indice += 1) {
           const giro = new THREE.Group()
-          giro.add(indice === 0 ? objeto : objeto.clone())
+          const copia = indice === 0 ? objeto : objeto.clone()
+          // contenedor > grupo > capas, el mismo armado que devuelve la extrusion
+          porCopia.push(indice === 0 ? capas : copia.children[0].children)
+          giro.add(copia)
 
           const efecto = crearEfectos(THREE, ESCALA * (config.escala / 100) * 100)
           giro.add(efecto.grupo)
@@ -101,6 +105,8 @@ export default function VerEscudoAR() {
           ancla.onTargetLost = () => setAnclado(false)
           giros.push(giro)
         }
+
+        const explosion = crearExplosion(porCopia)
 
         motor.current = { mindar, giros, animaciones, explosion, renderer, scene, camera, girando: true }
 

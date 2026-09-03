@@ -166,21 +166,23 @@ export function cargarSVG(url) {
   })
 }
 
-// Separa las capas en profundidad y las regresa, para que se vea que el
-// escudo esta hecho de capas y no de una sola pieza.
+// Separa las capas hacia adelante y las regresa, para que se vea que el escudo
+// esta hecho de capas y no de una sola pieza. Recibe una lista de capas o
+// varias: en AR cada ancla tiene su propia copia del modelo y todas se mueven.
 export function crearExplosion(capas) {
-  const base = capas.map((capa) => capa.position.z)
-  const giroBase = capas.map((capa) => capa.rotation.z)
+  const copias = Array.isArray(capas[0]) ? capas : [capas]
+  const base = copias.map((lista) => lista.map((capa) => capa.position.z))
   // Se reparte un recorrido fijo entre las capas que haya, para que el hueco
   // entre dos siempre sea mas grande que el grosor de la extrusion
-  const paso = RECORRIDO / Math.max(1, capas.length)
+  const paso = RECORRIDO / Math.max(1, copias[0]?.length || 1)
   let avance = 0
   let activa = false
 
   const colocar = (factor) => {
-    capas.forEach((capa, indice) => {
-      capa.position.z = base[indice] + paso * factor * (indice + 1)
-      capa.rotation.z = giroBase[indice] + factor * 0.12 * (indice % 2 ? -1 : 1)
+    copias.forEach((lista, copia) => {
+      lista.forEach((capa, indice) => {
+        capa.position.z = base[copia][indice] + paso * factor * (indice + 1)
+      })
     })
   }
 

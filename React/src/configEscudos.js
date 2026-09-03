@@ -64,6 +64,75 @@ export const SECCIONES = [
   },
 ]
 
+// La paleta de la propuesta mas los neutros que aparecen en los logos. Se usa
+// en vez del selector del sistema, que no respeta el estilo de la app.
+export const PALETA_CAPAS = [
+  { nombre: 'BLANCO', valor: '#FFFFFF' },
+  { nombre: 'PLATA', valor: '#C4CED4' },
+  { nombre: 'TINTA', valor: '#0F1A2B' },
+  { nombre: 'AZUL', valor: '#227AE6' },
+  { nombre: 'AZUL MEDIO', valor: '#195CA6' },
+  { nombre: 'AZUL PROFUNDO', valor: '#0D3767' },
+  { nombre: 'ACENTO', valor: '#F5C64B' },
+  { nombre: 'ALERTA', valor: '#C8402F' },
+  { nombre: 'CONFIRMACIÓN', valor: '#3E9E74' },
+  { nombre: 'VERDE', valor: '#7BD84D' },
+  { nombre: 'VIOLETA', valor: '#C45ADD' },
+  { nombre: 'ROJO', valor: '#FF2F32' },
+]
+
+// El selector propio trabaja en HSL porque son tres deslizadores, que es el
+// control que ya usa el resto del personalizador.
+export const CONTROLES_TONO = [
+  { id: 'h', nombre: 'TONO', min: 0, max: 360 },
+  { id: 's', nombre: 'SATURACIÓN', min: 0, max: 100, unidad: '%' },
+  { id: 'l', nombre: 'LUMINOSIDAD', min: 0, max: 100, unidad: '%' },
+]
+
+export function hslAHex({ h, s, l }) {
+  const saturacion = s / 100
+  const luz = l / 100
+  const c = (1 - Math.abs(2 * luz - 1)) * saturacion
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+  const m = luz - c / 2
+  const [r, g, b] = h < 60 ? [c, x, 0]
+    : h < 120 ? [x, c, 0]
+      : h < 180 ? [0, c, x]
+        : h < 240 ? [0, x, c]
+          : h < 300 ? [x, 0, c] : [c, 0, x]
+  const canal = (valor) => Math.round((valor + m) * 255).toString(16).padStart(2, '0')
+  return `#${canal(r)}${canal(g)}${canal(b)}`.toUpperCase()
+}
+
+export function hexAHsl(hex) {
+  const limpio = String(hex || '').replace('#', '')
+  const largo = limpio.length === 3 ? limpio.split('').map((letra) => letra + letra).join('') : limpio
+  if (!/^[0-9a-f]{6}$/i.test(largo)) {
+    return { h: 210, s: 80, l: 52 }
+  }
+  const r = parseInt(largo.slice(0, 2), 16) / 255
+  const g = parseInt(largo.slice(2, 4), 16) / 255
+  const b = parseInt(largo.slice(4, 6), 16) / 255
+  const mayor = Math.max(r, g, b)
+  const menor = Math.min(r, g, b)
+  const luz = (mayor + menor) / 2
+  const rango = mayor - menor
+  if (!rango) {
+    return { h: 0, s: 0, l: Math.round(luz * 100) }
+  }
+  let h = mayor === r ? ((g - b) / rango) % 6 : mayor === g ? (b - r) / rango + 2 : (r - g) / rango + 4
+  h = Math.round(h * 60)
+  return {
+    h: h < 0 ? h + 360 : h,
+    s: Math.round((rango / (1 - Math.abs(2 * luz - 1))) * 100),
+    l: Math.round(luz * 100),
+  }
+}
+
+export function esDeLaPaleta(color) {
+  return Boolean(color) && PALETA_CAPAS.some((tono) => tono.valor === color.toUpperCase())
+}
+
 export const CONTROLES_CAPA = [
   { id: 'grosor', nombre: 'GROSOR DE LA CAPA', min: 10, max: 200, unidad: '%' },
   { id: 'x', nombre: 'CORRIMIENTO HORIZONTAL', min: -20, max: 20 },
