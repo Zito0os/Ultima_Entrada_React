@@ -64,11 +64,59 @@ export function extruirDesdeSVG(datos, opciones = {}) {
   contenedor.add(grupo)
   contenedor.scale.multiplyScalar(TAMANO / mayor)
 
-  return { objeto: contenedor, triangulos: Math.round(triangulos), trazos: grupo.children.length }
+  return {
+    objeto: contenedor,
+    capas: grupo.children,
+    triangulos: Math.round(triangulos),
+    trazos: grupo.children.length,
+  }
 }
 
 export function cargarSVG(url) {
   return new Promise((resolver, rechazar) => {
     new SVGLoader().load(url, resolver, undefined, rechazar)
   })
+}
+
+// Separa los trazos en profundidad y los regresa, para que se vea que el
+// escudo esta hecho de capas y no de una sola pieza.
+export function crearExplosion(capas, separacion = 6) {
+  const base = capas.map((malla) => malla.position.z)
+  const giroBase = capas.map((malla) => malla.rotation.z)
+  const recorrido = Math.max(separacion, 6) * 7
+  let avance = 0
+  let activa = false
+
+  const colocar = (factor) => {
+    capas.forEach((malla, indice) => {
+      malla.position.z = base[indice] + recorrido * factor * (indice + 1)
+      malla.rotation.z = giroBase[indice] + factor * 0.12 * (indice % 2 ? -1 : 1)
+    })
+  }
+
+  return {
+    get activa() {
+      return activa
+    },
+    disparar() {
+      if (activa) {
+        return
+      }
+      activa = true
+      avance = 0
+    },
+    animar() {
+      if (!activa) {
+        return
+      }
+      avance += 0.018
+      if (avance >= 1) {
+        activa = false
+        colocar(0)
+        return
+      }
+      // Sube y baja en un solo movimiento suave
+      colocar(Math.sin(avance * Math.PI))
+    },
+  }
 }

@@ -5,7 +5,7 @@ import Icono from './Icono'
 import { filtroDeEstabilidad, leerConfig } from './configEscudos'
 import { buscarEscudo } from './escudosData'
 import { componerCaptura, crearEfectos } from './efectosAR'
-import { cargarSVG, extruirDesdeSVG } from './extruirEscudo'
+import { cargarSVG, crearExplosion, extruirDesdeSVG } from './extruirEscudo'
 
 // La extrusion mide 100 unidades y el marcador de MindAR mide 1
 const ESCALA = 0.006
@@ -62,8 +62,10 @@ export default function VerEscudoAR() {
         relleno.position.set(-2, -1, 2)
         scene.add(relleno)
 
-        const { objeto } = extruirDesdeSVG(datos, { ...config, color: escudo.color })
+        const { objeto, capas } = extruirDesdeSVG(datos, { ...config, color: escudo.color })
         objeto.scale.multiplyScalar(ESCALA * (config.escala / 100))
+
+        const explosion = crearExplosion(capas, config.separacion)
 
         // Una ancla por cada variante del escudo dentro del .mind
         const giros = []
@@ -72,8 +74,8 @@ export default function VerEscudoAR() {
           const giro = new THREE.Group()
           giro.add(indice === 0 ? objeto : objeto.clone())
 
-          const efecto = crearEfectos(THREE)
-          giro.add(efecto.particulas)
+          const efecto = crearEfectos(THREE, ESCALA * (config.escala / 100) * 100)
+          giro.add(efecto.grupo)
           animaciones.push(efecto)
 
           const ancla = mindar.addAnchor(indice)
@@ -83,7 +85,7 @@ export default function VerEscudoAR() {
           giros.push(giro)
         }
 
-        motor.current = { mindar, giros, animaciones, renderer, scene, camera, girando: true }
+        motor.current = { mindar, giros, animaciones, explosion, renderer, scene, camera, girando: true }
 
         setEstado('encendiendo')
         await mindar.start()
@@ -97,6 +99,7 @@ export default function VerEscudoAR() {
             giros.forEach((giro) => { giro.rotation.y += config.velocidad / 1000 })
           }
           animaciones.forEach((efecto) => efecto.animar())
+          explosion.animar()
           renderer.render(scene, camera)
         })
       } catch (fallo) {
@@ -141,7 +144,7 @@ export default function VerEscudoAR() {
 
   useEffect(() => {
     motor.current?.animaciones.forEach((efecto) => {
-      efecto.particulas.visible = efectos
+      efecto.grupo.visible = efectos
     })
   }, [efectos])
 
@@ -198,6 +201,9 @@ export default function VerEscudoAR() {
           </button>
           <button className={efectos ? 'ar-ver-accion is-activa' : 'ar-ver-accion'} type="button" onClick={() => setEfectos((e) => !e)} aria-pressed={efectos}>
             <Icono nombre="trofeo" /><span>EFECTOS</span>
+          </button>
+          <button className="ar-ver-accion" type="button" onClick={() => motor.current?.explosion.disparar()} disabled={!anclado}>
+            <Icono nombre="cartas" /><span>CAPAS</span>
           </button>
           <button className="ar-ver-accion" type="button" onClick={tomarFoto} disabled={estado !== 'buscando'}>
             <Icono nombre="escudo" /><span>FOTO</span>

@@ -1,14 +1,26 @@
-// Logos que se extruyen a 3D y que ademas sirven de marcador para el escaneo.
-// marcadores = cuantas variantes trae el archivo .mind de ese equipo.
-// equipo = id en teamsData, para poder saltar a su ficha desde la ventana AR.
-export const escudos = [
-  { id: 'mlb', nombre: 'MLB', svg: 'escudos/mlb.svg', fondo: '#FFFFFF', marcadores: 1 },
-  // El monograma viene en negro: se pinta con el color institucional
-  { id: 'yankees', nombre: 'YANKEES', svg: 'escudos/yankees.svg', fondo: '#FFFFFF', color: '#142448', marcadores: 1, equipo: 'yankees' },
-  { id: 'red-sox', nombre: 'RED SOX', svg: 'escudos/red-sox.svg', fondo: '#FFFFFF', marcadores: 1, equipo: 'red-sox' },
-  { id: 'astros', nombre: 'ASTROS', svg: 'escudos/astros.svg', fondo: '#FFFFFF', marcadores: 1, equipo: 'astros' },
-]
+import { teams } from './teamsData'
+
+// Cada equipo tiene su logo en SVG, que se extruye a 3D, y su archivo .mind
+// con las variantes que la camara puede reconocer. Los dos comparten el id.
+const ajustes = {
+  // El monograma de los Yankees viene en negro: se pinta con el color del club
+  yankees: { color: '#142448' },
+}
+
+export const escudos = teams.map((team) => ({
+  id: team.id,
+  nombre: team.name,
+  equipo: team.id,
+  svg: `escudos/${team.id}.svg`,
+  fondo: '#FFFFFF',
+  marcadores: 1,
+  ...(ajustes[team.id] || {}),
+}))
 
 export function buscarEscudo(id) {
   return escudos.find((escudo) => escudo.id === id) || escudos[0]
+}
+
+export function rutaEscudo(id) {
+  return `${import.meta.env.BASE_URL}escudos/${id}.svg`
 }

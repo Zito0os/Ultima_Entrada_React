@@ -215,7 +215,7 @@
 .ar-ver-pista { position: absolute; right: 20px; bottom: 42%; left: 20px; z-index: 4; margin: 0; color: #fff; font-family: var(--fuente-mono); font-size: .64rem; font-weight: 700; text-align: center; text-shadow: 0 2px 6px rgba(0,0,0,.8); }
 .ar-ver-aviso { position: absolute; right: 20px; bottom: 34%; left: 20px; z-index: 6; margin: 0; padding: 8px 12px; border-radius: 9px; color: #fff; background: var(--confirmacion); font-family: var(--fuente-mono); font-size: .66rem; font-weight: 700; text-align: center; }
 .ar-ver-controles { position: absolute; right: 0; bottom: 0; left: 0; z-index: 5; padding: 14px 12px max(16px, env(safe-area-inset-bottom)); }
-.ar-ver-acciones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ar-ver-acciones { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .ar-ver-accion { display: flex; min-height: 58px; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 0; border-radius: 12px; color: #fff; background: rgba(13,55,103,.82); font-family: var(--fuente-mono); font-size: .56rem; font-weight: 700; cursor: pointer; }
 .ar-ver-accion svg { width: 22px; height: 22px; }
 .ar-ver-accion.is-activa { color: var(--tinta); background: var(--acento); }
@@ -236,7 +236,7 @@ body { letter-spacing: .015em; }
 .ar-ver-accion span { font-family: var(--fuente-titulo); letter-spacing: .05em; }
 
 /* Personalizador */
-.prueba-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 9px; }
+.prueba-acciones { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; margin-top: 9px; }
 .prueba-acciones .prueba-boton { margin-top: 0; }
 .prueba-boton.is-secundario { color: #fff; background: var(--azul-medio); }
 .prueba-boton.is-fantasma { color: var(--azul-medio); background: transparent; border: 2px solid var(--azul-medio); }
@@ -244,3 +244,16 @@ body { letter-spacing: .015em; }
 .prueba-controles { max-height: 250px; overflow-y: auto; }
 .onboarding-modal { text-align: left; }
 .onboarding-modal h2 { text-align: center; }
+
+/* Trivia: cada equipo con su escudo */
+.trivia-mode { display: flex; align-items: center; gap: 12px; min-height: 66px; padding: 8px 16px 8px 8px; text-align: left; }
+.trivia-mode img { width: 46px; height: 46px; flex: 0 0 46px; padding: 4px; border-radius: 9px; object-fit: contain; background: #fff; box-sizing: border-box; }
+.trivia-mode span { flex: 1; font-family: var(--fuente-titulo); font-size: 1.25rem; font-weight: 700; letter-spacing: .02em; }
+.trivia-mode small { color: var(--acento); font-family: var(--fuente-mono); font-size: .58rem; font-weight: 700; }
+
+/* Escudos reales en lugar de las iniciales */
+.team-badge { display: grid; place-items: center; overflow: hidden; border: 0; border-radius: 14px; background: #fff; }
+.team-badge img { width: 84%; height: 84%; object-fit: contain; }
+.team-detail-identity .team-badge img { width: 88%; height: 88%; }
+.trivia-mode.is-pendiente { opacity: .5; cursor: not-allowed; }
+.equipos-vacio { grid-column: 1 / -1; margin: 26px 0; color: var(--tinta); font-family: var(--fuente-mono); font-size: .74rem; font-weight: 700; text-align: center; }

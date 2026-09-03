@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import BottomNav from './Navigation'
 import PageHeader from './PageHeader'
+import { rutaEscudo } from './escudosData'
 import { teams } from './teamsData'
 import { triviaPorEquipo } from './triviaData'
 
@@ -19,11 +20,16 @@ function Menu() {
         <h2>Elige un equipo</h2>
         <p className="trivia-menu-nota">Cinco preguntas con temporizador. Una ronda perfecta entrega el trofeo de conocimiento del club.</p>
         <div className="trivia-modes">
-          {teams.map((team) => (
-            <button className="trivia-mode" type="button" onClick={() => navigate(`/trivia/${team.id}`)} key={team.id}>
-              {team.name}
-            </button>
-          ))}
+          {teams.map((team) => {
+            const total = triviaPorEquipo[team.id]?.length || 0
+            return (
+              <button className={total ? 'trivia-mode' : 'trivia-mode is-pendiente'} type="button" disabled={!total} onClick={() => navigate(`/trivia/${team.id}`)} key={team.id}>
+                <img src={rutaEscudo(team.id)} alt="" aria-hidden="true" />
+                <span>{team.name}</span>
+                <small>{total ? `${total} preguntas` : 'próximamente'}</small>
+              </button>
+            )
+          })}
         </div>
       </section>
       <BottomNav activeTab="inicio" onTabChange={() => {}} />

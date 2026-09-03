@@ -4,8 +4,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 import PageHeader from './PageHeader'
 import { CONFIG_BASE, borrarConfig, guardarConfig, leerConfig, marcarOnboardingVisto, onboardingVisto, tieneConfig } from './configEscudos'
+import { crearEfectos } from './efectosAR'
 import { escudos } from './escudosData'
-import { cargarSVG, extruirDesdeSVG } from './extruirEscudo'
+import { cargarSVG, crearExplosion, extruirDesdeSVG } from './extruirEscudo'
 
 const controles = [
   { id: 'profundidad', nombre: 'PROFUNDIDAD', min: 1, max: 40 },
@@ -22,15 +23,16 @@ const controles = [
 export default function PruebaEscudo() {
   const contenedor = useRef(null)
   const escena = useRef(null)
-  const [escudoId, setEscudoId] = useState('mlb')
-  const [config, setConfig] = useState(() => leerConfig('mlb'))
+  const [escudoId, setEscudoId] = useState(escudos[0].id)
+  const [config, setConfig] = useState(() => leerConfig(escudos[0].id))
   const [girando, setGirando] = useState(true)
+  const [efectos, setEfectos] = useState(false)
   const [medidas, setMedidas] = useState({ triangulos: 0, trazos: 0 })
-  const [guardado, setGuardado] = useState(() => tieneConfig('mlb'))
+  const [guardado, setGuardado] = useState(() => tieneConfig(escudos[0].id))
   const [aviso, setAviso] = useState('')
   const [onboarding, setOnboarding] = useState(() => !onboardingVisto())
 
-  const escudo = escudos.find((item) => item.id === escudoId)
+  const escudo = escudos.find((item) => item.id === escudoId) || escudos[0]
 
   useEffect(() => {
     const nodo = contenedor.current
@@ -78,13 +80,18 @@ export default function PruebaEscudo() {
       if (escena.current?.girando !== false) {
         grupo.rotation.y += (escena.current?.velocidad ?? 20) / 1000
       }
+      escena.current?.efecto.animar()
+      escena.current?.explosion?.animar()
       orbita.update()
       renderer.render(scene, camara)
       requestAnimationFrame(animar)
     }
     animar()
 
-    escena.current = { grupo, orbita, girando: true, velocidad: CONFIG_BASE.velocidad }
+    const efecto = crearEfectos(THREE, 60)
+    scene.add(efecto.grupo)
+
+    escena.current = { grupo, orbita, efecto, girando: true, velocidad: CONFIG_BASE.velocidad }
 
     return () => {
       vivo = false
@@ -106,9 +113,10 @@ export default function PruebaEscudo() {
       if (cancelado) {
         return
       }
-      const { objeto, triangulos, trazos } = extruirDesdeSVG(datos, { ...config, color: escudo.color })
+      const { objeto, capas, triangulos, trazos } = extruirDesdeSVG(datos, { ...config, color: escudo.color })
       grupo.clear()
       grupo.add(objeto)
+      escena.current.explosion = crearExplosion(capas, config.separacion)
       setMedidas({ triangulos, trazos })
     })
 
@@ -123,6 +131,12 @@ export default function PruebaEscudo() {
       escena.current.velocidad = config.velocidad
     }
   }, [girando, config.velocidad])
+
+  useEffect(() => {
+    if (escena.current) {
+      escena.current.efecto.grupo.visible = efectos
+    }
+  }, [efectos])
 
   const cambiarEscudo = (id) => {
     setEscudoId(id)
@@ -193,9 +207,17 @@ export default function PruebaEscudo() {
           <button className="prueba-boton" type="button" onClick={guardar}>GUARDAR</button>
           <button className="prueba-boton is-secundario" type="button" onClick={restaurar}>RESTAURAR</button>
         </div>
-        <button className="prueba-boton is-fantasma" type="button" onClick={() => setGirando((g) => !g)} aria-pressed={girando}>
-          {girando ? 'DETENER GIRO' : 'GIRAR'}
-        </button>
+        <div className="prueba-acciones">
+          <button className="prueba-boton is-fantasma" type="button" onClick={() => setGirando((g) => !g)} aria-pressed={girando}>
+            {girando ? 'DETENER GIRO' : 'GIRAR'}
+          </button>
+          <button className={efectos ? 'prueba-boton is-secundario' : 'prueba-boton is-fantasma'} type="button" onClick={() => setEfectos((e) => !e)} aria-pressed={efectos}>
+            EFECTOS
+          </button>
+          <button className="prueba-boton is-fantasma" type="button" onClick={() => escena.current?.explosion?.disparar()}>
+            CAPAS
+          </button>
+        </div>
         <p className="prueba-nota">Arrastra para orbitar y rueda para acercar.</p>
       </section>
 

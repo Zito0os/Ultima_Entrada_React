@@ -8,7 +8,12 @@ import { regions, teams } from './teamsData'
 
 export default function Equipos() {
   const [activeRegion, setActiveRegion] = useState('TODAS')
+  const [busqueda, setBusqueda] = useState('')
   const navigate = useNavigate()
+
+  const texto = busqueda.trim().toLowerCase()
+  const visibles = teams.filter((team) => (activeRegion === 'TODAS' || team.region === activeRegion)
+    && (!texto || [team.name, team.stadium, team.city].some((campo) => campo.toLowerCase().includes(texto))))
 
   return (
     <main className="teams-shell">
@@ -17,7 +22,7 @@ export default function Equipos() {
         <div className="team-tools">
           <label className="team-search">
             <span className="sr-only">Buscar equipo, estadio o ciudad</span>
-            <input type="search" placeholder="Buscar equipo, estadio o ciudad" />
+            <input type="search" placeholder="Buscar equipo, estadio o ciudad" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} />
             <span aria-hidden="true">⌕</span>
           </label>
 
@@ -32,7 +37,7 @@ export default function Equipos() {
       </header>
 
       <section className="teams-list" aria-label="Lista de equipos">
-        {teams.map((team) => (
+        {visibles.map((team) => (
           <article className="team-card" key={team.id}>
             <TeamBadge team={team} />
             <div className="team-copy">
