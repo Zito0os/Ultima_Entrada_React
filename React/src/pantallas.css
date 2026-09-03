@@ -121,7 +121,7 @@
 /* Prueba de extrusion del escudo */
 .prueba-shell { min-height: 100svh; background: var(--superficie); color: var(--tinta); }
 .prueba-content { max-width: 520px; padding: 100px 14px 40px; margin: 0 auto; }
-.prueba-lienzo { overflow: hidden; border-radius: 13px; background: radial-gradient(circle at 50% 35%, #33455E 0%, #0A1B33 70%); }
+.prueba-lienzo { overflow: hidden; border-radius: 13px; background: radial-gradient(circle at 50% 32%, #7C8EA6 0%, #2B3E5A 72%); }
 .prueba-lienzo canvas { display: block; }
 .prueba-datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 9px; }
 .prueba-datos > div { display: flex; min-height: 58px; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; color: #fff; background: var(--azul-profundo); }

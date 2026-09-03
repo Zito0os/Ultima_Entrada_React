@@ -75,11 +75,7 @@ function Resumen({ team, aciertos, total, onRepetir }) {
   )
 }
 
-export default function Trivia() {
-  const { mode } = useParams()
-  const team = teams.find((item) => item.id === mode)
-  const preguntas = team ? triviaPorEquipo[team.id] : null
-
+function Ronda({ team, preguntas }) {
   const [indice, setIndice] = useState(0)
   const [elegida, setElegida] = useState(null)
   const [aciertos, setAciertos] = useState(0)
@@ -89,7 +85,7 @@ export default function Trivia() {
   const respondida = elegida !== null
 
   useEffect(() => {
-    if (!preguntas || respondida || terminada) {
+    if (respondida || terminada) {
       return
     }
     const reloj = setTimeout(() => {
@@ -101,11 +97,7 @@ export default function Trivia() {
       setRestante(restante - 1)
     }, 1000)
     return () => clearTimeout(reloj)
-  }, [restante, respondida, terminada, preguntas])
-
-  if (!team || !preguntas) {
-    return <Menu />
-  }
+  }, [restante, respondida, terminada])
 
   const reiniciar = () => {
     setIndice(0)
@@ -191,4 +183,18 @@ export default function Trivia() {
       <BottomNav activeTab="inicio" onTabChange={() => {}} />
     </main>
   )
+}
+
+export default function Trivia() {
+  const { mode } = useParams()
+  const team = teams.find((item) => item.id === mode)
+  const preguntas = team ? triviaPorEquipo[team.id] : null
+
+  if (!team || !preguntas) {
+    return <Menu />
+  }
+
+  // La llave arranca la ronda desde cero al cambiar de equipo: sin ella se
+  // quedaba la pantalla de resultado del equipo anterior
+  return <Ronda team={team} preguntas={preguntas} key={team.id} />
 }

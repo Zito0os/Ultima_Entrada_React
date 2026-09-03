@@ -44,20 +44,23 @@ export default function PruebaEscudo() {
     const nodo = contenedor.current
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    // MindAR usa sRGB en su propio lienzo: el visor tiene que igualarlo o los
+    // modelos se ven de otro color aqui que en la camara
+    renderer.outputEncoding = THREE.sRGBEncoding
     nodo.appendChild(renderer.domElement)
 
     const scene = new THREE.Scene()
     const camara = new THREE.PerspectiveCamera(45, 1, 1, 2000)
     camara.position.set(90, 60, 175)
 
-    scene.add(new THREE.AmbientLight(0xffffff, 1.4))
-    const clave = new THREE.DirectionalLight(0xffffff, 2.4)
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55))
+    const clave = new THREE.DirectionalLight(0xffffff, 0.85)
     clave.position.set(120, 160, 220)
     scene.add(clave)
-    const relleno = new THREE.DirectionalLight(0x9ec9ff, 1.2)
+    const relleno = new THREE.DirectionalLight(0x9ec9ff, 0.35)
     relleno.position.set(-160, -60, 120)
     scene.add(relleno)
-    const borde = new THREE.DirectionalLight(0xffffff, 1.5)
+    const borde = new THREE.DirectionalLight(0xffffff, 0.45)
     borde.position.set(0, 40, -220)
     scene.add(borde)
 
@@ -122,7 +125,7 @@ export default function PruebaEscudo() {
       const { objeto, capas, triangulos, trazos } = extruirDesdeSVG(datos, { ...config, color: escudo.color })
       grupo.clear()
       grupo.add(objeto)
-      escena.current.explosion = crearExplosion(capas, config.separacion)
+      escena.current.explosion = crearExplosion(capas)
       setMedidas({ triangulos, trazos })
     })
 
@@ -196,6 +199,18 @@ export default function PruebaEscudo() {
           </div>
         </div>
 
+        <div className="prueba-acciones">
+          <button className="prueba-boton is-fantasma" type="button" onClick={() => setGirando((g) => !g)} aria-pressed={girando}>
+            {girando ? 'DETENER GIRO' : 'GIRAR'}
+          </button>
+          <button className={efectos ? 'prueba-boton is-secundario' : 'prueba-boton is-fantasma'} type="button" onClick={() => setEfectos((e) => !e)} aria-pressed={efectos}>
+            EFECTOS
+          </button>
+          <button className="prueba-boton is-fantasma" type="button" onClick={() => escena.current?.explosion?.disparar()}>
+            CAPAS
+          </button>
+        </div>
+
         <div className="prueba-controles">
           {controles.map((control) => (
             <label key={control.id}>
@@ -210,17 +225,6 @@ export default function PruebaEscudo() {
         <div className="prueba-acciones">
           <button className="prueba-boton" type="button" onClick={guardar}>GUARDAR</button>
           <button className="prueba-boton is-secundario" type="button" onClick={restaurar}>RESTAURAR</button>
-        </div>
-        <div className="prueba-acciones">
-          <button className="prueba-boton is-fantasma" type="button" onClick={() => setGirando((g) => !g)} aria-pressed={girando}>
-            {girando ? 'DETENER GIRO' : 'GIRAR'}
-          </button>
-          <button className={efectos ? 'prueba-boton is-secundario' : 'prueba-boton is-fantasma'} type="button" onClick={() => setEfectos((e) => !e)} aria-pressed={efectos}>
-            EFECTOS
-          </button>
-          <button className="prueba-boton is-fantasma" type="button" onClick={() => escena.current?.explosion?.disparar()}>
-            CAPAS
-          </button>
         </div>
         <p className="prueba-nota">Arrastra para orbitar y rueda para acercar.</p>
       </section>

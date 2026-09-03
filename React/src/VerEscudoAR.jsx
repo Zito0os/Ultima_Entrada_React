@@ -63,18 +63,18 @@ export default function VerEscudoAR() {
         })
 
         const { renderer, scene, camera } = mindar
-        scene.add(new THREE.AmbientLight(0xffffff, 1.6))
-        const clave = new THREE.DirectionalLight(0xffffff, 2.4)
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6))
+        const clave = new THREE.DirectionalLight(0xffffff, 0.9)
         clave.position.set(1, 2, 3)
         scene.add(clave)
-        const relleno = new THREE.DirectionalLight(0x9ec9ff, 1.2)
+        const relleno = new THREE.DirectionalLight(0x9ec9ff, 0.4)
         relleno.position.set(-2, -1, 2)
         scene.add(relleno)
 
         const { objeto, capas } = extruirDesdeSVG(datos, { ...config, color: escudo.color })
         objeto.scale.multiplyScalar(ESCALA * (config.escala / 100))
 
-        const explosion = crearExplosion(capas, config.separacion)
+        const explosion = crearExplosion(capas)
 
         // Una ancla por cada variante del escudo dentro del .mind
         const giros = []
