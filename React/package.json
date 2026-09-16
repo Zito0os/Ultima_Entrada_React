@@ -11,11 +11,12 @@
     "marcadores": "node scripts/revisar-marcadores.mjs"
   },
   "dependencies": {
+    "firebase": "^12.19.0",
     "mind-ar": "^1.2.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2",
-    "three": "0.151.3"
+    "three": "^0.151.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

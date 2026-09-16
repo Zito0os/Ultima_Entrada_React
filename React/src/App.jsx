@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { collection, getDocs } from 'firebase/firestore'
 
 import './App.css'
 import './pantallas.css'
@@ -31,6 +32,7 @@ import Tarjetas from './Tarjetas'
 import Trivia from './Trivia'
 import Resultado from './Resultado'
 import Videos from './Videos'
+import { db } from './firebase'
 
 // three.js solo se descarga al entrar a la prueba 3D
 const PruebaEscudo = lazy(() => import('./PruebaEscudo'))
@@ -60,6 +62,8 @@ function HomePage() {
   const [activeTab, setActiveTab] = useState('inicio')
   const [isChallengeOpen, setIsChallengeOpen] = useState(false)
   const [areRulesOpen, setAreRulesOpen] = useState(false)
+  const [datosFirebase, setDatosFirebase] = useState([])
+  const [errorFirebase, setErrorFirebase] = useState('')
 
   const contentCards = [
     { id: 'trivia', title: 'TRIVIA', subtitle: 'Pon a prueba tus conocimientos', icon: '?', tone: 'green', path: '/trivia' },
@@ -67,6 +71,20 @@ function HomePage() {
     { id: 'videos', title: 'VIDEOS', subtitle: 'Las mejores jugadas de la historia', icon: '▶', tone: 'red', path: '/mejores-jugadas' },
     { id: 'finales', title: 'FINALES', subtitle: 'Batea la última entrada', icon: '◆', tone: 'green', path: '/finales' },
   ]
+
+  useEffect(() => {
+    const obtenerDatosFirebase = async () => {
+      try {
+        const resultado = await getDocs(collection(db, 'Prueba'))
+        setDatosFirebase(resultado.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
+      } catch (error) {
+        console.error(error)
+        setErrorFirebase(error.message)
+      }
+    }
+
+    obtenerDatosFirebase()
+  }, [])
 
   return (
     <main className="app-shell">
@@ -82,6 +100,18 @@ function HomePage() {
             <button className="button button-primary" type="button" onClick={() => setIsChallengeOpen(true)}>JUGAR</button>
             <button className="button button-secondary" type="button" onClick={() => setAreRulesOpen(true)}>REGLAS</button>
           </div>
+
+          <section aria-labelledby="firebase-title">
+            <h3 id="firebase-title">PRUEBA DE FIREBASE</h3>
+            {errorFirebase ? <p>Error al conectar: {errorFirebase}</p> : null}
+            {datosFirebase.map((dato) => (
+              <article key={dato.id}>
+                <h4>{dato.mensaje}</h4>
+                
+              </article>
+            ))}
+          </section>
+
         </section>
       </header>
 
@@ -93,6 +123,7 @@ function HomePage() {
           </button>
         ))}
       </section>
+
 
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
