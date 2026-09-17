@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import BottomNav from './Navigation'
+import Icono from './Icono'
 import PageHeader from './PageHeader'
 import { historyEvents } from './historyData'
 import { clipsDe, rutaMiniatura } from './videosData'
@@ -80,7 +81,7 @@ export default function HistoriaDetalle() {
                 onClick={() => navigate(`/videos/${clip.id}`)}
                 aria-label={`Reproducir ${clip.titulo}`}
               >
-                <span aria-hidden="true">▶</span>
+                <span><Icono nombre="reproducir" size={15} /></span>
                 <small>{clip.titulo}</small>
               </button>
             ))}

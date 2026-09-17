@@ -2,18 +2,21 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import BottomNav from './Navigation'
+import Icono from './Icono'
 import PageHeader from './PageHeader'
 import { buscarFiltro, filtros } from './filtrosData'
 import { crearMotorGL } from './filtrosGL'
-import { buscarClip, clipsDeEpoca, jugadas, rutaVideo } from './videosData'
+import { buscarClip, clipsDeEpoca, jugadas, rutaMiniatura, rutaVideo } from './videosData'
 
 export default function Videos() {
   const { eventId, playId } = useParams()
   const navigate = useNavigate()
   const video = useRef(null)
   const lienzo = useRef(null)
+  const marco = useRef(null)
   const motor = useRef(null)
   const grabadora = useRef(null)
+  const ocultar = useRef(null)
 
   const clipId = playId || eventId
   const clip = buscarClip(clipId) || jugadas[0]
@@ -31,6 +34,8 @@ export default function Videos() {
   const [sinGL, setSinGL] = useState(false)
   const [listaAbierta, setListaAbierta] = useState(false)
   const [silencio, setSilencio] = useState(false)
+  const [controles, setControles] = useState(true)
+  const [pantallaCompleta, setPantallaCompleta] = useState(false)
 
   const filtro = buscarFiltro(filtroId)
   const valor = parametros[filtro.id]
@@ -70,17 +75,74 @@ export default function Videos() {
     return () => { vivo = false }
   }, [filtroId, intensidad, valor])
 
+  // Los controles se van solos mientras corre el video y vuelven al tocar
+  const despertarControles = () => {
+    setControles(true)
+    clearTimeout(ocultar.current)
+    if (video.current && !video.current.paused) {
+      ocultar.current = setTimeout(() => setControles(false), 2000)
+    }
+  }
+
+  useEffect(() => () => clearTimeout(ocultar.current), [])
+
+  // Al salir con Esc el navegador no avisa por otro lado que este evento
+  useEffect(() => {
+    const alCambiar = () => {
+      if (!document.fullscreenElement) {
+        setPantallaCompleta(false)
+      }
+    }
+    document.addEventListener('fullscreenchange', alCambiar)
+    return () => document.removeEventListener('fullscreenchange', alCambiar)
+  }, [])
+
+  // Con la pantalla simulada no hay Esc del navegador, hay que escucharlo aqui
+  useEffect(() => {
+    if (!pantallaCompleta) {
+      return undefined
+    }
+    const alTeclear = (evento) => {
+      if (evento.key === 'Escape') {
+        setPantallaCompleta(false)
+      }
+    }
+    document.addEventListener('keydown', alTeclear)
+    return () => document.removeEventListener('keydown', alTeclear)
+  }, [pantallaCompleta])
+
   const alternar = () => {
     const nodo = video.current
     if (!nodo) {
       return
     }
     if (nodo.paused) {
-      nodo.play().then(() => setReproduciendo(true)).catch((fallo) => setError(fallo.message))
+      nodo.play().then(() => {
+        setReproduciendo(true)
+        clearTimeout(ocultar.current)
+        ocultar.current = setTimeout(() => setControles(false), 1200)
+      }).catch((fallo) => setError(fallo.message))
     } else {
       nodo.pause()
       setReproduciendo(false)
+      clearTimeout(ocultar.current)
+      setControles(true)
     }
+  }
+
+  // La clase manda: en iPhone requestFullscreen solo acepta el <video>, y aqui
+  // el que se ve es el lienzo con el filtro. Se pide la nativa por si la hay y
+  // si no, el marco se estira con CSS y se ve igual.
+  const alternarPantalla = () => {
+    if (pantallaCompleta) {
+      setPantallaCompleta(false)
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {})
+      }
+      return
+    }
+    setPantallaCompleta(true)
+    marco.current?.requestFullscreen?.().catch(() => {})
   }
 
   const importar = (evento) => {
@@ -129,7 +191,11 @@ export default function Videos() {
       <PageHeader title="VIDEOS" backTo={eventId ? `/historia/${eventId}` : '/mejores-jugadas'} />
 
       <section className="videos-content" aria-label="Reproductor con filtros">
-        <div className="video-marco">
+        <div
+          className={`video-marco${controles ? '' : ' es-limpio'}${pantallaCompleta ? ' es-completa' : ''}`}
+          ref={marco}
+          onPointerMove={despertarControles}
+        >
           <canvas className="video-lienzo" ref={lienzo} aria-label={`${nombreFuente} con filtro ${filtro.nombre}`} />
           <video
             className="video-oculto"
@@ -144,16 +210,27 @@ export default function Videos() {
             onPause={() => setReproduciendo(false)}
           />
           <button className="video-play" type="button" onClick={alternar} aria-label={reproduciendo ? 'Pausar' : 'Reproducir'}>
-            <span aria-hidden="true">{reproduciendo ? '❚❚' : '▶'}</span>
+            <span><Icono nombre={reproduciendo ? 'pausa' : 'reproducir'} size={32} /></span>
           </button>
-          <button
-            className={silencio ? 'video-audio es-silencio' : 'video-audio'}
-            type="button"
-            onClick={() => setSilencio((antes) => !antes)}
-            aria-label={silencio ? 'Activar el audio' : 'Silenciar'}
-          >
-            <span aria-hidden="true">{silencio ? '🔇' : '🔊'}</span>
-          </button>
+
+          <div className="video-controles">
+            <button
+              className={silencio ? 'video-boton es-apagado' : 'video-boton'}
+              type="button"
+              onClick={() => setSilencio((antes) => !antes)}
+              aria-label={silencio ? 'Activar el audio' : 'Silenciar'}
+            >
+              <Icono nombre={silencio ? 'bocinaMuda' : 'bocina'} size={21} />
+            </button>
+            <button
+              className="video-boton"
+              type="button"
+              onClick={alternarPantalla}
+              aria-label={pantallaCompleta ? 'Salir de pantalla completa' : 'Ver en pantalla completa'}
+            >
+              <Icono nombre={pantallaCompleta ? 'salirPantallaCompleta' : 'pantallaCompleta'} size={19} />
+            </button>
+          </div>
         </div>
 
         <p className="video-nombre">{nombreFuente}</p>
@@ -177,7 +254,7 @@ export default function Videos() {
             onClick={() => setListaAbierta((abierta) => !abierta)}
           >
             <strong>{filtro.nombre}</strong>
-            <span aria-hidden="true">{listaAbierta ? '▲' : '▼'}</span>
+            <Icono nombre="chevron" size={16} />
           </button>
 
           {listaAbierta && (
@@ -221,9 +298,10 @@ export default function Videos() {
               className="related-video"
               type="button"
               key={item.id}
+              style={{ backgroundImage: `url(${rutaMiniatura(item.id)})` }}
               onClick={() => { setError(''); navigate(playId ? `/mejores-jugadas/${item.id}` : `/videos/${item.id}`) }}
             >
-              <span className="related-play" aria-hidden="true">▶</span>
+              <span className="related-play"><Icono nombre="reproducir" size={16} /></span>
               <small>{item.titulo}</small>
             </button>
           ))}

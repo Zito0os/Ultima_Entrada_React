@@ -51,7 +51,7 @@ export default function Finales() {
               <span className={ganada ? 'final-marca es-ganada' : 'final-marca'}>
                 {abierta
                   ? <Icono nombre="trofeo" />
-                  : <span className="final-candado">{faltan} 🔒</span>}
+                  : <span className="final-candado">{faltan} <Icono nombre="candado" size={13} /></span>}
               </span>
             </button>
           )
