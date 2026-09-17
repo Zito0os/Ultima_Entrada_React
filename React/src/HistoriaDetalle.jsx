@@ -4,6 +4,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import BottomNav from './Navigation'
 import PageHeader from './PageHeader'
 import { historyEvents } from './historyData'
+import { clipsDe } from './videosData'
 
 export default function HistoriaDetalle() {
   const { eventId } = useParams()
@@ -70,12 +71,15 @@ export default function HistoriaDetalle() {
         <section className="era-videos" aria-labelledby="era-videos-title">
           <h2 id="era-videos-title">VIDEOS DE LA ÉPOCA</h2>
           <div className="era-video-list">
-            {Array.from({ length: Math.max(event.videos, 3) }, (_, index) => (
-              <button className={`era-video era-video-${index + 1}`} type="button" key={index} onClick={() => navigate(`/videos/${event.id}`)} aria-label={`Reproducir video ${index + 1}`}>
+            {clipsDe(event.id).map((clip, index) => (
+              <button className={`era-video era-video-${index + 1}`} type="button" key={clip.id} onClick={() => navigate(`/videos/${clip.id}`)} aria-label={`Reproducir ${clip.titulo}`}>
                 <span aria-hidden="true">▶</span>
               </button>
             ))}
           </div>
+          <button className="era-jugadas" type="button" onClick={() => navigate('/mejores-jugadas')}>
+            MEJORES JUGADAS DE LA ÉPOCA
+          </button>
         </section>
       </section>
 

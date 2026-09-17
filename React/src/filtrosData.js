@@ -29,7 +29,8 @@ export const filtros = [
   {
     id: 'color',
     nombre: 'AJUSTE DE COLOR',
-    parametro: { etiqueta: 'SATURACIÓN', min: 0, max: 200, unidad: '%', valor: 140 },
+    // El minimo no baja de 20: en cero seria escala de grises, que la rubrica prohibe
+    parametro: { etiqueta: 'SATURACIÓN', min: 20, max: 200, unidad: '%', valor: 140 },
     css: (intensidad, saturacion) => `saturate(${100 + ((saturacion - 100) * intensidad) / 100}%)`,
   },
   {

@@ -1,58 +1,205 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import BottomNav from './Navigation'
 import PageHeader from './PageHeader'
-
-const videoFilters = ['PIXELADO', 'ORIGINAL', 'DESENFOQUE', 'AJUSTE DE COLOR', 'SUAVIZADO', 'PASTEL']
-
-const relatedVideos = [
-  { id: 'reaccion', title: 'Reacción del juego', tone: 'blue' },
-  { id: 'jugadas', title: 'Mejores jugadas', tone: 'violet' },
-  { id: 'historia', title: 'Historia del béisbol', tone: 'green' },
-]
+import { buscarFiltro, filtros } from './filtrosData'
+import { crearMotorGL } from './filtrosGL'
+import { buscarClip, clipsDeEpoca, jugadas, rutaVideo } from './videosData'
 
 export default function Videos() {
-  const { eventId } = useParams()
+  const { eventId, playId } = useParams()
   const navigate = useNavigate()
-  const [activeFilter, setActiveFilter] = useState('PIXELADO')
-  const [intensity, setIntensity] = useState(60)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const video = useRef(null)
+  const lienzo = useRef(null)
+  const motor = useRef(null)
+  const grabadora = useRef(null)
+
+  const clipId = playId || eventId
+  const clip = buscarClip(clipId) || jugadas[0]
+
+  // Lo importado vale solo para el clip en que se cargo: al cambiar de clip se
+  // vuelve solo al archivo del catalogo, sin sincronizar nada en un efecto
+  const [importado, setImportado] = useState(null)
+  const [filtroId, setFiltroId] = useState('pixelado')
+  const [intensidad, setIntensidad] = useState(60)
+  const [parametros, setParametros] = useState(() => Object.fromEntries(filtros.map((f) => [f.id, f.parametro?.valor ?? 0])))
+  const [reproduciendo, setReproduciendo] = useState(false)
+  const [grabando, setGrabando] = useState(false)
+  const [aviso, setAviso] = useState('')
+  const [error, setError] = useState('')
+  const [sinGL, setSinGL] = useState(false)
+
+  const filtro = buscarFiltro(filtroId)
+  const valor = parametros[filtro.id]
+  const usaImportado = importado?.paraClip === clip.id
+  const fuente = usaImportado ? importado.url : rutaVideo(clip.id)
+  const nombreFuente = usaImportado ? importado.nombre : clip.titulo
+
+  // El motor vive mientras viva la pantalla: recompilar los siete programas en
+  // cada cambio de filtro tiraria cuadros
+  useEffect(() => {
+    const gl = crearMotorGL(lienzo.current)
+    if (!gl) {
+      setSinGL(true)
+      return undefined
+    }
+    motor.current = gl
+    return () => {
+      gl.destruir()
+      motor.current = null
+    }
+  }, [])
+
+  // Un solo lazo que pinta cada cuadro con el filtro activo
+  useEffect(() => {
+    let vivo = true
+    const pintar = () => {
+      if (!vivo) {
+        return
+      }
+      const nodo = video.current
+      if (nodo && motor.current && nodo.readyState >= 2) {
+        motor.current.dibujar(nodo, filtroId, intensidad, valor)
+      }
+      requestAnimationFrame(pintar)
+    }
+    pintar()
+    return () => { vivo = false }
+  }, [filtroId, intensidad, valor])
+
+  const alternar = () => {
+    const nodo = video.current
+    if (!nodo) {
+      return
+    }
+    if (nodo.paused) {
+      nodo.play().then(() => setReproduciendo(true)).catch((fallo) => setError(fallo.message))
+    } else {
+      nodo.pause()
+      setReproduciendo(false)
+    }
+  }
+
+  const importar = (evento) => {
+    const archivo = evento.target.files?.[0]
+    if (!archivo) {
+      return
+    }
+    if (importado) {
+      URL.revokeObjectURL(importado.url)
+    }
+    setImportado({ url: URL.createObjectURL(archivo), nombre: archivo.name, paraClip: clip.id })
+    setError('')
+  }
+
+  const cambiarParametro = (nuevo) => setParametros((actuales) => ({ ...actuales, [filtro.id]: Number(nuevo) }))
+
+  // Se graba el lienzo, no el video: asi el archivo sale con el filtro encima
+  const guardarClip = () => {
+    if (grabando) {
+      grabadora.current?.stop()
+      return
+    }
+    const flujo = lienzo.current.captureStream(30)
+    const trozos = []
+    const rec = new MediaRecorder(flujo, { mimeType: 'video/webm' })
+    rec.ondataavailable = (evento) => trozos.push(evento.data)
+    rec.onstop = () => {
+      const enlace = document.createElement('a')
+      enlace.href = URL.createObjectURL(new Blob(trozos, { type: 'video/webm' }))
+      enlace.download = `ultima-entrada-${clip.id}-${filtro.id}.webm`
+      enlace.click()
+      setGrabando(false)
+      setAviso('Clip guardado con el filtro aplicado.')
+      setTimeout(() => setAviso(''), 3200)
+    }
+    grabadora.current = rec
+    rec.start()
+    setGrabando(true)
+    setAviso('Grabando. Vuelve a tocar para terminar.')
+  }
+
+  const relacionados = (playId ? jugadas : clipsDeEpoca).filter((item) => item.id !== clip.id).slice(0, 3)
 
   return (
     <main className="videos-shell">
-      <PageHeader title="VIDEOS" backTo={eventId ? `/historia/${eventId}` : '/historia'} />
+      <PageHeader title="VIDEOS" backTo={eventId ? `/historia/${eventId}` : '/mejores-jugadas'} />
 
-      <section className="videos-content" aria-label="Editor de videos">
-        <button className={`video-preview ${isPlaying ? 'is-playing' : ''}`} type="button" onClick={() => setIsPlaying((playing) => !playing)} aria-label={isPlaying ? 'Pausar video' : 'Reproducir video'}>
-          <span className="play-icon" aria-hidden="true">{isPlaying ? '❚❚' : '▶'}</span>
-        </button>
+      <section className="videos-content" aria-label="Reproductor con filtros">
+        <div className="video-marco">
+          <canvas className="video-lienzo" ref={lienzo} aria-label={`${nombreFuente} con filtro ${filtro.nombre}`} />
+          <video
+            className="video-oculto"
+            ref={video}
+            src={fuente}
+            playsInline
+            loop
+            muted
+            crossOrigin="anonymous"
+            onError={() => setError('No se encontró el clip. Importa uno desde tu teléfono.')}
+            onPlay={() => setReproduciendo(true)}
+            onPause={() => setReproduciendo(false)}
+          />
+          <button className="video-play" type="button" onClick={alternar} aria-label={reproduciendo ? 'Pausar' : 'Reproducir'}>
+            <span aria-hidden="true">{reproduciendo ? '❚❚' : '▶'}</span>
+          </button>
+        </div>
+
+        <p className="video-nombre">{nombreFuente}</p>
+        {sinGL && <p className="video-error" role="alert">Este navegador no tiene WebGL, así que los filtros no se pueden aplicar.</p>}
+        {error && <p className="video-error" role="alert">{error}</p>}
+
+        <div className="video-fuente">
+          <label className="video-importar">
+            IMPORTAR VIDEO
+            <input type="file" accept="video/*" onChange={importar} />
+          </label>
+        </div>
 
         <p className="filter-heading">FILTRO APLICADO</p>
-        <div className="video-filters" aria-label="Filtros de video">
-          {videoFilters.map((filter) => (
-            <button className={activeFilter === filter ? 'video-filter is-active' : 'video-filter'} type="button" onClick={() => setActiveFilter(filter)} key={filter}>
-              {filter}
+        <div className="video-filters" role="tablist" aria-label="Filtros de video">
+          {filtros.map((opcion) => (
+            <button
+              className={filtroId === opcion.id ? 'video-filter is-active' : 'video-filter'}
+              type="button"
+              role="tab"
+              aria-selected={filtroId === opcion.id}
+              onClick={() => setFiltroId(opcion.id)}
+              key={opcion.id}
+            >
+              {opcion.nombre}
             </button>
           ))}
         </div>
 
         <div className="intensity-panel">
-          <div className="intensity-label"><strong>INTENSIDAD</strong><span>{intensity}%</span></div>
-          <input type="range" min="0" max="100" value={intensity} onChange={(event) => setIntensity(event.target.value)} aria-label="Intensidad del filtro" />
-          <small>TAMAÑO DEL BLOQUE 4PX</small>
+          <div className="intensity-label"><strong>INTENSIDAD</strong><span>{intensidad}%</span></div>
+          <input type="range" min="0" max="100" value={intensidad} onChange={(e) => setIntensidad(Number(e.target.value))} aria-label="Intensidad del filtro" disabled={filtro.id === 'original'} />
+          {filtro.parametro && (
+            <>
+              <div className="intensity-label"><strong>{filtro.parametro.etiqueta}</strong><span>{valor}{filtro.parametro.unidad}</span></div>
+              <input type="range" min={filtro.parametro.min} max={filtro.parametro.max} value={valor} onChange={(e) => cambiarParametro(e.target.value)} aria-label={filtro.parametro.etiqueta} />
+            </>
+          )}
         </div>
 
-        <button className="save-clip-button" type="button" onClick={() => setSaved((isSaved) => !isSaved)}>
-          {saved ? 'CLIP GUARDADO' : 'GUARDAR CLIP'}
+        <button className={grabando ? 'save-clip-button is-grabando' : 'save-clip-button'} type="button" onClick={guardarClip}>
+          {grabando ? 'TERMINAR Y GUARDAR' : 'GUARDAR CLIP'}
         </button>
+        {aviso && <p className="video-aviso" role="status">{aviso}</p>}
 
-        <p className="more-videos-heading">MAS VIDEOS</p>
+        <p className="more-videos-heading">MÁS VIDEOS</p>
         <section className="related-videos" aria-label="Más videos">
-          {relatedVideos.map((video) => (
-            <button className={`related-video related-${video.tone}`} type="button" key={video.id} onClick={() => navigate(eventId ? `/videos/${eventId}` : '/videos')} aria-label={video.title}>
+          {relacionados.map((item) => (
+            <button
+              className="related-video"
+              type="button"
+              key={item.id}
+              onClick={() => { setError(''); navigate(playId ? `/mejores-jugadas/${item.id}` : `/videos/${item.id}`) }}
+            >
               <span className="related-play" aria-hidden="true">▶</span>
+              <small>{item.titulo}</small>
             </button>
           ))}
         </section>

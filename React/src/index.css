@@ -18,6 +18,12 @@
   /* Derivados */
   --azul-claro: #75AEF5;
   --gris-bloque: #DEDEDE;
+  /* Tinta que no cambia: va sobre amarillo o sobre placas blancas */
+  --tinta-fija: #0F1A2B;
+  /* El azul de marca cuando se usa como TEXTO sobre la superficie */
+  --azul-texto: #195CA6;
+  --bloqueado: #a8a8a8;
+  --bloqueado-marca: #4a4a4a;
   --texto-tenue: #A9D1FB;
 
   --fuente-titulo: 'Clash Display', 'Arial Black', sans-serif;
@@ -34,6 +40,21 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
+
+/* Modo oscuro: se redefinen los tonos claros y la tinta. El azul de marca, el
+   acento y los colores de las tarjetas no cambian, para no perder la identidad. */
+:root[data-tema="oscuro"] {
+  --fondo: #12233D;
+  --superficie: #0A1B33;
+  --tinta: #E8F0FA;
+  --gris-bloque: #24384F;
+  --azul-profundo: #10406F;
+  --azul-texto: #75AEF5;
+  --bloqueado: #2C4260;
+  --bloqueado-marca: #7C93AD;
+}
+
+/* Las placas de los escudos siguen blancas: muchos logos son azul marino */
 
 body {
   margin: 0;

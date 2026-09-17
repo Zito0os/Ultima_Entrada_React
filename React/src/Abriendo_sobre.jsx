@@ -5,6 +5,7 @@ import BottomNav from './Navigation'
 import PageHeader from './PageHeader'
 import { cartaAlAzar } from './cartasData'
 import { packs } from './packsData'
+import { sonar } from './sonidos'
 import { rutaEscudo } from './escudosData'
 import { useJugador } from './almacen/useJugador'
 
@@ -73,7 +74,7 @@ export default function AbriendoSobre() {
         </div>
 
         {indice + 1 < sacadas.length ? (
-          <button className="next-card-button" type="button" onClick={() => setIndice((actual) => actual + 1)}>
+          <button className="next-card-button" type="button" onClick={() => { sonar('carta'); setIndice((actual) => actual + 1) }}>
             SIGUIENTE CARTA
           </button>
         ) : (

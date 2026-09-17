@@ -1,0 +1,130 @@
+/* Animaciones y transiciones de toda la app. El bloque de prefers-reduced-motion
+   de index.css las apaga todas, asi que aqui no hay que repetirlo. */
+
+:root {
+  --rapido: .18s;
+  --medio: .28s;
+  --lento: .45s;
+  /* Arranca rapido y frena suave: es lo que hace que se sienta de app y no de web */
+  --curva: cubic-bezier(.22, .7, .3, 1);
+}
+
+@keyframes entrar-pantalla {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes entrar-elemento {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes entrar-modal {
+  from { opacity: 0; transform: translateY(14px) scale(.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes aparecer {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulso-premio {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+
+@keyframes latido {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .35; }
+}
+
+@keyframes temblor {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+@keyframes brinco {
+  from { opacity: 0; transform: scale(.7); }
+  60% { transform: scale(1.08); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Las entradas ocultan con fill-mode: both. Si el navegador no anima (o el
+   usuario pidio menos movimiento) no se aplican y el contenido se ve de una. */
+@media (prefers-reduced-motion: no-preference) {
+  /* Cada pantalla entra con un fundido, SIN transform: adentro viven la cabecera
+     y la barra inferior en position:fixed, y un ancestro con transform les cambia
+     el bloque contenedor y dejan de quedarse pegadas. */
+  .app-shell, .acceso-shell, .album-shell, .ar-mode-shell, .ar-scan-shell, .ar-shell,
+  .batting-shell, .editor-shell, .final-detail-shell, .finals-shell, .gallery-shell,
+  .history-detail-shell, .history-shell, .opening-pack-shell, .packs-shell, .plays-shell,
+  .profile-shell, .prueba-shell, .result-shell, .result-shell-final, .team-detail-shell,
+  .teams-shell, .trivia-shell, .videos-shell {
+    animation: entrar-pantalla var(--medio) var(--curva) both;
+  }
+
+  /* Las listas entran escalonadas. El retraso se reparte con nth-child para no
+     tener que pasar el indice desde el JSX. */
+  .teams-list > *, .trophy-grid > *, .album-grid > *, .plays-list > *, .packs-list > *,
+  .history-timeline > *, .escudo-lista > *, .figuras-list > *, .milestones-list > *,
+  .photo-grid > *, .content-grid > *, .related-videos > *, .era-video-list > * {
+    animation: entrar-elemento var(--medio) var(--curva) both;
+  }
+  .teams-list > *:nth-child(1), .trophy-grid > *:nth-child(1), .album-grid > *:nth-child(1), .plays-list > *:nth-child(1), .packs-list > *:nth-child(1), .history-timeline > *:nth-child(1), .escudo-lista > *:nth-child(1), .figuras-list > *:nth-child(1), .milestones-list > *:nth-child(1), .photo-grid > *:nth-child(1), .content-grid > *:nth-child(1), .related-videos > *:nth-child(1), .era-video-list > *:nth-child(1) { animation-delay: .02s; }
+  .teams-list > *:nth-child(2), .trophy-grid > *:nth-child(2), .album-grid > *:nth-child(2), .plays-list > *:nth-child(2), .packs-list > *:nth-child(2), .history-timeline > *:nth-child(2), .escudo-lista > *:nth-child(2), .figuras-list > *:nth-child(2), .milestones-list > *:nth-child(2), .photo-grid > *:nth-child(2), .content-grid > *:nth-child(2), .related-videos > *:nth-child(2), .era-video-list > *:nth-child(2) { animation-delay: .06s; }
+  .teams-list > *:nth-child(3), .trophy-grid > *:nth-child(3), .album-grid > *:nth-child(3), .plays-list > *:nth-child(3), .packs-list > *:nth-child(3), .history-timeline > *:nth-child(3), .escudo-lista > *:nth-child(3), .figuras-list > *:nth-child(3), .milestones-list > *:nth-child(3), .photo-grid > *:nth-child(3), .content-grid > *:nth-child(3), .related-videos > *:nth-child(3), .era-video-list > *:nth-child(3) { animation-delay: .1s; }
+  .teams-list > *:nth-child(4), .trophy-grid > *:nth-child(4), .album-grid > *:nth-child(4), .plays-list > *:nth-child(4), .packs-list > *:nth-child(4), .history-timeline > *:nth-child(4), .escudo-lista > *:nth-child(4), .figuras-list > *:nth-child(4), .milestones-list > *:nth-child(4), .photo-grid > *:nth-child(4), .content-grid > *:nth-child(4) { animation-delay: .14s; }
+  .teams-list > *:nth-child(5), .trophy-grid > *:nth-child(5), .album-grid > *:nth-child(5), .plays-list > *:nth-child(5), .history-timeline > *:nth-child(5), .escudo-lista > *:nth-child(5), .milestones-list > *:nth-child(5), .photo-grid > *:nth-child(5), .content-grid > *:nth-child(5) { animation-delay: .18s; }
+  .teams-list > *:nth-child(n+6), .trophy-grid > *:nth-child(n+6), .album-grid > *:nth-child(n+6), .plays-list > *:nth-child(n+6), .history-timeline > *:nth-child(n+6), .escudo-lista > *:nth-child(n+6), .milestones-list > *:nth-child(n+6), .photo-grid > *:nth-child(n+6) { animation-delay: .22s; }
+
+  /* Modales: el fondo se funde y el panel sube */
+  .modal-backdrop { animation: aparecer var(--rapido) ease both; }
+  .modal-backdrop > * { animation: entrar-modal var(--medio) var(--curva) both; }
+
+  /* El saldo pulsa cuando cambia: la propuesta pide que la recompensa se vea
+     donde se produjo. Se redibuja con key, asi que la animacion se repite sola. */
+  .coins.es-nuevo, .trophies.es-nuevo { animation: pulso-premio var(--lento) var(--curva); }
+
+}
+
+/* Trivia: la correcta respira, la fallada tiembla */
+.answer-button.is-correcta { animation: pulso-premio var(--lento) var(--curva); }
+.answer-button.is-fallada { animation: temblor var(--medio) ease; }
+
+/* Minijuego: el resultado de la jugada entra de golpe */
+.batting-jugada { animation: brinco var(--medio) var(--curva); }
+
+/* La nota del hito se abre en alto, sin saltar */
+
+/* Escaner: las escuadras laten mientras busca */
+.ar-ver-marco span, .scan-corner { animation: latido 1.6s ease-in-out infinite; }
+.ar-ver-estado.is-anclado { animation: pulso-premio var(--lento) var(--curva); }
+
+/* Transiciones de estado en todo lo que cambia de color */
+.video-filter, .plays-filter, .profile-filter, .album-filter, .gallery-filter,
+.region-filter, .prueba-seccion, .ajuste-opcion, .capa-tono, .capa-chip, .mode-chip {
+  transition: background var(--rapido) ease, color var(--rapido) ease, border-color var(--rapido) ease;
+}
+
+/* Las tarjetas se hunden un poco al tocarlas */
+.team-card, .play-card, .pack-card, .album-card, .trophy-card, .history-event, .final-row {
+  transition: transform var(--rapido) var(--curva), box-shadow var(--rapido) ease;
+}
+.team-card:active, .play-card:active, .pack-card:active, .album-card:active, .history-event:active {
+  transform: scale(.98);
+}
+
+/* El lienzo del reproductor aparece cuando ya hay imagen */
+.video-lienzo { transition: opacity var(--medio) ease; }
+
+/* Estas tambien ocultan mientras animan, asi que van protegidas igual */
+@media (prefers-reduced-motion: no-preference) {
+  .correct-answer { animation: entrar-elemento var(--medio) var(--curva) both; }
+  .batting-fin { animation: entrar-modal var(--medio) var(--curva) both; }
+  .milestone-nota { animation: entrar-elemento var(--rapido) var(--curva) both; }
+}
