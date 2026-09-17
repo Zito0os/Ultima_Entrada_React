@@ -27,6 +27,7 @@
 .brand-row h1 { color: #fff; font-size: clamp(2.5rem, 6vw, 4.4rem); margin: 0; font-weight: 900; letter-spacing: -.25px; }
 .stats { display: flex; gap: clamp(14px, 3vw, 28px); align-items: center; font-size: clamp(1rem, 2vw, 1.35rem); font-weight: 800; }
 .coin-icon { display: inline-grid; place-items: center; width: 30px; height: 30px; margin-right: 5px; border-radius: 50%; color: #f8b900; background: var(--acento); box-shadow: inset 0 0 0 3px #eeb92a; }
+.coin-icon svg { width: 58%; height: 58%; }
 .trophy-icon { color: #fff; font-size: 1.8em; vertical-align: middle; margin-right: 5px; }
 .daily-challenge { max-width: 1080px; margin: 0 auto; padding: 23px clamp(20px, 4vw, 40px) 15px; border-radius: 25px; background: #20599c; box-sizing: border-box; }
 .eyebrow { margin: 0; color: var(--acento); font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 900; text-align: center; letter-spacing: 1px; }
@@ -117,7 +118,7 @@
 .intensity-panel small { color: var(--acento); font-family: var(--fuente-mono); font-size: .46rem; font-weight: 900; }
 .save-clip-button { width: 100%; min-height: 34px; margin-top: 7px; border: 0; border-radius: 6px; color: #fff; background: var(--azul-profundo); font: inherit; font-size: 1.15rem; font-weight: 900; letter-spacing: .03em; cursor: pointer; }
 .related-videos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.related-video { display: grid; height: 82px; place-items: center; border: 0; border-radius: 15px; cursor: pointer; }
+.related-video { display: grid; height: 82px; place-items: center; overflow: hidden; border: 0; border-radius: 15px; background-position: center; background-size: cover; cursor: pointer; }
 .related-blue { background: #4d7ff0; }.related-violet { background: #c75add; }.related-green { background: var(--confirmacion); }
 .related-play { color: rgba(0, 0, 0, .38); font-size: 1.4rem; }
 .videos-shell > .bottom-nav { position: fixed; }
@@ -298,8 +299,8 @@
 .plays-list { display: grid; gap: 11px; }
 .play-card { display: flex; min-height: 68px; align-items: center; gap: 9px; padding: 8px 7px; border: 0; border-radius: 7px; color: #fff; background: var(--azul-profundo); font: inherit; text-align: left; cursor: pointer; }
 .play-card:hover { filter: brightness(1.08); }
-.play-thumbnail { display: grid; flex: 0 0 82px; width: 82px; height: 50px; place-items: center; border-radius: 6px; background: var(--azul); }
-.play-thumbnail span { display: grid; width: 24px; height: 24px; place-items: center; padding-left: 2px; border-radius: 50%; color: #fff; background: #000; font-size: .7rem; }
+.play-thumbnail { display: grid; flex: 0 0 82px; width: 82px; height: 50px; place-items: center; overflow: hidden; border-radius: 6px; background-color: var(--azul); background-position: center; background-size: cover; }
+.play-thumbnail span { display: grid; width: 26px; height: 26px; place-items: center; padding-left: 2px; border-radius: 50%; color: #fff; background: rgba(0, 0, 0, .6); }
 .play-copy { min-width: 0; display: flex; flex-direction: column; }
 .play-meta { color: var(--acento); font-family: var(--fuente-mono); font-size: .61rem; font-weight: 900; }
 .play-copy strong { margin-top: 2px; overflow: hidden; font-family: var(--fuente-mono); font-size: .76rem; text-overflow: ellipsis; white-space: nowrap; }

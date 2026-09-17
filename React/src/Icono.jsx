@@ -52,6 +52,78 @@ const trazos = {
     viewBox: '0 0 24 24',
     contenido: <path d="M12 21L10 20M12 21L14 20M12 21V18.5M6 18L4 17V14.5M4 9.5V7M4 7L6 6M4 7L6 8M10 4L12 3L14 4M18 6L20 7M20 7L18 8M20 7V9.5M12 11L10 10M12 11L14 10M12 11V13.5M18 18L20 17V14.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />,
   },
+  obturador: {
+    viewBox: '0 0 24 24',
+    contenido: (
+      <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="3" />
+        <rect x="7.5" y="7.5" width="9" height="9" rx="1.5" />
+      </g>
+    ),
+  },
+  punto: {
+    viewBox: '0 0 24 24',
+    contenido: <circle cx="12" cy="12" r="7" fill="currentColor" />,
+  },
+  girar: {
+    viewBox: '0 0 24 24',
+    contenido: <path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v4h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />,
+  },
+  moneda: {
+    viewBox: '0 0 24 24',
+    contenido: <path d="M12 2.2 14.3 8a1 1 0 0 0 .6.6l5.9 2.3-5.9 2.3a1 1 0 0 0-.6.6L12 19.7 9.7 13.8a1 1 0 0 0-.6-.6L3.2 10.9l5.9-2.3a1 1 0 0 0 .6-.6L12 2.2Z" fill="currentColor" />,
+  },
+  rombo: {
+    viewBox: '0 0 24 24',
+    contenido: <path d="M12 2.6 21.4 12 12 21.4 2.6 12 12 2.6Z" fill="currentColor" />,
+  },
+  candado: {
+    viewBox: '0 0 16 16',
+    contenido: <path fillRule="evenodd" clipRule="evenodd" d="M4 6V4C4 1.79086 5.79086 0 8 0C10.2091 0 12 1.79086 12 4V6H14V16H2V6H4ZM6 4C6 2.89543 6.89543 2 8 2C9.10457 2 10 2.89543 10 4V6H6V4ZM7 13V9H9V13H7Z" fill="currentColor" />,
+  },
+  bocina: {
+    viewBox: '0 0 24 24',
+    contenido: (
+      <>
+        <path opacity="0.15" d="M13 3L7 8H5C3.89543 8 3 8.89543 3 10V14C3 15.1046 3.89543 16 5 16H7L13 21V3Z" fill="currentColor" />
+        <path d="M16 8.99998C16.5 9.49999 17 10.5 17 12C17 13.5 16.5 14.5 16 15M19 6C20.5 7.5 21 10 21 12C21 14 20.5 16.5 19 18M13 3L7 8H5C3.89543 8 3 8.89543 3 10V14C3 15.1046 3.89543 16 5 16H7L13 21V3Z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </>
+    ),
+  },
+  bocinaMuda: {
+    viewBox: '0 0 24 24',
+    contenido: (
+      <>
+        <path opacity="0.15" d="M13 3L7 8H5C3.89543 8 3 8.89543 3 10V14C3 15.1046 3.89543 16 5 16H7L13 21V3Z" fill="currentColor" />
+        <path d="M16 9L22 15M22 9L16 15M13 3L7 8H5C3.89543 8 3 8.89543 3 10V14C3 15.1046 3.89543 16 5 16H7L13 21V3Z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </>
+    ),
+  },
+  reproducir: {
+    viewBox: '0 0 24 24',
+    contenido: <path d="M8 5.5v13l11-6.5L8 5.5Z" fill="currentColor" />,
+  },
+  pausa: {
+    viewBox: '0 0 24 24',
+    contenido: (
+      <g fill="currentColor">
+        <rect x="7" y="5" width="3.6" height="14" rx="1" />
+        <rect x="13.4" y="5" width="3.6" height="14" rx="1" />
+      </g>
+    ),
+  },
+  pantallaCompleta: {
+    viewBox: '0 0 24 24',
+    contenido: <path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />,
+  },
+  salirPantallaCompleta: {
+    viewBox: '0 0 24 24',
+    contenido: <path d="M9 4v4a1 1 0 0 1-1 1H4M20 9h-4a1 1 0 0 1-1-1V4M15 20v-4a1 1 0 0 1 1-1h4M4 15h4a1 1 0 0 1 1 1v4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />,
+  },
+  chevron: {
+    viewBox: '0 0 24 24',
+    contenido: <path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />,
+  },
   flecha: {
     viewBox: '0 0 200 200',
     contenido: <path d="M100,15a85,85,0,1,0,85,85A84.93,84.93,0,0,0,100,15Zm0,150a65,65,0,1,1,65-65A64.87,64.87,0,0,1,100,165ZM116.5,57.5a9.67,9.67,0,0,0-14,0L74,86a19.92,19.92,0,0,0,0,28.5L102.5,143a9.9,9.9,0,0,0,14-14l-28-29L117,71.5C120.5,68,120.5,61.5,116.5,57.5Z" fill="currentColor" />,

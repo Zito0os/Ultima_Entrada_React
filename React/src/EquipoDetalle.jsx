@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import BottomNav from './Navigation'
+import Icono from './Icono'
 import PageHeader from './PageHeader'
 import TablaAnotacion from './TablaAnotacion'
 import TeamBadge from './TeamBadge'
@@ -90,7 +91,7 @@ export default function EquipoDetalle() {
             <div className="era-video-list">
               {[1, 2, 3].map((numero) => (
                 <button className={`era-video era-video-${numero}`} type="button" onClick={() => navigate('/videos')} aria-label={`Reproducir video ${numero} de ${team.name}`} key={numero}>
-                  <span aria-hidden="true">▶</span>
+                  <span><Icono nombre="reproducir" size={15} /></span>
                 </button>
               ))}
             </div>

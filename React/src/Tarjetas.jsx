@@ -28,7 +28,7 @@ export default function Tarjetas() {
           <div className="ar-regions" aria-label="Seleccionar tipo de tarjeta">
             {['COMÚN', 'ESPECIAL', 'HOLO'].map((region, index) => <button className={index === 0 ? 'ar-region is-active' : 'ar-region'} type="button" key={region}>{region}</button>)}
           </div>
-          <button className="camera-button" type="button" onClick={() => navigate('/ar/tarjetas/anclado')} aria-label="Tomar foto de la tarjeta"><span className="camera-icon" aria-hidden="true">▣</span></button>
+          <button className="camera-button" type="button" onClick={() => navigate('/ar/tarjetas/anclado')} aria-label="Tomar foto de la tarjeta"><span className="camera-icon"><Icono nombre="obturador" /></span></button>
         </section>
         <BottomNav activeTab="ar" onTabChange={() => {}} />
       </main>
@@ -51,10 +51,10 @@ export default function Tarjetas() {
         </button>
 
         <div className="card-tools" aria-label="Herramientas de tarjeta">
-          <button type="button" onClick={() => setCardSide('front')}>⟳</button>
+          <button type="button" onClick={() => setCardSide('front')} aria-label="Ver el frente"><Icono nombre="girar" /></button>
           <button className="herramienta-bate" type="button" aria-label="Animar el bateo"><Icono nombre="bate" /></button>
-          <button type="button">●</button>
-          <button type="button">▣</button>
+          <button type="button" aria-label="Grabar"><Icono nombre="punto" /></button>
+          <button type="button" aria-label="Capturar"><Icono nombre="obturador" /></button>
         </div>
         <button className="change-card-button" type="button" onClick={() => setCardSide('back')}>CAMBIAR TARJETA</button>
       </section>

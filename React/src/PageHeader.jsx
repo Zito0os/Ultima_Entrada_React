@@ -34,7 +34,7 @@ export default function PageHeader({ title, backTo, rightLabel }) {
           <span className="page-header-label">{rightLabel}</span>
         ) : (
           <div className="page-header-stats" aria-label="Progreso del jugador">
-            <span className={subioSaldo ? 'coins es-nuevo' : 'coins'} key={perfil.monedas}><span className="coin-icon">✦</span> {perfil.monedas}</span>
+            <span className={subioSaldo ? 'coins es-nuevo' : 'coins'} key={perfil.monedas}><span className="coin-icon"><Icono nombre="moneda" /></span> {perfil.monedas}</span>
             <span className={subioTrofeo ? 'trophies es-nuevo' : 'trophies'} key={ganados}><span className="trophy-icon"><Icono nombre="trofeo" /></span> {ganados}/{TOTAL_TROFEOS}</span>
           </div>
         )}

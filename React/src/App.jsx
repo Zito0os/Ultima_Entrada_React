@@ -70,8 +70,8 @@ function HomePage() {
   const contentCards = [
     { id: 'trivia', title: 'TRIVIA', subtitle: 'Pon a prueba tus conocimientos', icon: '?', tone: 'green', path: '/trivia' },
     { id: 'sobres', title: 'SOBRES', subtitle: 'Descubre premios sorpresa', icono: 'cartas', tone: 'violet', path: '/sobres' },
-    { id: 'videos', title: 'VIDEOS', subtitle: 'Las mejores jugadas de la historia', icon: '▶', tone: 'red', path: '/mejores-jugadas' },
-    { id: 'finales', title: 'FINALES', subtitle: 'Batea la última entrada', icon: '◆', tone: 'green', path: '/finales' },
+    { id: 'videos', title: 'VIDEOS', subtitle: 'Las mejores jugadas de la historia', icono: 'reproducir', tone: 'red', path: '/mejores-jugadas' },
+    { id: 'finales', title: 'FINALES', subtitle: 'Batea la última entrada', icono: 'rombo', tone: 'green', path: '/finales' },
   ]
 
   useEffect(() => {
