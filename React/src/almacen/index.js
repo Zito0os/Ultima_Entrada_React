@@ -1,4 +1,4 @@
-import { adaptadorLocal } from './adaptadorLocal'
+import { adaptadorFirebase } from './adaptadorFirebase'
 
 // Interfaz que tiene que cumplir cualquier almacen. Ninguna pantalla habla con
 // localStorage ni con la base directamente: todas pasan por useJugador, que a
@@ -11,6 +11,6 @@ import { adaptadorLocal } from './adaptadorLocal'
 //   mover(desdeId, haciaId)        -> Promise<boolean>
 //
 // El perfil siempre tiene la forma de PERFIL_BASE en esquema.js.
-export const almacen = adaptadorLocal
+export const almacen = adaptadorFirebase
 
 export const INVITADO = 'invitado'

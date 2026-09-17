@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
 
 import { cartaAlAzar } from './cartasData'
 import { useJugador } from './almacen/useJugador'
+import { auth } from './firebase'
 
 export default function Registro() {
   const navigate = useNavigate()
   const { acciones } = useJugador()
   const [correo, setCorreo] = useState('')
+  const [usuario, setUsuario] = useState('')
   const [contrasena, setContrasena] = useState('')
   const [confirmar, setConfirmar] = useState('')
   const [aviso, setAviso] = useState('')
@@ -15,6 +18,10 @@ export default function Registro() {
 
   const crear = (event) => {
     event.preventDefault()
+    if (!usuario.trim()) {
+      setAviso('Escribe un nombre de usuario.')
+      return
+    }
     if (!correo.includes('@')) {
       setAviso('Escribe un correo válido.')
       return
@@ -27,10 +34,21 @@ export default function Registro() {
       setAviso('Las dos contraseñas no coinciden.')
       return
     }
-    acciones.iniciarSesion(correo.split('@')[0], correo)
-    acciones.agregarCartas([cartaAlAzar(), cartaAlAzar('especial')])
-    setAviso('')
-    setCreada(true)
+    const registrar = async () => {
+      try {
+        const resultado = await createUserWithEmailAndPassword(auth, correo.trim(), contrasena)
+        await updateProfile(resultado.user, { displayName: usuario.trim() })
+        const cartasRegalo = [cartaAlAzar(), cartaAlAzar('especial')]
+        await acciones.iniciarSesion(usuario.trim(), resultado.user.email || correo.trim(), resultado.user.uid, cartasRegalo)
+        setAviso('')
+        setCreada(true)
+      } catch (error) {
+        setAviso(error.code === 'auth/email-already-in-use'
+          ? 'Ese correo ya tiene una cuenta.'
+          : 'No se pudo crear la cuenta. Intenta nuevamente.')
+      }
+    }
+    registrar()
   }
 
   if (creada) {
@@ -59,6 +77,10 @@ export default function Registro() {
         <div className="acceso-panel">
           <h2 className="acceso-titulo">REGISTRARSE</h2>
           <div className="acceso-campos">
+            <label className="acceso-campo">
+              <span className="sr-only">Nombre de usuario</span>
+              <input type="text" placeholder="NOMBRE DE USUARIO" value={usuario} onChange={(event) => setUsuario(event.target.value)} autoComplete="username" />
+            </label>
             <label className="acceso-campo">
               <span className="sr-only">Correo</span>
               <input type="email" placeholder="CORREO" value={correo} onChange={(event) => setCorreo(event.target.value)} autoComplete="email" />

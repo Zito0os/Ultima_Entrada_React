@@ -24,6 +24,14 @@ function TarjetaTrofeo({ trofeo, ganado }) {
   )
 }
 
+function inicialesDe(nombre) {
+  const partes = nombre.trim().split(/\s+/).filter(Boolean)
+  if (!partes.length) {
+    return '?'
+  }
+  return partes.slice(0, 2).map((parte) => parte[0]).join('').toUpperCase()
+}
+
 export default function Perfil() {
   const navigate = useNavigate()
   const { perfil, acciones } = useJugador()
@@ -37,15 +45,17 @@ export default function Perfil() {
       <PageHeader title="MI PERFIL" backTo="/" />
 
       <section className="profile-content" aria-label="Progreso de trofeos">
-        <button className="gallery-entry cuenta-entry" type="button" onClick={() => navigate(perfil.cuenta.invitado ? '/entrar' : '/perfil')}>
-          <strong>CUENTA</strong>
-          <span className="cuenta-valor">{perfil.cuenta.usuario || 'INICIAR SESIÓN'}</span>
-        </button>
+        <div className="profile-identity">
+          <div className="profile-avatar" aria-hidden="true">
+            <span>{inicialesDe(perfil.cuenta.usuario || 'Usuario invitado')}</span>
+          </div>
+          <strong className="profile-name">{perfil.cuenta.usuario || 'USUARIO INVITADO'}</strong>
+        </div>
 
-        {!perfil.cuenta.invitado && (
-          <button className="gallery-entry" type="button" onClick={() => acciones.cerrarSesion()}>
-            <strong>CERRAR SESIÓN</strong>
-            <span className="flecha-avance"><Icono nombre="flecha" /></span>
+        {perfil.cuenta.invitado && (
+          <button className="gallery-entry cuenta-entry" type="button" onClick={() => navigate('/entrar')}>
+            <strong>CUENTA</strong>
+            <span className="cuenta-valor">INICIAR SESIÓN</span>
           </button>
         )}
 
@@ -85,6 +95,12 @@ export default function Perfil() {
             <TarjetaTrofeo trofeo={trofeo} ganado={perfil.trofeos.includes(trofeo.id)} key={trofeo.id} />
           ))}
         </section>
+
+        {!perfil.cuenta.invitado && (
+          <button className="profile-logout" type="button" onClick={() => acciones.cerrarSesion()}>
+            CERRAR SESIÓN
+          </button>
+        )}
       </section>
 
       <BottomNav activeTab="perfil" onTabChange={() => {}} />
