@@ -1,23 +1,33 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { signInWithEmailAndPassword } from 'firebase/auth'
 
 import { useJugador } from './almacen/useJugador'
+import { auth } from './firebase'
 
 export default function Entrar() {
   const navigate = useNavigate()
   const { acciones } = useJugador()
-  const [usuario, setUsuario] = useState('')
+  const [correo, setCorreo] = useState('')
   const [contrasena, setContrasena] = useState('')
   const [aviso, setAviso] = useState('')
 
-  const iniciar = (event) => {
+  const iniciar = async (event) => {
     event.preventDefault()
-    if (!usuario.trim() || !contrasena) {
-      setAviso('Escribe tu usuario y tu contraseña para continuar.')
+    if (!correo.trim() || !contrasena) {
+      setAviso('Escribe tu correo y tu contraseña para continuar.')
       return
     }
-    acciones.iniciarSesion(usuario.trim())
-    navigate('/')
+    try {
+      const resultado = await signInWithEmailAndPassword(auth, correo.trim(), contrasena)
+      const nombre = resultado.user.displayName || correo.split('@')[0]
+      await acciones.iniciarSesion(nombre, resultado.user.email || correo.trim(), resultado.user.uid)
+      navigate('/')
+    } catch (error) {
+      setAviso(error.code === 'auth/invalid-credential'
+        ? 'El correo o la contraseña no son correctos.'
+        : 'No se pudo iniciar sesión. Intenta nuevamente.')
+    }
   }
 
   return (
@@ -29,8 +39,8 @@ export default function Entrar() {
           <h2 className="acceso-titulo">INICIO SESIÓN</h2>
           <div className="acceso-campos">
             <label className="acceso-campo">
-              <span className="sr-only">Usuario</span>
-              <input type="text" placeholder="USUARIO" value={usuario} onChange={(event) => setUsuario(event.target.value)} autoComplete="username" />
+              <span className="sr-only">Correo</span>
+              <input type="email" placeholder="CORREO" value={correo} onChange={(event) => setCorreo(event.target.value)} autoComplete="email" />
             </label>
             <label className="acceso-campo">
               <span className="sr-only">Contraseña</span>

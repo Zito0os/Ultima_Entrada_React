@@ -11,6 +11,7 @@
     "marcadores": "node scripts/revisar-marcadores.mjs"
   },
   "dependencies": {
+    "firebase": "^12.19.0",
     "mind-ar": "^1.2.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

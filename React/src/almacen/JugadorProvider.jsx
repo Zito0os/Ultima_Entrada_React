@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { signOut } from 'firebase/auth'
 
 import { INVITADO, almacen } from './index'
 import { JugadorContexto } from './JugadorContexto'
 import { CARTAS_TOTAL, PERFIL_BASE, hoy, normalizar } from './esquema'
+import { auth } from '../firebase'
 
 const CLAVE_SESION = 'ue_sesion'
 
@@ -60,18 +62,41 @@ export function JugadorProvider({ children }) {
   }, [usuarioId])
 
   const acciones = useMemo(() => ({
-    iniciarSesion(usuario, correo = '') {
-      const id = usuario.trim().toLowerCase()
-      almacen.mover(INVITADO, id).then(() => {
-        guardarSesion(id)
-        setUsuarioId(id)
+    async iniciarSesion(usuario, correo = '', uid = '', cartasIniciales = []) {
+      const id = uid || usuario.trim().toLowerCase()
+      const perfilActual = ultimo.current || PERFIL_BASE
+      const existente = await almacen.leer(id)
+      const siguiente = normalizar(existente || {
+        ...perfilActual,
+        cuenta: { usuario: usuario.trim(), correo, invitado: false, creada: new Date().toISOString() },
       })
-      actualizar(() => ({ cuenta: { usuario: usuario.trim(), correo, invitado: false, creada: new Date().toISOString() } }))
+      siguiente.cuenta = { ...siguiente.cuenta, usuario: usuario.trim(), correo, invitado: false }
+      if (!existente && cartasIniciales.length) {
+        const cartas = { ...siguiente.cartas }
+        cartasIniciales.forEach((carta) => {
+          cartas[carta.id] = (cartas[carta.id] || 0) + 1
+        })
+        siguiente.cartas = cartas
+      }
+      await almacen.guardar(id, siguiente)
+      if (!existente && id !== usuario.trim().toLowerCase()) {
+        await almacen.borrar(usuario.trim().toLowerCase())
+      }
+      guardarSesion(id)
+      setUsuarioId(id)
+      setPerfil(siguiente)
+      return siguiente
     },
 
-    cerrarSesion() {
-      guardarSesion(INVITADO)
-      setUsuarioId(INVITADO)
+    async cerrarSesion() {
+      clearTimeout(guardando.current)
+      try {
+        await signOut(auth)
+      } finally {
+        guardarSesion(INVITADO)
+        setUsuarioId(INVITADO)
+        setPerfil(normalizar(PERFIL_BASE))
+      }
     },
 
     ganarMonedas(cantidad) {
