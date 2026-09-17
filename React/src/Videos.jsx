@@ -29,6 +29,8 @@ export default function Videos() {
   const [aviso, setAviso] = useState('')
   const [error, setError] = useState('')
   const [sinGL, setSinGL] = useState(false)
+  const [listaAbierta, setListaAbierta] = useState(false)
+  const [silencio, setSilencio] = useState(false)
 
   const filtro = buscarFiltro(filtroId)
   const valor = parametros[filtro.id]
@@ -135,7 +137,7 @@ export default function Videos() {
             src={fuente}
             playsInline
             loop
-            muted
+            muted={silencio}
             crossOrigin="anonymous"
             onError={() => setError('No se encontró el clip. Importa uno desde tu teléfono.')}
             onPlay={() => setReproduciendo(true)}
@@ -143,6 +145,14 @@ export default function Videos() {
           />
           <button className="video-play" type="button" onClick={alternar} aria-label={reproduciendo ? 'Pausar' : 'Reproducir'}>
             <span aria-hidden="true">{reproduciendo ? '❚❚' : '▶'}</span>
+          </button>
+          <button
+            className={silencio ? 'video-audio es-silencio' : 'video-audio'}
+            type="button"
+            onClick={() => setSilencio((antes) => !antes)}
+            aria-label={silencio ? 'Activar el audio' : 'Silenciar'}
+          >
+            <span aria-hidden="true">{silencio ? '🔇' : '🔊'}</span>
           </button>
         </div>
 
@@ -157,20 +167,35 @@ export default function Videos() {
           </label>
         </div>
 
-        <p className="filter-heading">FILTRO APLICADO</p>
-        <div className="video-filters" role="tablist" aria-label="Filtros de video">
-          {filtros.map((opcion) => (
-            <button
-              className={filtroId === opcion.id ? 'video-filter is-active' : 'video-filter'}
-              type="button"
-              role="tab"
-              aria-selected={filtroId === opcion.id}
-              onClick={() => setFiltroId(opcion.id)}
-              key={opcion.id}
-            >
-              {opcion.nombre}
-            </button>
-          ))}
+        <div className="filtro-selector">
+          <p className="filter-heading" id="filtro-titulo">FILTRO APLICADO</p>
+          <button
+            className={listaAbierta ? 'filtro-actual es-abierto' : 'filtro-actual'}
+            type="button"
+            aria-expanded={listaAbierta}
+            aria-labelledby="filtro-titulo"
+            onClick={() => setListaAbierta((abierta) => !abierta)}
+          >
+            <strong>{filtro.nombre}</strong>
+            <span aria-hidden="true">{listaAbierta ? '▲' : '▼'}</span>
+          </button>
+
+          {listaAbierta && (
+            <div className="filtro-lista" role="listbox" aria-label="Filtros disponibles">
+              {filtros.map((opcion) => (
+                <button
+                  className={filtroId === opcion.id ? 'filtro-opcion is-active' : 'filtro-opcion'}
+                  type="button"
+                  role="option"
+                  aria-selected={filtroId === opcion.id}
+                  onClick={() => { setFiltroId(opcion.id); setListaAbierta(false) }}
+                  key={opcion.id}
+                >
+                  {opcion.nombre}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="intensity-panel">

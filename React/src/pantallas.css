@@ -325,6 +325,11 @@ body { letter-spacing: .015em; }
 .video-play { position: absolute; inset: 0; display: grid; width: 100%; place-items: center; border: 0; background: transparent; cursor: pointer; }
 .video-play span { display: grid; width: 74px; height: 74px; place-items: center; border-radius: 50%; color: #fff; background: rgba(0, 0, 0, .55); font-size: 1.9rem; }
 .video-play:focus-visible { outline: 3px solid var(--acento); outline-offset: -4px; }
+
+/* Va encima del boton de reproducir, que ocupa todo el marco */
+.video-audio { position: absolute; right: 10px; bottom: 10px; z-index: 2; display: grid; width: 44px; height: 44px; place-items: center; border: 0; border-radius: 50%; background: rgba(0, 0, 0, .55); color: #fff; font-size: 1.15rem; cursor: pointer; }
+.video-audio.es-silencio { background: rgba(0, 0, 0, .8); opacity: .75; }
+.video-audio:focus-visible { outline: 3px solid var(--acento); outline-offset: 2px; }
 .video-nombre { margin: 7px 3px 0; color: var(--azul-profundo); font-family: var(--fuente-mono); font-size: .66rem; font-weight: 700; }
 .video-error { margin: 6px 3px 0; padding: 7px 9px; border-radius: 6px; color: #fff; background: var(--alerta); font-family: var(--fuente-mono); font-size: .62rem; font-weight: 700; }
 .video-aviso { margin: 6px 3px 0; color: var(--confirmacion); font-family: var(--fuente-mono); font-size: .64rem; font-weight: 900; }
@@ -341,7 +346,7 @@ body { letter-spacing: .015em; }
 .era-jugadas:focus-visible { outline: 3px solid var(--acento); outline-offset: 2px; }
 .plays-vacio { margin: 10px 3px; color: var(--azul-medio); font-family: var(--fuente-mono); font-size: .68rem; font-weight: 700; }
 
-.ajustes-perfil { margin-top: 10px; padding: 10px 11px 12px; border-radius: 12px; background: var(--azul-profundo); }
+.ajustes-perfil { margin-top: 26px; padding: 10px 11px 12px; border-radius: 12px; background: var(--azul-profundo); }
 .ajustes-titulo { margin: 0 0 8px; color: var(--acento); font-family: var(--fuente-mono); font-size: .62rem; font-weight: 900; letter-spacing: .05em; }
 .ajustes-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
 .ajuste-opcion { min-height: 38px; border: 2px solid #fff; border-radius: 8px; color: #fff; background: transparent; font-family: var(--fuente-mono); font-size: .62rem; font-weight: 900; letter-spacing: .03em; cursor: pointer; }
@@ -354,7 +359,7 @@ body { letter-spacing: .015em; }
 .base.es-ocupada { color: var(--tinta-fija); border-color: var(--acento); background: var(--acento); }
 .batting-jugada { margin: 8px 0 0; color: var(--acento); font-family: var(--fuente-titulo); font-size: 1.3rem; font-weight: 900; text-align: center; }
 .barra-tiempo { position: relative; height: 26px; margin-top: 9px; overflow: hidden; border: 2px solid var(--azul-profundo); border-radius: 8px; background: var(--gris-bloque); }
-.barra-zona { position: absolute; top: 0; bottom: 0; left: 34%; width: 32%; background: linear-gradient(90deg, rgba(62,158,116,.35), rgba(62,158,116,.85), rgba(62,158,116,.35)); }
+.barra-zona { position: absolute; top: 0; bottom: 0; left: 59%; width: 26%; background: linear-gradient(90deg, rgba(62,158,116,.35), rgba(62,158,116,.85), rgba(62,158,116,.35)); }
 .barra-aguja { position: absolute; top: -2px; bottom: -2px; width: 5px; margin-left: -2px; background: var(--alerta); }
 .batting-fin { margin-top: 9px; text-align: center; }
 .batting-fin strong { display: block; margin-bottom: 7px; color: var(--azul-profundo); font-family: var(--fuente-titulo); font-size: 1.25rem; }
@@ -372,3 +377,61 @@ body { letter-spacing: .015em; }
 .bases-vista, .batting-jugada, .barra-tiempo, .batting-acciones, .batting-fin { padding-right: 14px; padding-left: 14px; box-sizing: border-box; }
 .batting-jugada { margin-top: 10px; }
 .batting-acciones { margin-top: 2px; }
+
+/* ---- Menu de finales ---- */
+.finals-resumen { margin: 0 0 10px; color: var(--azul-texto); font-family: var(--fuente-mono); font-size: .68rem; font-weight: 700; }
+.finals-resumen strong { color: var(--acento); font-size: 1.1rem; }
+.final-card { display: grid; width: 100%; grid-template-columns: auto auto 1fr auto; gap: 10px; align-items: center; margin-bottom: 9px; padding: 10px 11px; border: 0; border-radius: 13px; background: var(--azul-profundo); text-align: left; cursor: pointer; }
+.final-card.es-ganada { box-shadow: inset 0 0 0 2px var(--acento); }
+.final-card.es-bloqueada { opacity: .55; cursor: not-allowed; }
+.final-anio { color: var(--acento); font-family: var(--fuente-titulo); font-size: 1.5rem; font-weight: 950; line-height: 1; }
+.final-equipos { display: flex; gap: 5px; align-items: center; }
+.final-equipos b { color: #fff; font-family: var(--fuente-mono); font-size: .6rem; }
+.final-texto { display: block; min-width: 0; }
+.final-texto strong { display: block; color: #fff; font-family: var(--fuente-mono); font-size: .72rem; font-weight: 900; }
+.final-texto small { display: block; margin-top: 2px; color: var(--texto-tenue); font-family: var(--fuente-mono); font-size: .58rem; line-height: 1.25; }
+.final-marca { display: grid; width: 30px; place-items: center; color: var(--texto-tenue); }
+.final-marca svg { width: 22px; height: 22px; }
+.final-marca.es-ganada { color: var(--acento); }
+.final-candado { color: #fff; font-family: var(--fuente-mono); font-size: .55rem; font-weight: 900; white-space: nowrap; }
+
+.escudo-final { display: grid; width: 32px; height: 32px; flex: 0 0 32px; place-items: center; overflow: hidden; border-radius: 7px; background: #fff; }
+.escudo-final img { width: 100%; height: 100%; object-fit: contain; padding: 3px; box-sizing: border-box; }
+.escudo-final b { display: grid; width: 100%; height: 100%; place-items: center; color: #fff; font-family: var(--fuente-mono); font-size: .5rem; font-weight: 900; }
+.escudo-final.es-grande { width: 62px; height: 62px; flex-basis: 62px; border-radius: 12px; }
+.escudo-final.es-grande b { font-size: .8rem; }
+
+/* ---- Detalle de la final ---- */
+.final-detail-titulo { margin: 12px 0 4px; color: var(--tinta); font-family: var(--fuente-mono); font-size: .82rem; font-weight: 900; text-align: center; }
+.final-detail-relato { margin: 0 0 12px; color: var(--tinta); font-family: var(--fuente-texto); font-size: .84rem; line-height: 1.45; text-align: center; }
+.final-situacion { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.final-situacion > div { display: flex; min-height: 54px; flex-direction: column; align-items: center; justify-content: center; border-radius: 9px; background: var(--azul-profundo); }
+.final-situacion span { color: var(--texto-tenue); font-family: var(--fuente-mono); font-size: .5rem; font-weight: 700; }
+.final-situacion strong { color: var(--acento); font-family: var(--fuente-titulo); font-size: 1.5rem; line-height: 1; }
+.final-detail-ganada { margin: 9px 0 0; color: var(--confirmacion); font-family: var(--fuente-mono); font-size: .64rem; font-weight: 900; text-align: center; }
+.play-final-button:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ---- Pelota y bateador del minijuego ---- */
+.pelota { position: absolute; z-index: 5; width: 16px; height: 16px; margin: -8px 0 0 -8px; border: 2px solid #C6011F; border-radius: 50%; background: #fff; transition: opacity .12s ease; }
+.bateador { position: absolute; bottom: 5%; left: 56%; z-index: 4; height: 40%; margin-left: -7%; transform-origin: bottom center; transition: transform .12s ease; pointer-events: none; }
+.bateador.es-pose-2 { transform: rotate(-12deg); }
+.bateador.es-pose-3 { transform: rotate(-22deg) translateX(-4%); }
+.barra-perfecta { position: absolute; top: 0; bottom: 0; left: 67%; width: 10%; background: rgba(245, 198, 75, .85); }
+
+/* Separado de los trofeos con una linea, para que no se lean como un bloque */
+.ajustes-perfil { border-top: 2px solid var(--gris-bloque); border-radius: 0 0 12px 12px; padding-top: 14px; }
+.ajuste-opcion { min-height: 46px; }
+
+/* Los siete filtros en un desplegable: sueltos median 22px de alto y no se
+   podian tocar con el dedo */
+.filtro-selector { position: relative; margin-top: 10px; }
+.filtro-actual { display: grid; width: 100%; grid-template-columns: 1fr auto; align-items: center; min-height: 46px; padding: 0 12px; border: 2px solid var(--azul-medio); border-radius: 9px; background: var(--azul-medio); cursor: pointer; }
+.filtro-actual strong { color: var(--acento); font-family: var(--fuente-mono); font-size: .76rem; font-weight: 900; letter-spacing: .04em; text-align: left; }
+.filtro-actual span { color: #fff; font-size: .7rem; }
+.filtro-actual.es-abierto { border-color: var(--acento); border-radius: 9px 9px 0 0; }
+.filtro-actual:focus-visible { outline: 3px solid var(--acento); outline-offset: 2px; }
+.filtro-lista { position: absolute; z-index: 10; right: 0; left: 0; overflow: hidden; border: 2px solid var(--acento); border-top: 0; border-radius: 0 0 9px 9px; background: var(--azul-profundo); }
+.filtro-opcion { display: block; width: 100%; min-height: 46px; padding: 0 12px; border: 0; border-bottom: 1px solid rgba(255, 255, 255, .12); background: transparent; color: #fff; font-family: var(--fuente-mono); font-size: .72rem; font-weight: 900; letter-spacing: .04em; text-align: left; cursor: pointer; }
+.filtro-opcion:last-child { border-bottom: 0; }
+.filtro-opcion.is-active { color: var(--tinta-fija); background: var(--acento); }
+.filtro-opcion:focus-visible { outline: 3px solid var(--acento); outline-offset: -3px; }

@@ -17,6 +17,10 @@ export const trofeos = [
   ...logros.map((logro) => ({ ...logro, tipo: 'logro' })),
 ]
 
+// El total se calcula, no se escribe a mano: al agregar finales o equipos
+// la cabecera y el perfil se ajustan solos
+export const TOTAL_TROFEOS = trofeos.length
+
 export function buscarTrofeo(id) {
   return trofeos.find((trofeo) => trofeo.id === id)
 }

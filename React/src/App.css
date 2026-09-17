@@ -162,9 +162,13 @@
 .figura p { margin: 0; color: var(--tinta); font-family: var(--fuente-texto); font-size: .78rem; line-height: 1.4; }
 .era-videos { margin-top: 13px; }
 .era-video-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.era-video { display: grid; height: 50px; place-items: center; border: 0; border-radius: 6px; color: #000; background: var(--azul); cursor: pointer; }
-.era-video-2 { background: var(--azul-claro); }.era-video-3 { background: var(--azul-medio); }
-.era-video span { display: grid; width: 23px; height: 23px; place-items: center; padding-left: 2px; border-radius: 50%; color: #fff; background: #000; font-size: .7rem; }
+.era-video { position: relative; display: grid; min-height: 96px; align-content: end; overflow: hidden; border: 0; border-radius: 6px; color: #fff; background-color: var(--azul); background-position: center; background-size: cover; cursor: pointer; }
+/* Sombra bajo el titulo: la miniatura es una foto y el texto tiene que leerse igual */
+.era-video::after { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .15) 0%, rgba(0, 0, 0, .78) 58%, rgba(0, 0, 0, .92) 100%); content: ''; }
+.era-video small { position: relative; z-index: 1; padding: 0 5px 6px; font-size: .55rem; font-weight: 700; line-height: 1.25; letter-spacing: .02em; text-align: center; }
+.era-video-2 { background-color: var(--azul-claro); }
+.era-video-3 { background-color: var(--azul-medio); }
+.era-video span { position: absolute; top: 50%; left: 50%; z-index: 1; display: grid; width: 27px; height: 27px; margin: -20px 0 0 -13px; place-items: center; padding-left: 2px; border-radius: 50%; color: #fff; background: rgba(0, 0, 0, .62); font-size: .75rem; }
 .era-video:focus-visible { outline: 3px solid var(--acento); outline-offset: 3px; }
 .history-detail-shell > .bottom-nav { position: fixed; }
 .gallery-shell { min-height: 100svh; background: var(--superficie); color: var(--tinta); }

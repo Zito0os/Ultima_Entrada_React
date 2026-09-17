@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-
 import Icono from './Icono'
-import { TROFEOS_TOTAL } from './almacen/esquema'
+import { TOTAL_TROFEOS } from './trofeosData'
 import { finals } from './finalsData'
 import { useJugador } from './almacen/useJugador'
 
@@ -43,7 +42,7 @@ export default function Resultado() {
           <div className="result-stats">
             <div><strong>+{ganada && !yaLaTenia ? 50 : 0}</strong><span>MONEDAS</span></div>
             <div><strong>{lanzamientos}</strong><span>TURNOS</span></div>
-            <div><strong>{perfil.trofeos.length}/{TROFEOS_TOTAL}</strong><span>COLECCIÓN</span></div>
+            <div><strong>{perfil.trofeos.length}/{TOTAL_TROFEOS}</strong><span>COLECCIÓN</span></div>
           </div>
         </div>
 

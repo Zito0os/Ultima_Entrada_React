@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-
 import BottomNav from './Navigation'
 import PageHeader from './PageHeader'
 import Icono from './Icono'
-import { TROFEOS_TOTAL } from './almacen/esquema'
-import { trofeos } from './trofeosData'
+
+import { TOTAL_TROFEOS, trofeos } from './trofeosData'
 import { useJugador } from './almacen/useJugador'
 import { useTema } from './useTema'
 import { sonar } from './sonidos'
@@ -70,6 +69,42 @@ export default function Perfil() {
           <strong>ALBUM</strong>
           <span className="flecha-avance"><Icono nombre="flecha" /></span>
         </button>
+
+
+
+        <div className="profile-summary">
+          <div>
+            <span>TROFEOS</span>
+            <strong>{ganados}<span>/{TOTAL_TROFEOS}</span></strong>
+          </div>
+          <div className="streak-summary">
+            <span>RACHA</span>
+            <strong>{perfil.racha.dias}</strong>
+          </div>
+          <div className="progress-track" aria-label={`${ganados} de ${TOTAL_TROFEOS} trofeos desbloqueados`}>
+            <span style={{ width: `${(ganados / TOTAL_TROFEOS) * 100}%` }} />
+          </div>
+        </div>
+
+        <div className="profile-filters" role="tablist" aria-label="Filtrar trofeos">
+          {filtros.map((item) => (
+            <button className={filtro === item.id ? 'profile-filter is-active' : 'profile-filter'} type="button" role="tab" aria-selected={filtro === item.id} onClick={() => setFiltro(item.id)} key={item.id}>
+              {item.nombre}
+            </button>
+          ))}
+        </div>
+
+        <section className="trophy-grid" aria-label="Colección de trofeos">
+          {visibles.map((trofeo) => (
+            <TarjetaTrofeo trofeo={trofeo} ganado={perfil.trofeos.includes(trofeo.id)} key={trofeo.id} />
+          ))}
+        </section>
+
+        {!perfil.cuenta.invitado && (
+          <button className="profile-logout" type="button" onClick={() => acciones.cerrarSesion()}>
+            CERRAR SESIÓN
+          </button>
+        )}
         <section className="ajustes-perfil" aria-label="Preferencias">
           <p className="ajustes-titulo">PREFERENCIAS</p>
           <div className="ajustes-fila">
@@ -94,40 +129,6 @@ export default function Perfil() {
           >{conSonido ? 'SONIDO ENCENDIDO' : 'SONIDO APAGADO'}</button>
         </section>
 
-
-        <div className="profile-summary">
-          <div>
-            <span>TROFEOS</span>
-            <strong>{ganados}<span>/{TROFEOS_TOTAL}</span></strong>
-          </div>
-          <div className="streak-summary">
-            <span>RACHA</span>
-            <strong>{perfil.racha.dias}</strong>
-          </div>
-          <div className="progress-track" aria-label={`${ganados} de ${TROFEOS_TOTAL} trofeos desbloqueados`}>
-            <span style={{ width: `${(ganados / TROFEOS_TOTAL) * 100}%` }} />
-          </div>
-        </div>
-
-        <div className="profile-filters" role="tablist" aria-label="Filtrar trofeos">
-          {filtros.map((item) => (
-            <button className={filtro === item.id ? 'profile-filter is-active' : 'profile-filter'} type="button" role="tab" aria-selected={filtro === item.id} onClick={() => setFiltro(item.id)} key={item.id}>
-              {item.nombre}
-            </button>
-          ))}
-        </div>
-
-        <section className="trophy-grid" aria-label="Colección de trofeos">
-          {visibles.map((trofeo) => (
-            <TarjetaTrofeo trofeo={trofeo} ganado={perfil.trofeos.includes(trofeo.id)} key={trofeo.id} />
-          ))}
-        </section>
-
-        {!perfil.cuenta.invitado && (
-          <button className="profile-logout" type="button" onClick={() => acciones.cerrarSesion()}>
-            CERRAR SESIÓN
-          </button>
-        )}
       </section>
 
       <BottomNav activeTab="perfil" onTabChange={() => {}} />
