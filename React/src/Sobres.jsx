@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import BottomNav from './Navigation'
 import PageHeader from './PageHeader'
 import { packs } from './packsData'
+import { sonar } from './sonidos'
 import { useJugador } from './almacen/useJugador'
 
 export default function Sobres() {
@@ -16,6 +17,7 @@ export default function Sobres() {
       setAviso(`Te faltan ${pack.price - perfil.monedas} monedas para ese sobre.`)
       return
     }
+    sonar('moneda')
     navigate(`/sobres/${pack.id}`)
   }
 

@@ -6,6 +6,7 @@ import PageHeader from './PageHeader'
 import { rutaEscudo } from './escudosData'
 import { teams } from './teamsData'
 import { triviaPorEquipo } from './triviaData'
+import { sonar } from './sonidos'
 import { useJugador } from './almacen/useJugador'
 
 const SEGUNDOS = 12
@@ -118,6 +119,7 @@ function Ronda({ team, preguntas }) {
       return
     }
     setElegida(opcion)
+    sonar(opcion === pregunta.correcta ? 'acierto' : 'fallo')
     if (opcion === pregunta.correcta) {
       setAciertos((total) => total + 1)
     }

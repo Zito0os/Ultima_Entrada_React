@@ -7,6 +7,8 @@ import Icono from './Icono'
 import { TROFEOS_TOTAL } from './almacen/esquema'
 import { trofeos } from './trofeosData'
 import { useJugador } from './almacen/useJugador'
+import { useTema } from './useTema'
+import { sonar } from './sonidos'
 
 const filtros = [
   { id: 'todos', nombre: 'TODOS' },
@@ -27,6 +29,7 @@ function TarjetaTrofeo({ trofeo, ganado }) {
 export default function Perfil() {
   const navigate = useNavigate()
   const { perfil, acciones } = useJugador()
+  const { tema, conSonido } = useTema()
   const [filtro, setFiltro] = useState('todos')
 
   const ganados = perfil.trofeos.length
@@ -57,6 +60,30 @@ export default function Perfil() {
           <strong>ALBUM</strong>
           <span className="flecha-avance"><Icono nombre="flecha" /></span>
         </button>
+        <section className="ajustes-perfil" aria-label="Preferencias">
+          <p className="ajustes-titulo">PREFERENCIAS</p>
+          <div className="ajustes-fila">
+            <button
+              className={tema === 'claro' ? 'ajuste-opcion is-active' : 'ajuste-opcion'}
+              type="button"
+              aria-pressed={tema === 'claro'}
+              onClick={() => acciones.marcarPreferencia('tema', 'claro')}
+            >MODO CLARO</button>
+            <button
+              className={tema === 'oscuro' ? 'ajuste-opcion is-active' : 'ajuste-opcion'}
+              type="button"
+              aria-pressed={tema === 'oscuro'}
+              onClick={() => acciones.marcarPreferencia('tema', 'oscuro')}
+            >MODO OSCURO</button>
+          </div>
+          <button
+            className={conSonido ? 'ajuste-opcion es-ancho is-active' : 'ajuste-opcion es-ancho'}
+            type="button"
+            aria-pressed={conSonido}
+            onClick={() => { acciones.marcarPreferencia('sonido', !conSonido); if (!conSonido) { sonar('acierto') } }}
+          >{conSonido ? 'SONIDO ENCENDIDO' : 'SONIDO APAGADO'}</button>
+        </section>
+
 
         <div className="profile-summary">
           <div>

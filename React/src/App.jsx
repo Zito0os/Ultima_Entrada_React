@@ -3,8 +3,10 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from
 
 import './App.css'
 import './pantallas.css'
+import './animaciones.css'
 import AR from './AR'
 import { JugadorProvider } from './almacen/JugadorProvider'
+import { useTema } from './useTema'
 import { useJugador } from './almacen/useJugador'
 import Album from './Album'
 import AbriendoSobre from './Abriendo_sobre'
@@ -132,6 +134,7 @@ function HomePage() {
 function AppRoutes() {
   const location = useLocation()
   const { acciones } = useJugador()
+  useTema()
 
   useEffect(() => {
     acciones.registrarVisita()

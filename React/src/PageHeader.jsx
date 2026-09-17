@@ -1,12 +1,26 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import Icono from './Icono'
 import { TROFEOS_TOTAL } from './almacen/esquema'
 import { useJugador } from './almacen/useJugador'
 
+// Fuera del componente a proposito: la cabecera se vuelve a montar en cada
+// pantalla, y asi el pulso solo sale cuando el numero cambio de verdad
+let saldoVisto = null
+let trofeosVistos = null
+
 export default function PageHeader({ title, backTo, rightLabel }) {
   const navigate = useNavigate()
   const { perfil } = useJugador()
+  const ganados = perfil.trofeos.length
+  const subioSaldo = saldoVisto !== null && saldoVisto !== perfil.monedas
+  const subioTrofeo = trofeosVistos !== null && trofeosVistos !== ganados
+
+  useEffect(() => {
+    saldoVisto = perfil.monedas
+    trofeosVistos = ganados
+  })
 
   return (
     <header className="page-header">
@@ -21,8 +35,8 @@ export default function PageHeader({ title, backTo, rightLabel }) {
           <span className="page-header-label">{rightLabel}</span>
         ) : (
           <div className="page-header-stats" aria-label="Progreso del jugador">
-            <span className="coins"><span className="coin-icon">✦</span> {perfil.monedas}</span>
-            <span className="trophies"><span className="trophy-icon"><Icono nombre="trofeo" /></span> {perfil.trofeos.length}/{TROFEOS_TOTAL}</span>
+            <span className={subioSaldo ? 'coins es-nuevo' : 'coins'} key={perfil.monedas}><span className="coin-icon">✦</span> {perfil.monedas}</span>
+            <span className={subioTrofeo ? 'trophies es-nuevo' : 'trophies'} key={ganados}><span className="trophy-icon"><Icono nombre="trofeo" /></span> {ganados}/{TROFEOS_TOTAL}</span>
           </div>
         )}
       </div>

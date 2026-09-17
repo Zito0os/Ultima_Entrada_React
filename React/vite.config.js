@@ -7,4 +7,10 @@ const base = process.env.GITHUB_ACTIONS ? '/Ultima_Entrada_React/' : '/'
 export default defineConfig({
   base,
   plugins: [react()],
+  server: {
+    // Escucha en toda la red para poder abrirlo desde el celular.
+    // Ojo: sobre http la camara no enciende, hace falta https o localhost.
+    host: true,
+    port: 5173,
+  },
 })
