@@ -1,64 +1,53 @@
-import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import PageHeader from './PageHeader'
-import { finals } from './finalsData'
+import { buscarFinal } from './finalsData'
 import { sonar } from './sonidos'
 
-// La barra recorre 0 a 100 y regresa. El centro es el contacto perfecto.
-const PASO = 2.2
-const CENTRO = 50
-// Media anchura de la zona buena, en la misma escala de la barra
-const ZONA = 16
+// El lanzamiento avanza de 0 a 100 mientras la pelota viaja al home.
+const PASO = 2
+const TIC = 28
+// Donde esta la pelota cuando cruza el plato: ahi es el contacto perfecto
+const CONTACTO = 72
 const ZONAS = [
-  { limite: 6, tipo: 'jonron', texto: '¡JONRÓN!' },
-  { limite: ZONA, tipo: 'hit', texto: 'HIT' },
-  { limite: 28, tipo: 'foul', texto: 'FOUL' },
+  { limite: 5, tipo: 'jonron', texto: '¡JONRÓN!' },
+  { limite: 13, tipo: 'hit', texto: 'HIT' },
+  { limite: 22, tipo: 'foul', texto: 'FOUL' },
 ]
+// Cada cuantos lanzamientos viene uno fuera de la zona
+const PROBABILIDAD_ZONA = 0.65
 
 export default function JuegoFinal() {
   const { finalId } = useParams()
   const navigate = useNavigate()
-  const final = finals.find((item) => item.id === finalId)
+  const final = buscarFinal(finalId)
 
-  const [posicion, setPosicion] = useState(0)
+  const [avance, setAvance] = useState(0)
+  const [fase, setFase] = useState('esperando')
+  const [lanzamiento, setLanzamiento] = useState(0)
+  const [enZona, setEnZona] = useState(true)
+  const [pose, setPose] = useState(1)
   const [bolas, setBolas] = useState(0)
   const [strikes, setStrikes] = useState(0)
-  const [outs, setOuts] = useState(0)
+  const [outs, setOuts] = useState(() => final?.outs ?? 0)
   const [carreras, setCarreras] = useState(0)
-  const [bases, setBases] = useState([false, true, false])
+  const [bases, setBases] = useState(() => final?.bases ?? [false, false, false])
   const [turnos, setTurnos] = useState(0)
   const [jugada, setJugada] = useState('')
   const [fin, setFin] = useState(null)
-  const direccion = useRef(1)
+  const [reglas, setReglas] = useState(true)
 
-  // La barra corre con un intervalo y no con rAF: asi sigue viva aunque la
-  // pestana pierda el foco a medio turno
-  useEffect(() => {
-    if (fin) {
-      return undefined
-    }
-    const reloj = setInterval(() => {
-      setPosicion((actual) => {
-        let siguiente = actual + PASO * direccion.current
-        if (siguiente >= 100) {
-          siguiente = 100
-          direccion.current = -1
-        } else if (siguiente <= 0) {
-          siguiente = 0
-          direccion.current = 1
-        }
-        return siguiente
-      })
-    }, 16)
-    return () => clearInterval(reloj)
-  }, [fin])
-
-  if (!final) {
-    return null
+  const lanzar = () => {
+    setEnZona(Math.random() < PROBABILIDAD_ZONA)
+    setAvance(0)
+    setPose(1)
+    setLanzamiento((n) => n + 1)
+    setFase('lanzando')
   }
 
   const terminar = (ganada) => {
+    setFase('fin')
     setFin(ganada ? 'ganada' : 'perdida')
     sonar(ganada ? 'acierto' : 'fallo')
   }
@@ -84,9 +73,10 @@ export default function JuegoFinal() {
     setBases(nuevas)
     if (anotadas > 0) {
       setCarreras(carreras + anotadas)
-      // Basta una carrera para cerrar la entrada
       terminar(true)
+      return true
     }
+    return false
   }
 
   const nuevoTurno = () => {
@@ -95,71 +85,107 @@ export default function JuegoFinal() {
     setTurnos(turnos + 1)
   }
 
-  const sumarStrike = (texto) => {
+  const sumarStrike = (titulo, motivo) => {
+    setJugada(`${titulo} · ${motivo}`)
     if (strikes + 1 >= 3) {
-      setJugada('¡PONCHADO!')
       sonar('fallo')
       const total = outs + 1
       setOuts(total)
       nuevoTurno()
+      setJugada(`¡PONCHADO! · ${motivo}`)
       if (total >= 3) {
         terminar(false)
+        return
       }
-      return
+    } else {
+      setStrikes(strikes + 1)
     }
-    setStrikes(strikes + 1)
-    setJugada(texto)
+    setFase('esperando')
   }
 
   const sumarBola = () => {
     if (bolas + 1 >= 4) {
-      setJugada('BASE POR BOLAS')
+      setJugada('BASE POR BOLAS · Cuatro fuera de la zona.')
       nuevoTurno()
-      avanzar(1)
-      return
+      if (avanzar(1)) {
+        return
+      }
+    } else {
+      setBolas(bolas + 1)
+      setJugada('BOLA · Venía fuera de la zona, bien dejada.')
     }
-    setBolas(bolas + 1)
-    setJugada('BOLA')
+    setFase('esperando')
   }
 
   const batear = () => {
-    if (fin) {
+    if (fase !== 'lanzando') {
       return
     }
     sonar('bate')
-    const distancia = Math.abs(posicion - CENTRO)
+    setPose(2)
+    const distancia = Math.abs(avance - CONTACTO)
     const zona = ZONAS.find((item) => distancia <= item.limite)
+    const tarde = avance > CONTACTO
 
     if (!zona) {
-      sumarStrike('ABANICASTE')
+      sumarStrike('ABANICASTE', tarde ? 'Le pegaste tarde.' : 'Le pegaste muy pronto.')
       return
     }
     if (zona.tipo === 'foul') {
-      // El foul nunca hace el tercer strike
       setStrikes(strikes >= 2 ? strikes : strikes + 1)
-      setJugada('FOUL')
+      setJugada(`FOUL · Casi: ${tarde ? 'un poco tarde' : 'un poco pronto'}.`)
+      setFase('esperando')
       return
     }
-    setJugada(zona.texto)
+    setPose(3)
+    setJugada(`${zona.texto} · Contacto en el momento justo.`)
     nuevoTurno()
-    avanzar(zona.tipo === 'jonron' ? 4 : 1)
+    if (!avanzar(zona.tipo === 'jonron' ? 4 : 1)) {
+      setFase('esperando')
+    }
   }
 
-  // Dejar pasar: si el lanzamiento venia en la zona es strike cantado
-  const dejarPasar = () => {
-    if (fin) {
-      return
+  // Un intervalo por lanzamiento. Al llegar al final lo resuelve ahi mismo:
+  // dentro del temporizador si se puede cambiar el estado, en el cuerpo del
+  // efecto no. Los contadores no se mueven durante el vuelo de la pelota, asi
+  // que lo que captura el cierre sigue siendo valido cuando termina.
+  useEffect(() => {
+    if (fase !== 'lanzando') {
+      return undefined
     }
-    if (Math.abs(posicion - CENTRO) <= ZONA) {
-      sumarStrike('STRIKE CANTADO')
-    } else {
-      sumarBola()
-    }
+    let t = 0
+    const reloj = setInterval(() => {
+      t += PASO
+      setAvance(t)
+      if (t >= 100) {
+        clearInterval(reloj)
+        if (enZona) {
+          sumarStrike('STRIKE CANTADO', 'La dejaste pasar y venía en la zona.')
+        } else {
+          sumarBola()
+        }
+      }
+    }, TIC)
+    return () => clearInterval(reloj)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fase, lanzamiento])
+
+  if (!final) {
+    return <Navigate to="/finales" replace />
   }
 
   const irAlResultado = () => navigate(`/finales/${final.id}/resultado`, {
     state: { ganada: fin === 'ganada', lanzamientos: turnos },
   })
+
+  // La pelota sale del monticulo y crece conforme se acerca
+  const t = avance / 100
+  const estiloPelota = {
+    top: `${18 + t * 58}%`,
+    left: `${44 + Math.sin(t * Math.PI) * (enZona ? 2 : 9)}%`,
+    transform: `scale(${0.35 + t * 1.5})`,
+    opacity: fase === 'lanzando' ? 1 : 0,
+  }
 
   return (
     <main className="batting-shell">
@@ -167,10 +193,9 @@ export default function JuegoFinal() {
 
       <section className="batting-content" aria-label="Juego de bateo">
         <div className="batting-scoreboard">
-          <div><strong>{final.home}</strong><b>{carreras}</b><strong>{final.away}</strong><b>1</b></div>
+          <div><strong>{final.local.abrev}</strong><b>{final.carreras.local + carreras}</b><strong>{final.rival.abrev}</strong><b>{final.carreras.rival}</b></div>
           <div className="scoreboard-inning"><span>ENTRADA</span><strong>9</strong></div>
           <div><span>B - S - O</span><strong>{bolas} - {strikes} - {outs}</strong></div>
-          <span className="scoreboard-diamond" aria-hidden="true">◆</span>
         </div>
 
         <div className="bases-vista" aria-label={`Corredores en base: ${bases.filter(Boolean).length}`}>
@@ -179,25 +204,35 @@ export default function JuegoFinal() {
           ))}
         </div>
 
-        <div className="baseball-field" aria-hidden="true">
-          <div className="field-cloud cloud-one" />
-          <div className="field-cloud cloud-two" />
-          <div className="field-lights light-left" />
-          <div className="field-lights light-right" />
-          <div className="field-scoreboard" />
-          <div className="field-fence" />
-          <div className="field-grass" />
-          <div className="field-dirt" />
-          <div className="field-mound" />
-          <div className="field-home" />
-          <div className="field-bat" />
+        <div className="baseball-field">
+          <div className="field-cloud cloud-one" aria-hidden="true" />
+          <div className="field-cloud cloud-two" aria-hidden="true" />
+          <div className="field-lights light-left" aria-hidden="true" />
+          <div className="field-lights light-right" aria-hidden="true" />
+          <div className="field-fence" aria-hidden="true" />
+          <div className="field-grass" aria-hidden="true" />
+          <div className="field-dirt" aria-hidden="true" />
+          <div className="field-mound" aria-hidden="true" />
+          <div className="field-home" aria-hidden="true" />
+
+          <span className="pelota" style={estiloPelota} aria-hidden="true" />
+
+          <img
+            className={`bateador es-pose-${pose}`}
+            src={`${import.meta.env.BASE_URL}bateador/pose-${pose}.png`}
+            alt=""
+            aria-hidden="true"
+          />
         </div>
 
-        <p className="batting-jugada" role="status">{jugada || 'ESPERA EL LANZAMIENTO'}</p>
+        <p className="batting-jugada" role="status">
+          {jugada || (fase === 'lanzando' ? 'BATEA CUANDO LA PELOTA LLEGUE AL PLATO' : 'LISTO PARA EL LANZAMIENTO')}
+        </p>
 
-        <div className="barra-tiempo" aria-label="Barra de tiempo de bateo">
+        <div className="barra-tiempo" aria-label="Tiempo del lanzamiento">
           <div className="barra-zona" />
-          <div className="barra-aguja" style={{ left: `${posicion}%` }} />
+          <div className="barra-perfecta" />
+          <div className="barra-aguja" style={{ left: `${avance}%`, opacity: fase === 'lanzando' ? 1 : .25 }} />
         </div>
 
         {fin ? (
@@ -209,11 +244,31 @@ export default function JuegoFinal() {
           </div>
         ) : (
           <div className="batting-acciones">
-            <button className="bat-button" type="button" onClick={batear}>BATEAR</button>
-            <button className="bat-button es-pasar" type="button" onClick={dejarPasar}>DEJAR PASAR</button>
+            <button className="bat-button" type="button" onClick={batear} disabled={fase !== 'lanzando'}>
+              BATEAR
+            </button>
+            <button className="bat-button es-pasar" type="button" onClick={lanzar} disabled={fase === 'lanzando'}>
+              {lanzamiento === 0 ? 'EMPEZAR' : 'SIGUIENTE'}
+            </button>
           </div>
         )}
       </section>
+
+      {reglas && (
+        <div className="modal-backdrop" role="presentation" onClick={() => setReglas(false)}>
+          <section className="challenge-modal" role="dialog" aria-modal="true" aria-labelledby="reglas-bateo" onClick={(e) => e.stopPropagation()}>
+            <span className="modal-kicker">{final.serie}</span>
+            <h2 id="reglas-bateo">CÓMO SE<br />BATEA</h2>
+            <ol className="rules-list">
+              <li>Toca SIGUIENTE y la pelota sale del montículo hacia ti.</li>
+              <li>Toca BATEAR cuando la aguja entre en la franja verde. El centro amarillo es jonrón.</li>
+              <li>Si la dejas pasar y venía en la zona, es strike cantado. Si venía fuera, es bola.</li>
+              <li>Tres strikes son un out. Con tres outs se acaba. Una carrera y ganas la entrada.</li>
+            </ol>
+            <button className="button button-primary modal-action" type="button" onClick={() => setReglas(false)}>ENTENDIDO</button>
+          </section>
+        </div>
+      )}
     </main>
   )
 }

@@ -246,7 +246,7 @@ export const historyEvents = [
     period: '1994-hoy',
     title: 'LA ERA MODERNA',
     description: 'Comodines, series largas y las sequías que por fin se rompen.',
-    videos: 2,
+    videos: 3,
     texto: [
       'La época arranca con una huelga: el paro de jugadores de 1994 canceló la temporada en agosto y dejó al béisbol sin Serie Mundial por primera vez desde 1904. Al volver, en 1995, llegó el comodín y la postemporada pasó de cuatro equipos clasificados a ocho.',
       'Lo que define estos treinta años son las sequías que cayeron una tras otra: Boston en 2004 después de ochenta y seis años, los White Sox en 2005 después de ochenta y ocho, y los Cubs en 2016 después de ciento ocho. En paralelo, la estadística avanzada cambió la forma de armar equipos y la repetición en video entró al terreno en 2014.',

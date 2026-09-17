@@ -1,8 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-
 import Icono from './Icono'
-import { TROFEOS_TOTAL } from './almacen/esquema'
+import { TOTAL_TROFEOS } from './trofeosData'
 import { useJugador } from './almacen/useJugador'
 
 // Fuera del componente a proposito: la cabecera se vuelve a montar en cada
@@ -36,7 +35,7 @@ export default function PageHeader({ title, backTo, rightLabel }) {
         ) : (
           <div className="page-header-stats" aria-label="Progreso del jugador">
             <span className={subioSaldo ? 'coins es-nuevo' : 'coins'} key={perfil.monedas}><span className="coin-icon">✦</span> {perfil.monedas}</span>
-            <span className={subioTrofeo ? 'trophies es-nuevo' : 'trophies'} key={ganados}><span className="trophy-icon"><Icono nombre="trofeo" /></span> {ganados}/{TROFEOS_TOTAL}</span>
+            <span className={subioTrofeo ? 'trophies es-nuevo' : 'trophies'} key={ganados}><span className="trophy-icon"><Icono nombre="trofeo" /></span> {ganados}/{TOTAL_TROFEOS}</span>
           </div>
         )}
       </div>
