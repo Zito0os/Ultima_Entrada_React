@@ -1,274 +1,735 @@
-import { useEffect, useState } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
-import PageHeader from './PageHeader'
-import { buscarFinal } from './finalsData'
-import { sonar } from './sonidos'
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-// El lanzamiento avanza de 0 a 100 mientras la pelota viaja al home.
-const PASO = 2
-const TIC = 28
-// Donde esta la pelota cuando cruza el plato: ahi es el contacto perfecto
-const CONTACTO = 72
-const ZONAS = [
-  { limite: 5, tipo: 'jonron', texto: '¡JONRÓN!' },
-  { limite: 13, tipo: 'hit', texto: 'HIT' },
-  { limite: 22, tipo: 'foul', texto: 'FOUL' },
-]
-// Cada cuantos lanzamientos viene uno fuera de la zona
-const PROBABILIDAD_ZONA = 0.65
+function JuegoFinal() {
+    const containerRef = useRef(null);
 
-export default function JuegoFinal() {
-  const { finalId } = useParams()
-  const navigate = useNavigate()
-  const final = buscarFinal(finalId)
+    useEffect(() => {
+        const container = containerRef.current;
 
-  const [avance, setAvance] = useState(0)
-  const [fase, setFase] = useState('esperando')
-  const [lanzamiento, setLanzamiento] = useState(0)
-  const [enZona, setEnZona] = useState(true)
-  const [pose, setPose] = useState(1)
-  const [bolas, setBolas] = useState(0)
-  const [strikes, setStrikes] = useState(0)
-  const [outs, setOuts] = useState(() => final?.outs ?? 0)
-  const [carreras, setCarreras] = useState(0)
-  const [bases, setBases] = useState(() => final?.bases ?? [false, false, false])
-  const [turnos, setTurnos] = useState(0)
-  const [jugada, setJugada] = useState('')
-  const [fin, setFin] = useState(null)
-  const [reglas, setReglas] = useState(true)
+        if (!container) return;
 
-  const lanzar = () => {
-    setEnZona(Math.random() < PROBABILIDAD_ZONA)
-    setAvance(0)
-    setPose(1)
-    setLanzamiento((n) => n + 1)
-    setFase('lanzando')
-  }
+        // ==========================================
+        // ESCENA
+        // ==========================================
 
-  const terminar = (ganada) => {
-    setFase('fin')
-    setFin(ganada ? 'ganada' : 'perdida')
-    sonar(ganada ? 'acierto' : 'fallo')
-  }
+        const scene = new THREE.Scene();
 
-  // Todos avanzan el mismo numero de bases; el que pasa de tercera anota
-  const avanzar = (basesGanadas) => {
-    const nuevas = [false, false, false]
-    let anotadas = 0
-    const corredores = [0]
-    bases.forEach((ocupada, indice) => {
-      if (ocupada) {
-        corredores.push(indice + 1)
-      }
-    })
-    corredores.forEach((base) => {
-      const destino = base + basesGanadas
-      if (destino >= 4) {
-        anotadas += 1
-      } else {
-        nuevas[destino - 1] = true
-      }
-    })
-    setBases(nuevas)
-    if (anotadas > 0) {
-      setCarreras(carreras + anotadas)
-      terminar(true)
-      return true
-    }
-    return false
-  }
+        scene.background = new THREE.Color(0x87ceeb);
 
-  const nuevoTurno = () => {
-    setBolas(0)
-    setStrikes(0)
-    setTurnos(turnos + 1)
-  }
+        // ==========================================
+        // CÁMARA - VISTA DEL BATEADOR
+        // ==========================================
 
-  const sumarStrike = (titulo, motivo) => {
-    setJugada(`${titulo} · ${motivo}`)
-    if (strikes + 1 >= 3) {
-      sonar('fallo')
-      const total = outs + 1
-      setOuts(total)
-      nuevoTurno()
-      setJugada(`¡PONCHADO! · ${motivo}`)
-      if (total >= 3) {
-        terminar(false)
-        return
-      }
-    } else {
-      setStrikes(strikes + 1)
-    }
-    setFase('esperando')
-  }
+        const camera = new THREE.PerspectiveCamera(
+            65,
+            container.clientWidth / container.clientHeight,
+            0.1,
+            1000
+        );
 
-  const sumarBola = () => {
-    if (bolas + 1 >= 4) {
-      setJugada('BASE POR BOLAS · Cuatro fuera de la zona.')
-      nuevoTurno()
-      if (avanzar(1)) {
-        return
-      }
-    } else {
-      setBolas(bolas + 1)
-      setJugada('BOLA · Venía fuera de la zona, bien dejada.')
-    }
-    setFase('esperando')
-  }
+        // La cámara está detrás de Home Plate,
+        // como si fueran los ojos del bateador.
+        camera.position.set(
+            0,
+            2.1,
+            13.5
+        );
 
-  const batear = () => {
-    if (fase !== 'lanzando') {
-      return
-    }
-    sonar('bate')
-    setPose(2)
-    const distancia = Math.abs(avance - CONTACTO)
-    const zona = ZONAS.find((item) => distancia <= item.limite)
-    const tarde = avance > CONTACTO
+        // Mirar hacia el pitcher
+        camera.lookAt(
+            0,
+            1.8,
+            1
+        );
 
-    if (!zona) {
-      sumarStrike('ABANICASTE', tarde ? 'Le pegaste tarde.' : 'Le pegaste muy pronto.')
-      return
-    }
-    if (zona.tipo === 'foul') {
-      setStrikes(strikes >= 2 ? strikes : strikes + 1)
-      setJugada(`FOUL · Casi: ${tarde ? 'un poco tarde' : 'un poco pronto'}.`)
-      setFase('esperando')
-      return
-    }
-    setPose(3)
-    setJugada(`${zona.texto} · Contacto en el momento justo.`)
-    nuevoTurno()
-    if (!avanzar(zona.tipo === 'jonron' ? 4 : 1)) {
-      setFase('esperando')
-    }
-  }
+        // ==========================================
+        // RENDERER
+        // ==========================================
 
-  // Un intervalo por lanzamiento. Al llegar al final lo resuelve ahi mismo:
-  // dentro del temporizador si se puede cambiar el estado, en el cuerpo del
-  // efecto no. Los contadores no se mueven durante el vuelo de la pelota, asi
-  // que lo que captura el cierre sigue siendo valido cuando termina.
-  useEffect(() => {
-    if (fase !== 'lanzando') {
-      return undefined
-    }
-    let t = 0
-    const reloj = setInterval(() => {
-      t += PASO
-      setAvance(t)
-      if (t >= 100) {
-        clearInterval(reloj)
-        if (enZona) {
-          sumarStrike('STRIKE CANTADO', 'La dejaste pasar y venía en la zona.')
-        } else {
-          sumarBola()
+        const renderer = new THREE.WebGLRenderer({
+            antialias: true
+        });
+
+        renderer.setSize(
+            container.clientWidth,
+            container.clientHeight
+        );
+
+        renderer.setPixelRatio(
+            Math.min(window.devicePixelRatio, 2)
+        );
+
+        renderer.shadowMap.enabled = true;
+
+        container.appendChild(renderer.domElement);
+
+        // ==========================================
+        // LUCES
+        // ==========================================
+
+        const ambientLight = new THREE.AmbientLight(
+            0xffffff,
+            1.2
+        );
+
+        scene.add(ambientLight);
+
+        const sun = new THREE.DirectionalLight(
+            0xffffff,
+            2
+        );
+
+        sun.position.set(
+            10,
+            30,
+            15
+        );
+
+        sun.castShadow = true;
+
+        sun.shadow.mapSize.width = 2048;
+        sun.shadow.mapSize.height = 2048;
+
+        scene.add(sun);
+
+        // ==========================================
+        // ESTADIO
+        // ==========================================
+
+        const stadium = new THREE.Group();
+
+        scene.add(stadium);
+
+        // ==========================================
+        // CÉSPED
+        // ==========================================
+
+        const grassGeometry =
+            new THREE.PlaneGeometry(
+                60,
+                60
+            );
+
+        const grassMaterial =
+            new THREE.MeshStandardMaterial({
+                color: 0x194c1f
+            });
+
+        const grass = new THREE.Mesh(
+            grassGeometry,
+            grassMaterial
+        );
+
+        grass.rotation.x =
+            -Math.PI / 2;
+
+        grass.receiveShadow = true;
+
+        stadium.add(grass);
+
+        // ==========================================
+        // DIAMANTE DE TIERRA
+        // ==========================================
+
+        const dirtGeometry =
+            new THREE.PlaneGeometry(
+                14,
+                14
+            );
+
+        const dirtMaterial =
+            new THREE.MeshStandardMaterial({
+                color: 0x412406
+            });
+
+        const dirt = new THREE.Mesh(
+            dirtGeometry,
+            dirtMaterial
+        );
+
+        dirt.rotation.x =
+            -Math.PI / 2;
+
+        dirt.rotation.z =
+            Math.PI / 4;
+
+        dirt.position.y =
+            0.02;
+
+        dirt.receiveShadow = true;
+
+        stadium.add(dirt);
+
+        // ==========================================
+        // CÉSPED DEL INTERIOR
+        // ==========================================
+
+        const infieldGeometry =
+            new THREE.CircleGeometry(
+                5.7,
+                64
+            );
+
+        const infieldMaterial =
+            new THREE.MeshStandardMaterial({
+                color: 0x194c1f
+            });
+
+        const infield = new THREE.Mesh(
+            infieldGeometry,
+            infieldMaterial
+        );
+
+        infield.rotation.x =
+            -Math.PI / 2;
+
+        infield.position.y =
+            0.04;
+
+        stadium.add(infield);
+
+        // ==========================================
+        // FUNCIÓN BASE
+        // ==========================================
+
+        function crearBase(x, z) {
+            const geometry =
+                new THREE.BoxGeometry(
+                    1,
+                    0.15,
+                    1
+                );
+
+            const material =
+                new THREE.MeshStandardMaterial({
+                    color: 0xffffff
+                });
+
+            const base =
+                new THREE.Mesh(
+                    geometry,
+                    material
+                );
+
+            base.position.set(
+                x,
+                0.12,
+                z
+            );
+
+            base.rotation.y =
+                Math.PI / 4;
+
+            base.castShadow = true;
+
+            stadium.add(base);
         }
-      }
-    }, TIC)
-    return () => clearInterval(reloj)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fase, lanzamiento])
 
-  if (!final) {
-    return <Navigate to="/finales" replace />
-  }
+        // ==========================================
+        // BASES
+        // ==========================================
 
-  const irAlResultado = () => navigate(`/finales/${final.id}/resultado`, {
-    state: { ganada: fin === 'ganada', lanzamientos: turnos },
-  })
+        crearBase(4.5, 1.8);
 
-  // La pelota sale del monticulo y crece conforme se acerca
-  const t = avance / 100
-  const estiloPelota = {
-    top: `${18 + t * 58}%`,
-    left: `${44 + Math.sin(t * Math.PI) * (enZona ? 2 : 9)}%`,
-    transform: `scale(${0.35 + t * 1.5})`,
-    opacity: fase === 'lanzando' ? 1 : 0,
-  }
+        crearBase(0, -2.7);
 
-  return (
-    <main className="batting-shell">
-      <PageHeader title="" backTo={`/finales/${final.id}`} />
+        crearBase(-4.5, 1.8);
 
-      <section className="batting-content" aria-label="Juego de bateo">
-        <div className="batting-scoreboard">
-          <div><strong>{final.local.abrev}</strong><b>{final.carreras.local + carreras}</b><strong>{final.rival.abrev}</strong><b>{final.carreras.rival}</b></div>
-          <div className="scoreboard-inning"><span>ENTRADA</span><strong>9</strong></div>
-          <div><span>B - S - O</span><strong>{bolas} - {strikes} - {outs}</strong></div>
-        </div>
+        // ==========================================
+        // HOME PLATE
+        // ==========================================
 
-        <div className="bases-vista" aria-label={`Corredores en base: ${bases.filter(Boolean).length}`}>
-          {['1B', '2B', '3B'].map((nombre, indice) => (
-            <span className={bases[indice] ? 'base es-ocupada' : 'base'} key={nombre}>{nombre}</span>
-          ))}
-        </div>
+        const homeShape =
+            new THREE.Shape();
 
-        <div className="baseball-field">
-          <div className="field-cloud cloud-one" aria-hidden="true" />
-          <div className="field-cloud cloud-two" aria-hidden="true" />
-          <div className="field-lights light-left" aria-hidden="true" />
-          <div className="field-lights light-right" aria-hidden="true" />
-          <div className="field-fence" aria-hidden="true" />
-          <div className="field-grass" aria-hidden="true" />
-          <div className="field-dirt" aria-hidden="true" />
-          <div className="field-mound" aria-hidden="true" />
-          <div className="field-home" aria-hidden="true" />
+        homeShape.moveTo(
+            -0.8,
+            0.5
+        );
 
-          <span className="pelota" style={estiloPelota} aria-hidden="true" />
+        homeShape.lineTo(
+            0.8,
+            0.5
+        );
 
-          <img
-            className={`bateador es-pose-${pose}`}
-            src={`${import.meta.env.BASE_URL}bateador/pose-${pose}.png`}
-            alt=""
-            aria-hidden="true"
-          />
-        </div>
+        homeShape.lineTo(
+            0.8,
+            -0.2
+        );
 
-        <p className="batting-jugada" role="status">
-          {jugada || (fase === 'lanzando' ? 'BATEA CUANDO LA PELOTA LLEGUE AL PLATO' : 'LISTO PARA EL LANZAMIENTO')}
-        </p>
+        homeShape.lineTo(
+            0,
+            -0.8
+        );
 
-        <div className="barra-tiempo" aria-label="Tiempo del lanzamiento">
-          <div className="barra-zona" />
-          <div className="barra-perfecta" />
-          <div className="barra-aguja" style={{ left: `${avance}%`, opacity: fase === 'lanzando' ? 1 : .25 }} />
-        </div>
+        homeShape.lineTo(
+            -0.8,
+            -0.2
+        );
 
-        {fin ? (
-          <div className="batting-fin">
-            <strong>{fin === 'ganada' ? '¡GANASTE LA ENTRADA!' : 'TE QUEDASTE SIN OUTS'}</strong>
-            <button className="bat-button" type="button" onClick={irAlResultado}>
-              {fin === 'ganada' ? 'VER RECOMPENSA' : 'VER RESULTADO'}
-            </button>
-          </div>
-        ) : (
-          <div className="batting-acciones">
-            <button className="bat-button" type="button" onClick={batear} disabled={fase !== 'lanzando'}>
-              BATEAR
-            </button>
-            <button className="bat-button es-pasar" type="button" onClick={lanzar} disabled={fase === 'lanzando'}>
-              {lanzamiento === 0 ? 'EMPEZAR' : 'SIGUIENTE'}
-            </button>
-          </div>
-        )}
-      </section>
+        homeShape.closePath();
 
-      {reglas && (
-        <div className="modal-backdrop" role="presentation" onClick={() => setReglas(false)}>
-          <section className="challenge-modal" role="dialog" aria-modal="true" aria-labelledby="reglas-bateo" onClick={(e) => e.stopPropagation()}>
-            <span className="modal-kicker">{final.serie}</span>
-            <h2 id="reglas-bateo">CÓMO SE<br />BATEA</h2>
-            <ol className="rules-list">
-              <li>Toca SIGUIENTE y la pelota sale del montículo hacia ti.</li>
-              <li>Toca BATEAR cuando la aguja entre en la franja verde. El centro amarillo es jonrón.</li>
-              <li>Si la dejas pasar y venía en la zona, es strike cantado. Si venía fuera, es bola.</li>
-              <li>Tres strikes son un out. Con tres outs se acaba. Una carrera y ganas la entrada.</li>
-            </ol>
-            <button className="button button-primary modal-action" type="button" onClick={() => setReglas(false)}>ENTENDIDO</button>
-          </section>
-        </div>
-      )}
-    </main>
-  )
+        const homeGeometry =
+            new THREE.ShapeGeometry(
+                homeShape
+            );
+
+        const homeMaterial =
+            new THREE.MeshStandardMaterial({
+                color: 0xffffff
+            });
+
+        const home =
+            new THREE.Mesh(
+                homeGeometry,
+                homeMaterial
+            );
+
+        home.rotation.x =
+            -Math.PI / 2;
+
+        home.position.set(
+            0,
+            0.13,
+            6.4
+        );
+
+        stadium.add(home);
+
+        
+        // ==========================================
+        // JUGADOR
+        // ==========================================
+
+
+        // El modelo se coloca a la izquierda de la placa original.
+        const homePlateLoader = new GLTFLoader();
+        let loadedHomePlate = null;
+        let componentUnmounted = false;
+
+        homePlateLoader.load(
+            `${import.meta.env.BASE_URL}modelos/Modelo_base.glb`,
+            (gltf) => {
+                if (componentUnmounted) return;
+
+                loadedHomePlate = gltf.scene;
+
+                const modelBounds = new THREE.Box3().setFromObject(
+                    loadedHomePlate
+                );
+                const modelSize = modelBounds.getSize(
+                    new THREE.Vector3()
+                );
+                const largestDimension = Math.max(
+                    modelSize.x,
+                    modelSize.y,
+                    modelSize.z
+                );
+
+                if (largestDimension > 0) {
+                    loadedHomePlate.scale.setScalar(
+                        1.6 / largestDimension
+                    );
+                }
+
+                loadedHomePlate.updateMatrixWorld(true);
+
+                const fittedBounds = new THREE.Box3().setFromObject(
+                    loadedHomePlate
+                );
+                const fittedCenter = fittedBounds.getCenter(
+                    new THREE.Vector3()
+                );
+
+                loadedHomePlate.position.set(
+                    -0.8 - fittedCenter.x,
+                    0.13 - fittedBounds.min.y,
+                    8.4 - fittedCenter.z
+                );
+
+                loadedHomePlate.traverse((child) => {
+                    if (!child.isMesh) return;
+
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                });
+
+                stadium.add(loadedHomePlate);
+            },
+            undefined,
+            (error) => {
+                console.error(
+                    "No se pudo cargar el modelo GLB del home plate. Se conserva la placa de respaldo.",
+                    error
+                );
+            }
+        );
+
+        // ==========================================
+        // PITCHER'S MOUND
+        // ==========================================
+
+        const moundGeometry =
+            new THREE.CylinderGeometry(
+                0.8,
+                0.8,
+                0.10,
+                64
+            );
+
+        const moundMaterial =
+            new THREE.MeshStandardMaterial({
+                color: 0x31230c
+            });
+
+        const mound =
+            new THREE.Mesh(
+                moundGeometry,
+                moundMaterial
+            );
+
+        mound.position.set(
+            0,
+            0.15,
+            1
+        );
+
+        mound.castShadow = true;
+
+        stadium.add(mound);
+
+
+
+
+        // ==========================================
+        // PLACA DEL PITCHER
+        // ==========================================
+/*
+        const pitcherPlateGeometry =
+            new THREE.BoxGeometry(
+                0.8,
+                0.08,
+                0.3
+            );
+
+        const pitcherPlateMaterial =
+            new THREE.MeshStandardMaterial({
+                color: 0x2a8034
+            });
+
+        const pitcherPlate =
+            new THREE.Mesh(
+                pitcherPlateGeometry,
+                pitcherPlateMaterial
+            );
+
+        pitcherPlate.position.set(
+            0,
+            0.3,
+            1
+        );
+
+        stadium.add(
+            pitcherPlate
+        );
+*/
+
+
+
+
+        // ==========================================
+        // LÍNEAS DEL CAMPO
+        // ==========================================
+
+        function crearLinea(
+            x,
+            z,
+            rotation
+        ) {
+            const geometry =
+                new THREE.PlaneGeometry(
+                    0.12,
+                    9
+                );
+
+            const material =
+                new THREE.MeshStandardMaterial({
+                    color: 0xffffff
+                });
+
+            const line =
+                new THREE.Mesh(
+                    geometry,
+                    material
+                );
+
+            line.rotation.x =
+                -Math.PI / 2;
+
+            line.rotation.z =
+                rotation;
+
+            line.position.set(
+                x,
+                0.08,
+                z
+            );
+
+            stadium.add(line);
+        }
+
+        crearLinea(
+            2.5,
+            4.2,
+            -Math.PI / 4
+        );
+
+        crearLinea(
+            -2.5,
+            4.2,
+            Math.PI / 4
+        );
+
+        // ==========================================
+        // CÍRCULO DEL PITCHER
+        // ==========================================
+        /*
+        const ringGeometry =
+            new THREE.RingGeometry(
+                1.35,
+                1.45,
+                64
+            );
+
+        const ringMaterial =
+            new THREE.MeshBasicMaterial({
+                color: 0xffffff,
+                side: THREE.DoubleSide
+            });
+
+        const ring =
+            new THREE.Mesh(
+                ringGeometry,
+                ringMaterial
+            );
+
+        ring.rotation.x =
+            -Math.PI / 2;
+
+        ring.position.set(
+            0,
+            0.31,
+            1
+        );
+
+        stadium.add(ring);
+        */
+        // ==========================================
+        // GRADAS
+        // ==========================================
+
+        function crearGrada(
+            x,
+            y,
+            z,
+            width,
+            depth
+        ) {
+            const geometry =
+                new THREE.BoxGeometry(
+                    width,
+                    1,
+                    depth
+                );
+
+            const material =
+                new THREE.MeshStandardMaterial({
+                    color: 0x555555
+                });
+
+            const grada =
+                new THREE.Mesh(
+                    geometry,
+                    material
+                );
+
+            grada.position.set(
+                x,
+                y,
+                z
+            );
+
+            grada.castShadow = true;
+
+            grada.receiveShadow = true;
+
+            stadium.add(grada);
+        }
+
+        for (
+            let i = 0;
+            i < 5;
+            i++
+        ) {
+            crearGrada(
+                0,
+                0.5 + i * 0.6,
+                -18 - i * 1.2,
+                35,
+                1
+            );
+        }
+
+        // ==========================================
+        // PEQUEÑO MOVIMIENTO DE CÁMARA
+        // ==========================================
+
+        let mouseX = 0;
+
+        let mouseY = 0;
+
+        function mouseMove(event) {
+            const rect =
+                renderer.domElement.getBoundingClientRect();
+
+            mouseX =
+                ((event.clientX - rect.left) /
+                    rect.width) *
+                    2 -
+                1;
+
+            mouseY =
+                ((event.clientY - rect.top) /
+                    rect.height) *
+                    2 -
+                1;
+        }
+
+        renderer.domElement.addEventListener(
+            "mousemove",
+            mouseMove
+        );
+
+        // ==========================================
+        // ANIMACIÓN
+        // ==========================================
+
+        let animationId;
+
+        function animate() {
+            animationId =
+                requestAnimationFrame(
+                    animate
+                );
+
+            // Movimiento muy pequeño
+            // para dar sensación de cámara viva
+            const targetX =
+                mouseX * 0.8;
+
+            const targetY =
+                1.8 - mouseY * 0.3;
+
+            camera.lookAt(
+                targetX,
+                targetY,
+                1
+            );
+
+            renderer.render(
+                scene,
+                camera
+            );
+        }
+
+        animate();
+
+        // ==========================================
+        // RESPONSIVE
+        // ==========================================
+
+        function resize() {
+            camera.aspect =
+                container.clientWidth /
+                container.clientHeight;
+
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(
+                container.clientWidth,
+                container.clientHeight
+            );
+        }
+
+        window.addEventListener(
+            "resize",
+            resize
+        );
+
+        // ==========================================
+        // LIMPIEZA
+        // ==========================================
+
+        return () => {
+            componentUnmounted = true;
+
+            cancelAnimationFrame(
+                animationId
+            );
+
+            renderer.domElement.removeEventListener(
+                "mousemove",
+                mouseMove
+            );
+
+            window.removeEventListener(
+                "resize",
+                resize
+            );
+
+            renderer.dispose();
+
+            if (loadedHomePlate) {
+                loadedHomePlate.traverse((child) => {
+                    if (!child.isMesh) return;
+
+                    child.geometry.dispose();
+
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach((material) => material.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                });
+            }
+
+            if (
+                container.contains(
+                    renderer.domElement
+                )
+            ) {
+                container.removeChild(
+                    renderer.domElement
+                );
+            }
+        };
+    }, []);
+
+    return (
+        <div
+            ref={containerRef}
+            style={{
+                width: "100%",
+                height: "100vh",
+                overflow: "hidden",
+                position: "relative"
+            }}
+        />
+    );
 }
+
+export default JuegoFinal;
+
