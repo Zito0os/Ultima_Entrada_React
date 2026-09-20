@@ -103,16 +103,7 @@ function HomePage() {
             <button className="button button-secondary" type="button" onClick={() => setAreRulesOpen(true)}>REGLAS</button>
           </div>
 
-          <section aria-labelledby="firebase-title">
-            <h3 id="firebase-title">PRUEBA DE FIREBASE</h3>
-            {errorFirebase ? <p>Error al conectar: {errorFirebase}</p> : null}
-            {datosFirebase.map((dato) => (
-              <article key={dato.id}>
-                <h4>{dato.mensaje}</h4>
-                
-              </article>
-            ))}
-          </section>
+
 
         </section>
       </header>

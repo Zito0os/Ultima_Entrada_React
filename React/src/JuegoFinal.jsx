@@ -1,10 +1,13 @@
 
 import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 function JuegoFinal() {
     const containerRef = useRef(null);
+    const { finalId } = useParams();
+    const navigate = useNavigate();
     const gameRef = useRef({
         phase: "ready",
         strikes: 0,
@@ -21,6 +24,16 @@ function JuegoFinal() {
         countdown: 0,
         animation: "Idle"
     });
+    const [lanzamientos, setLanzamientos] = useState(0);
+
+    function irAlResultado() {
+        navigate(`/finales/${finalId}/resultado`, {
+            state: {
+                ganada: gameRef.current.phase === "won",
+                lanzamientos
+            }
+        });
+    }
 
     function updateGameState(changes) {
         Object.assign(gameRef.current, changes);
@@ -660,6 +673,7 @@ function JuegoFinal() {
             console.log("[JuegoFinal] Lanzamiento iniciado.");
 
             pitchProgress = 0;
+            setLanzamientos((total) => total + 1);
             hit = false;
             swing = false;
             bateoPendiente = false;
@@ -1231,6 +1245,9 @@ function JuegoFinal() {
                     <p>ÚLTIMA ENTRADA</p>
                     <h1>¡HOME RUN!</h1>
                     <strong>¡GANASTE EL JUEGO!</strong>
+                    <button type="button" onClick={irAlResultado}>
+                        VER RECOMPENSA
+                    </button>
                 </div>
             )}
         </div>
