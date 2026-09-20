@@ -667,6 +667,31 @@ function JuegoFinal() {
             }
         }
 
+        function resolverPelotaDejadaPasar() {
+            const strikes = gameRef.current.strikes + 1;
+
+            ballInFlight = false;
+            pitchActive = false;
+            ball.position.copy(pitchEnd);
+
+            console.log("[JuegoFinal] Pelota dejada pasar: strike sin animacion Strike.", {
+                strikes
+            });
+            reproducirAnimacion("Idle");
+            updateGameState({
+                phase: strikes >= 3 ? "lost" : "strike",
+                strikes
+            });
+
+            if (strikes < 3) {
+                animationTimerRef.current = window.setTimeout(() => {
+                    if (!componentUnmounted && gameRef.current.phase === "strike") {
+                        updateGameState({ phase: "ready" });
+                    }
+                }, 1000);
+            }
+        }
+
         startPitchRef.current = () => {
             if (gameRef.current.phase !== "countdown") return;
 
@@ -1055,7 +1080,7 @@ function JuegoFinal() {
                 );
 
                 if (pitchProgress >= 1 && pitchActive) {
-                    registrarStrike();
+                    resolverPelotaDejadaPasar();
                 }
 
             } else if (hit) {
@@ -1237,7 +1262,14 @@ function JuegoFinal() {
                         BATEAR
                     </button>
                 )}
-                {gameState.phase === "lost" && <p>3 STRIKES: JUEGO TERMINADO</p>}
+                {gameState.phase === "lost" && (
+                    <>
+                        <p>3 STRIKES: JUEGO TERMINADO</p>
+                        <button type="button" onClick={irAlResultado}>
+                            VER RESULTADO
+                        </button>
+                    </>
+                )}
             </div>
 
             {gameState.phase === "won" && (
