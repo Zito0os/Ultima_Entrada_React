@@ -35,7 +35,7 @@ function JuegoFinal() {
         camera.position.set(
             0,
             2.1,
-            13.5
+            12
         );
 
         // Mirar hacia el pitcher
@@ -71,14 +71,14 @@ function JuegoFinal() {
         // ==========================================
 
         const ambientLight = new THREE.AmbientLight(
-            0xffffff,
-            1.2
+            0xE3E3FF,
+            1
         );
 
         scene.add(ambientLight);
 
         const sun = new THREE.DirectionalLight(
-            0xffffff,
+            0xE3E3FF,
             2
         );
 
@@ -102,6 +102,54 @@ function JuegoFinal() {
         const stadium = new THREE.Group();
 
         scene.add(stadium);
+
+        // ==========================================
+        // PELOTA
+        // ==========================================
+
+        const ballGeometry = new THREE.SphereGeometry(0.08, 32, 32);
+
+        const ballMaterial = new THREE.MeshStandardMaterial({
+            color: 0xffffff
+        });
+
+        const ball = new THREE.Mesh(
+            ballGeometry,
+            ballMaterial
+        );
+
+        ball.castShadow = true;
+        stadium.add(ball);                                  
+
+
+        //donde empieza y donde termina la pelota
+        const pitchStart = new THREE.Vector3(0, 0.7, 0.5);
+        const pitchEnd = new THREE.Vector3(0, 0.7, 14.2);
+
+        ball.position.copy(pitchStart);
+
+        const pitchSpeed = 1.5; // Velocidad de la pelota (ajustable)
+        let pitchProgress = 0;
+
+        const clock = new THREE.Clock();
+
+
+        // ==========================================
+        // SISTEMA DE BATEO VARIABLES
+        // ==========================================
+
+        let swing = false;
+        let swingTimer = 0;
+        let hit = false;
+        let hitDirection = 0;
+
+        const swingDuration = 0.20;
+        const hitDistance = 1.0;
+
+
+
+
+        
 
         // ==========================================
         // CÉSPED
@@ -613,6 +661,62 @@ function JuegoFinal() {
             mouseMove
         );
 
+
+        // ==========================================
+        // CONTROL DE BATEO
+        // ==========================================
+
+        function batear() {
+            if (swing || hit) return;
+
+            swing = true;
+            swingTimer = swingDuration;
+
+
+            //aqui es el punto donde si hace contacto es hit
+            const distanceToBall =
+                ball.position.distanceTo(
+                    new THREE.Vector3(
+                        0,
+                        0.7 ,
+                        8.0
+                    )
+                );
+
+            if (distanceToBall < hitDistance) {
+                hit = true;
+
+                hitDirection =
+                    (Math.random() - 0.5) * 2;
+
+                console.log("HIT");
+            } else {
+                console.log("MISS");
+            }
+        }
+
+        function teclaBatear(event) {
+            if (event.code === "Space") {
+                event.preventDefault();
+                batear();
+            }
+        }
+
+        window.addEventListener(
+            "keydown",
+            teclaBatear
+        );
+
+        renderer.domElement.addEventListener(
+            "click",
+            batear
+        );
+
+
+
+
+
+
         // ==========================================
         // ANIMACIÓN
         // ==========================================
@@ -624,7 +728,43 @@ function JuegoFinal() {
                 requestAnimationFrame(
                     animate
                 );
+            const delta = clock.getDelta();
 
+            if (!hit) {
+
+                pitchProgress +=
+                    delta * pitchSpeed;
+
+                if (pitchProgress >= 1) {
+                    pitchProgress = 0;
+                }
+
+                ball.position.lerpVectors(
+                    pitchStart,
+                    pitchEnd,
+                    pitchProgress
+                );
+
+            } else {
+
+                ball.position.x +=
+                    hitDirection * delta * 8;
+
+                ball.position.z -=
+                    delta * 12;
+
+                ball.position.y +=
+                    delta * 4;
+            }
+
+            if (swing) {
+
+                swingTimer -= delta;
+
+                if (swingTimer <= 0) {
+                    swing = false;
+                }
+            }
             // Movimiento muy pequeño
             // para dar sensación de cámara viva
             const targetX =
@@ -675,6 +815,16 @@ function JuegoFinal() {
 
         return () => {
             componentUnmounted = true;
+
+            window.removeEventListener(
+                "keydown",
+                teclaBatear
+            );
+
+            renderer.domElement.removeEventListener(
+                "click",
+                batear
+            );
 
             cancelAnimationFrame(
                 animationId
