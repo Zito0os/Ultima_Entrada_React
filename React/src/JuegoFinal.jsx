@@ -17,7 +17,12 @@ function JuegoFinal() {
     const readyTimerRef = useRef(null);
     const animationTimerRef = useRef(null);
     const startPitchRef = useRef(() => {});
+    const startPitcherAnimationRef = useRef(() => {});
     const batearRef = useRef(() => {});
+    const lanzamientoPendienteRef = useRef(false);
+    const lanzamientoAnticipadoRef = useRef(false);
+    const strikeTerminadoRef = useRef(true);
+    const tiempoAntesDeLanzar = 1.7;
     const [gameState, setGameState] = useState({
         phase: "ready",
         strikes: 0,
@@ -43,20 +48,17 @@ function JuegoFinal() {
     function prepararLanzamiento() {
         if (gameRef.current.phase !== "ready") return;
 
-        let seconds = 3;
-        updateGameState({ phase: "countdown", countdown: seconds });
-        readyTimerRef.current = window.setInterval(() => {
-            seconds -= 1;
-
-            if (seconds <= 0) {
-                window.clearInterval(readyTimerRef.current);
-                readyTimerRef.current = null;
-                startPitchRef.current();
-                return;
-            }
-
-            updateGameState({ countdown: seconds });
-        }, 1000);
+        startPitcherAnimationRef.current();
+        lanzamientoPendienteRef.current = true;
+        updateGameState({
+            phase: "countdown",
+            countdown: tiempoAntesDeLanzar,
+            bateoBloqueado: false
+        });
+        readyTimerRef.current = window.setTimeout(() => {
+            readyTimerRef.current = null;
+            startPitchRef.current();
+        }, tiempoAntesDeLanzar * 1000);
     }
 
     useEffect(() => {
@@ -182,7 +184,7 @@ function JuegoFinal() {
         ball.position.copy(pitchStart);
         ball.visible = false;
 
-        const pitchSpeed = 0.7; // Velocidad de la pelota (ajustable)
+        const pitchSpeed = 0.8; // Velocidad de la pelota (ajustable)
         let pitchProgress = 0;
 
         const clock = new THREE.Clock();
@@ -421,6 +423,12 @@ function JuegoFinal() {
         // El jugador se coloca a la izquierda de la placa original.
         const homePlateLoader = new GLTFLoader();
         let loadedHomePlate = null;
+        const pitcherLoader = new GLTFLoader();
+        let loadedPitcher = null;
+        let pitcherMixer = null;
+        const pitcherAnimationActions = {};
+        const pitcherAnimationMeshes = new Map();
+        let pitcherSkinnedMeshes = [];
         let componentUnmounted = false;
 
         function prepararClipParaRigVisible(clip) {
@@ -503,6 +511,25 @@ function JuegoFinal() {
                     );
                 });
 
+                animationMixer.addEventListener("finished", (event) => {
+                    const strikeAction = obtenerAccion("Strike");
+                    if (event.action !== strikeAction || componentUnmounted) {
+                        return;
+                    }
+
+                    strikeTerminadoRef.current = true;
+                    reproducirAnimacion("Idle");
+                    if (
+                        gameRef.current.phase === "strike" &&
+                        !lanzamientoPendienteRef.current
+                    ) {
+                        updateGameState({
+                            phase: "ready",
+                            bateoBloqueado: false
+                        });
+                    }
+                });
+
                 if (obtenerAccion("Idle")) {
                     console.log("[JuegoFinal] Reproduciendo Idle al cargar.");
                     reproducirAnimacion("Idle");
@@ -568,6 +595,154 @@ function JuegoFinal() {
             (error) => {
                 console.error(
                     "[JuegoFinal] No se pudo cargar Modelo_base_anim.glb.",
+                    error
+                );
+            }
+        );
+
+
+        
+        // ==========================================
+        // PITCHER
+        // ==========================================
+
+
+
+
+        function obtenerAccionPitcher(nombre) {
+            const nombreBuscado = normalizarNombreAnimacion(nombre);
+            const clave = Object.keys(pitcherAnimationActions).find((item) => {
+                return normalizarNombreAnimacion(item) === nombreBuscado;
+            });
+
+            return clave ? pitcherAnimationActions[clave] : null;
+        }
+
+        function reproducirAnimacionPitcher(nombre) {
+            const action = obtenerAccionPitcher(nombre);
+            if (!action || !pitcherMixer) return;
+
+            pitcherMixer.stopAllAction();
+            action.reset();
+            action.enabled = true;
+            action.paused = false;
+            action.setLoop(
+                nombre === "Idle_Pitching" ? THREE.LoopRepeat : THREE.LoopOnce,
+                nombre === "Idle_Pitching" ? Infinity : 1
+            );
+            action.clampWhenFinished = nombre !== "Idle_Pitching";
+            action.play();
+
+            const visibleMeshes = pitcherAnimationMeshes.get(action);
+            if (visibleMeshes && visibleMeshes.length > 0) {
+                pitcherSkinnedMeshes.forEach((mesh) => {
+                    mesh.visible = visibleMeshes.includes(mesh);
+                });
+            } else {
+                pitcherSkinnedMeshes.forEach((mesh) => {
+                    mesh.visible = true;
+                });
+            }
+        }
+
+        startPitcherAnimationRef.current = () => {
+            reproducirAnimacionPitcher("Pitching");
+        };
+
+        pitcherLoader.load(
+            `${import.meta.env.BASE_URL}modelos/Pitcher_anim.glb`,
+            (gltf) => {
+                if (componentUnmounted) return;
+
+                loadedPitcher = gltf.scene;
+                //ROTAR 180 GRADOS PARA QUE MIRE AL BATEADOR
+                //loadedPitcher.rotation.y = Math.PI;
+                pitcherMixer = new THREE.AnimationMixer(loadedPitcher);
+
+                pitcherSkinnedMeshes = [];
+                loadedPitcher.traverse((child) => {
+                    if (child.isSkinnedMesh) pitcherSkinnedMeshes.push(child);
+                });
+
+                gltf.animations.forEach((clip) => {
+                    const preparedClip = prepararClipParaRigVisible(clip);
+                    const action = pitcherMixer.clipAction(preparedClip);
+                    const trackNodes = new Set(
+                        preparedClip.tracks.flatMap((track) => (
+                            track.name.match(/mixamorig[A-Za-z0-9_]+/g) || []
+                        ))
+                    );
+                    const matchingMeshes = pitcherSkinnedMeshes.filter((mesh) =>
+                        mesh.skeleton.bones.some((bone) => trackNodes.has(bone.name))
+                    );
+                    const meshesForClip = matchingMeshes.length > 0
+                        ? matchingMeshes
+                        : pitcherSkinnedMeshes;
+
+                    pitcherAnimationActions[clip.name] = action;
+                    pitcherAnimationMeshes.set(action, meshesForClip);
+                });
+
+                pitcherMixer.addEventListener("finished", (event) => {
+                    const pitchingAction = obtenerAccionPitcher("Pitching");
+                    if (event.action === pitchingAction && !componentUnmounted) {
+                        reproducirAnimacionPitcher("Idle_Pitching");
+                    }
+                });
+
+                const modelBounds = new THREE.Box3().setFromObject(loadedPitcher);
+                const modelSize = modelBounds.getSize(new THREE.Vector3());
+                const alturaPitcher = 0.3;
+
+                if (modelSize.y > 0) {
+                    loadedPitcher.scale.setScalar(alturaPitcher / modelSize.y);
+                }
+
+                loadedPitcher.updateMatrixWorld(true);
+
+                const fittedBounds = new THREE.Box3().setFromObject(loadedPitcher);
+                const fittedCenter = fittedBounds.getCenter(new THREE.Vector3());
+
+                loadedPitcher.position.set(
+                    -fittedCenter.x,
+                    0.2 - fittedBounds.min.y,
+                    1 - fittedCenter.z
+                );
+                loadedPitcher.traverse((child) => {
+                    if (!child.isMesh) return;
+
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+
+                    const materials = Array.isArray(child.material)
+                        ? child.material
+                        : [child.material];
+
+                    materials.forEach((material) => {
+                        material.transparent = false;
+                        material.opacity = 1;
+                        material.alphaTest = 0;
+                        material.depthTest = true;
+                        material.depthWrite = true;
+                        material.blending = THREE.NoBlending;
+                        material.needsUpdate = true;
+                    });
+                });
+
+                loadedPitcher.traverse((child) => {
+                    if (!child.isMesh) return;
+
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                });
+
+                stadium.add(loadedPitcher);
+                reproducirAnimacionPitcher("Idle_Pitching");
+            },
+            undefined,
+            (error) => {
+                console.error(
+                    "[JuegoFinal] No se pudo cargar Pitcher_anim.glb.",
                     error
                 );
             }
@@ -642,6 +817,7 @@ function JuegoFinal() {
             );
             swing = false;
             pitchActive = false;
+            strikeTerminadoRef.current = false;
 
             if (reproducirStrike) {
                 reproducirAnimacion("Strike");
@@ -649,22 +825,9 @@ function JuegoFinal() {
 
             updateGameState({
                 phase: strikes >= 3 ? "lost" : "strike",
-                strikes
+                strikes,
+                bateoBloqueado: false
             });
-
-            if (strikes < 3) {
-                const strikeAction = obtenerAccion("Strike");
-                const duration = strikeAction
-                    ? (strikeAction.getClip().duration * 1000) / velocidadAnimaciones
-                    : 1000;
-
-                animationTimerRef.current = window.setTimeout(() => {
-                    if (!componentUnmounted && gameRef.current.phase === "strike") {
-                        reproducirAnimacion("Idle");
-                        updateGameState({ phase: "ready" });
-                    }
-                }, duration);
-            }
         }
 
         function resolverPelotaDejadaPasar() {
@@ -672,6 +835,7 @@ function JuegoFinal() {
 
             ballInFlight = false;
             pitchActive = false;
+            strikeTerminadoRef.current = true;
             ball.position.copy(pitchEnd);
 
             console.log("[JuegoFinal] Pelota dejada pasar: strike sin animacion Strike.", {
@@ -693,7 +857,12 @@ function JuegoFinal() {
         }
 
         startPitchRef.current = () => {
-            if (gameRef.current.phase !== "countdown") return;
+            if (
+                !lanzamientoPendienteRef.current ||
+                gameRef.current.phase === "lost"
+            ) return;
+
+            lanzamientoPendienteRef.current = false;
 
             console.log("[JuegoFinal] Lanzamiento iniciado.");
 
@@ -702,21 +871,33 @@ function JuegoFinal() {
             hit = false;
             swing = false;
             bateoPendiente = false;
-            pitchActive = true;
+            pitchActive = !lanzamientoAnticipadoRef.current;
             ballInFlight = true;
             ball.position.copy(pitchStart);
             ball.visible = true;
-            reproducirAnimacion("Idle");
-            updateGameState({ phase: "pitching", countdown: 0 });
+            if (gameRef.current.animation !== "Strike") {
+                reproducirAnimacion("Idle");
+            }
+            updateGameState({
+                phase: "pitching",
+                countdown: 0,
+                bateoBloqueado: lanzamientoAnticipadoRef.current
+            });
         };
 
         batearRef.current = () => {
             if (
-                gameRef.current.phase !== "pitching" ||
+                !["countdown", "pitching"].includes(gameRef.current.phase) ||
                 swing ||
                 hit ||
                 bateoPendiente
             ) return;
+
+            if (gameRef.current.phase === "countdown") {
+                lanzamientoAnticipadoRef.current = true;
+                registrarStrike(true);
+                return;
+            }
 
             bateoPendiente = true;
             swing = true;
@@ -1016,11 +1197,12 @@ function JuegoFinal() {
                     2 -
                 1;
         }
-
+        /*
         renderer.domElement.addEventListener(
             "mousemove",
             mouseMove
         );
+        */
 
 
         // ==========================================
@@ -1079,8 +1261,25 @@ function JuegoFinal() {
                     pitchProgress
                 );
 
-                if (pitchProgress >= 1 && pitchActive) {
-                    resolverPelotaDejadaPasar();
+                if (pitchProgress >= 1) {
+                    if (pitchActive) {
+                        resolverPelotaDejadaPasar();
+                    } else if (lanzamientoAnticipadoRef.current) {
+                        ball.visible = false;
+                        lanzamientoAnticipadoRef.current = false;
+
+                        if (strikeTerminadoRef.current) {
+                            updateGameState({
+                                phase: "ready",
+                                bateoBloqueado: false
+                            });
+                        } else {
+                            updateGameState({
+                                phase: "strike",
+                                bateoBloqueado: false
+                            });
+                        }
+                    }
                 }
 
             } else if (hit) {
@@ -1111,6 +1310,10 @@ function JuegoFinal() {
                     mixerUpdateLogged = true;
                     console.log("[JuegoFinal] AnimationMixer actualizado correctamente.");
                 }
+            }
+
+            if (pitcherMixer) {
+                pitcherMixer.update(delta);
             }
             // Movimiento muy pequeño
             // para dar sensación de cámara viva
@@ -1164,7 +1367,7 @@ function JuegoFinal() {
             componentUnmounted = true;
 
             if (readyTimerRef.current) {
-                window.clearInterval(readyTimerRef.current);
+                window.clearTimeout(readyTimerRef.current);
             }
 
             if (animationTimerRef.current) {
@@ -1176,7 +1379,10 @@ function JuegoFinal() {
             }
 
             startPitchRef.current = () => {};
+            startPitcherAnimationRef.current = () => {};
             batearRef.current = () => {};
+            lanzamientoPendienteRef.current = false;
+            lanzamientoAnticipadoRef.current = false;
 
             window.removeEventListener(
                 "keydown",
@@ -1206,6 +1412,20 @@ function JuegoFinal() {
 
             if (loadedHomePlate) {
                 loadedHomePlate.traverse((child) => {
+                    if (!child.isMesh) return;
+
+                    child.geometry.dispose();
+
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach((material) => material.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                });
+            }
+
+            if (loadedPitcher) {
+                loadedPitcher.traverse((child) => {
                     if (!child.isMesh) return;
 
                     child.geometry.dispose();
@@ -1253,15 +1473,14 @@ function JuegoFinal() {
                         LISTO
                     </button>
                 )}
-                {gameState.phase === "countdown" && (
-                    <p>LANZAMIENTO EN {gameState.countdown}</p>
-                )}
                 {gameState.phase === "strike" && <p>¡STRIKE!</p>}
-                {gameState.phase === "pitching" && (
+                {gameState.phase === "countdown" || (
+                    gameState.phase === "pitching" && !gameState.bateoBloqueado
+                ) ? (
                     <button type="button" onClick={() => batearRef.current()}>
                         BATEAR
                     </button>
-                )}
+                ) : null}
                 {gameState.phase === "lost" && (
                     <>
                         <p>3 STRIKES: JUEGO TERMINADO</p>
