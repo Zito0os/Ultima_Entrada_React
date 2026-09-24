@@ -1,0 +1,274 @@
+/* ==========================================
+   MARCADOR ESTILO TABLERO DE ESTADISTICAS
+   Fondo blanco, tonos azules, sin gradientes
+   ========================================== */
+
+.juego-final-scoreboard {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    min-width: 260px;
+    padding: 10px 18px 14px;
+
+    background: #ffffff;
+    border: 2px solid #0b3d91;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(11, 61, 145, 0.25);
+
+    font-family: "Courier New", "DejaVu Sans Mono", monospace;
+    color: #0b1f3a;
+    user-select: none;
+}
+
+/* Franja superior: liga + entrada */
+.marcador-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #0b3d91;
+}
+
+.marcador-liga {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #0b3d91;
+    font-weight: 700;
+}
+
+.marcador-entrada {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.marcador-entrada-num {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0b3d91;
+}
+
+.marcador-entrada-txt {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: #4c6fa8;
+}
+
+/* Filas de conteo B / S */
+.marcador-conteo {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding-top: 4px;
+}
+
+.marcador-fila {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.marcador-label {
+    width: 16px;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    color: #0b3d91;
+}
+
+.marcador-dots {
+    display: flex;
+    gap: 8px;
+}
+
+/* Puntos */
+.dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid #a9bfe0;
+}
+
+/* Bolas: verde cuando estan activas */
+.dot.bola {
+    background: #ffffff;
+    border-color: #a9bfe0;
+}
+
+.dot.bola.activo {
+    background: #1f9d55;
+    border-color: #1f9d55;
+}
+
+/* Strikes: rojo cuando estan activos */
+.dot.strike.activo {
+    background: #d92626;
+    border-color: #d92626;
+}
+
+/* Responsive: pantallas pequeñas */
+@media (max-width: 480px) {
+    .juego-final-scoreboard {
+        min-width: 210px;
+        padding: 8px 12px 12px;
+        top: 12px;
+    }
+
+    .marcador-entrada-num {
+        font-size: 15px;
+    }
+
+    .marcador-entrada-txt {
+        font-size: 9px;
+    }
+
+    .dot {
+        width: 12px;
+        height: 12px;
+    }
+}
+
+/* ==========================================
+   ZONA DE LANZAMIENTO + JOYSTICK
+   ========================================== */
+
+/* El boton de bateo queda al lado derecho, frente al joystick. */
+.juego-final-actions {
+    left: auto !important;
+    right: 8% !important;
+    bottom: 90px !important;
+    transform: none !important;
+}
+
+.juego-final-victoria {
+    z-index: 30 !important;
+}
+
+.zona-lanzamiento-wrapper {
+    position: absolute;
+    right: 8%;
+    bottom: 28%;
+    z-index: 10;
+
+    display: flex;
+    align-items: center;
+
+    user-select: none;
+}
+
+/* Cuadricula 3x3 sobre la zona visual de primera base */
+.zona-lanzamiento {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.82);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.zona-celda {
+    border: 1px solid rgba(255, 255, 255, 0.58);
+}
+
+/* Circulo de prediccion: aparece antes del lanzamiento */
+.zona-circulo-objetivo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 68px;
+    height: 68px;
+    transform: translate(-50%, -50%);
+
+    border-radius: 50%;
+    border: 3px solid #f5a623;
+    background: rgba(245, 166, 35, 0.15);
+
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+}
+
+/* Punto de contacto del jugador */
+.zona-punto-contacto {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 18px;
+    height: 18px;
+    transform: translate(-50%, -50%);
+
+    border-radius: 50%;
+    background: #d92626;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Joystick */
+.joystick-base {
+    position: fixed;
+    left: 8%;
+    bottom: 90px;
+    z-index: 10;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+
+    background: #ffffff;
+    border: 2px solid #0b3d91;
+
+    touch-action: none;
+    cursor: pointer;
+}
+
+.joystick-stick {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border-radius: 50%;
+
+    background: #0b3d91;
+    transition: transform 0.05s linear;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .juego-final-actions {
+        right: 5% !important;
+        bottom: 70px !important;
+    }
+
+    .zona-lanzamiento-wrapper {
+        right: 5%;
+        bottom: 25%;
+    }
+
+    .joystick-base {
+        left: 6%;
+        bottom: 70px;
+        width: 74px;
+        height: 74px;
+    }
+
+    .joystick-stick {
+        width: 32px;
+        height: 32px;
+        margin: -16px 0 0 -16px;
+    }
+}

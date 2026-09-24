@@ -401,6 +401,17 @@ body { letter-spacing: .015em; }
 .final-marca.es-ganada { color: var(--acento); }
 .final-candado { display: inline-flex; align-items: center; gap: 4px; color: #fff; font-family: var(--fuente-mono); font-size: .55rem; font-weight: 900; white-space: nowrap; }
 
+.juego-final-scoreboard { position: absolute; top: 18px; left: 50%; z-index: 5; display: flex; min-width: 260px; justify-content: space-between; gap: 22px; padding: 11px 16px; border: 2px solid rgba(255, 255, 255, .75); border-radius: 8px; color: #fff; background: rgba(12, 37, 29, .82); font-family: var(--fuente-mono); font-size: .76rem; transform: translateX(-50%); }
+.juego-final-scoreboard strong { color: var(--acento); }
+.juego-final-actions { position: absolute; right: 50%; bottom: 28px; z-index: 5; transform: translateX(50%); }
+.juego-final-actions button { min-width: 170px; min-height: 54px; border: 0; border-radius: 8px; color: #000; background: var(--acento); font: inherit; font-size: 1.25rem; font-weight: 900; cursor: pointer; }
+.juego-final-actions p { margin: 0; padding: 13px 18px; border-radius: 8px; color: #fff; background: rgba(12, 37, 29, .86); font-family: var(--fuente-mono); font-weight: 800; text-align: center; }
+.juego-final-victoria { position: absolute; top: 50%; left: 50%; z-index: 8; width: min(86vw, 430px); padding: 30px 22px; border: 3px solid var(--acento); border-radius: 10px; color: #fff; background: rgba(12, 37, 29, .94); text-align: center; transform: translate(-50%, -50%); }
+.juego-final-victoria p { margin: 0 0 8px; color: var(--acento); font-family: var(--fuente-mono); font-size: .78rem; font-weight: 800; }
+.juego-final-victoria h1 { margin: 0 0 10px; font-size: clamp(2rem, 8vw, 3.8rem); }
+.juego-final-victoria strong { font-family: var(--fuente-mono); }
+.juego-final-victoria button { display: block; min-width: 190px; margin: 20px auto 0; padding: 12px 18px; border: 0; border-radius: 8px; color: #000; background: var(--acento); font: inherit; font-weight: 900; cursor: pointer; }
+
 .escudo-final { display: grid; width: 32px; height: 32px; flex: 0 0 32px; place-items: center; overflow: hidden; border-radius: 7px; background: #fff; }
 .escudo-final img { width: 100%; height: 100%; object-fit: contain; padding: 3px; box-sizing: border-box; }
 .escudo-final b { display: grid; width: 100%; height: 100%; place-items: center; color: #fff; font-family: var(--fuente-mono); font-size: .5rem; font-weight: 900; }
