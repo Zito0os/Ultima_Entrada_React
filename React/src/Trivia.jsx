@@ -124,7 +124,7 @@ function Resumen({ team, epoca, aciertos, total, onRepetir }) {
       <main className="trivia-shell">
         <PageHeader title="TRIVIA" backTo={`/trivia/${team.id}`} />
         <section className="trivia-resumen">
-          <TrofeoGanado nombre={trofeo.nombre} pista={trofeo.pista} onCerrar={() => setCerrado(true)} />
+          <TrofeoGanado trofeo={trofeo} onCerrar={() => setCerrado(true)} />
         </section>
         <BottomNav activeTab="inicio" onTabChange={() => {}} />
       </main>

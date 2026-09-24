@@ -167,15 +167,11 @@ export default function VerCartaAR({ carta, onSalir, onFoto }) {
     }
     actual.renderer.render(actual.scene, actual.camera)
     const foto = componerCaptura(actual.mindar.video, actual.renderer.domElement)
-    foto.toBlob((blob) => {
-      const enlace = document.createElement('a')
-      enlace.href = URL.createObjectURL(blob)
-      enlace.download = `ultima-entrada-${carta.id}.png`
-      enlace.click()
-      onFoto?.(carta)
-      setAviso('Foto guardada con la carta incluida.')
-      setTimeout(() => setAviso(''), 3000)
-    }, 'image/png')
+    // onFoto la guarda en la galeria y regresa una promesa
+    Promise.resolve(onFoto?.(carta, foto))
+      .then(() => setAviso('Foto guardada en tu galería.'))
+      .catch(() => setAviso('No se pudo guardar la foto. Revisa tu conexión.'))
+      .finally(() => setTimeout(() => setAviso(''), 3000))
   }, [carta, onFoto])
 
   const rotulo = estado === 'error' ? 'ERROR'

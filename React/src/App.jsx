@@ -40,6 +40,7 @@ import { db } from './firebase'
 // three.js solo se descarga al entrar a la prueba 3D
 const PruebaEscudo = lazy(() => import('./PruebaEscudo'))
 const PruebaCartas = lazy(() => import('./PruebaCartas'))
+const PruebaTrofeo = lazy(() => import('./PruebaTrofeo'))
 const CompilarMarcador = lazy(() => import('./CompilarMarcador'))
 const VerEscudoAR = lazy(() => import('./VerEscudoAR'))
 const VerCartaARPagina = lazy(() => import('./VerCartaARPagina'))
@@ -198,6 +199,7 @@ function AppRoutes() {
       <Route path="/ar/tarjetas" element={<Tarjetas />} />
       <Route path="/ar/carta/:cartaId" element={<Suspense fallback={<p className="prueba-cargando">Encendiendo la camara...</p>}><VerCartaARPagina /></Suspense>} />
       <Route path="/album/prueba" element={<Suspense fallback={<p className="prueba-cargando">Cargando las cartas...</p>}><PruebaCartas /></Suspense>} />
+      <Route path="/trofeo/prueba" element={<Suspense fallback={<p className="prueba-cargando">Cargando el trofeo...</p>}><PruebaTrofeo /></Suspense>} />
       <Route path="/album" element={<Album />} />
       <Route path="/album/:cartaId" element={<DetalleCartaPagina />} />
       <Route path="/equipos" element={<Equipos />} />

@@ -38,7 +38,7 @@ export default function Resultado() {
     return (
       <main className="result-shell-final">
         <section className="result-content-final">
-          <TrofeoGanado nombre={trofeo.nombre} pista={trofeo.pista} onCerrar={() => setCerrado(true)} />
+          <TrofeoGanado trofeo={trofeo} onCerrar={() => setCerrado(true)} />
         </section>
       </main>
     )

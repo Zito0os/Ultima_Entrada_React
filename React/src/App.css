@@ -53,7 +53,8 @@
 .bottom-nav { position: fixed; right: 0; bottom: 0; left: 0; z-index: 5; display: flex; justify-content: space-around; padding: 8px max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)); background: var(--azul-medio); box-shadow: 0 -4px 18px rgba(11, 52, 100, .18); }
 .nav-item { display: flex; flex: 1; flex-direction: column; align-items: center; gap: 1px; border: 0; background: none; color: var(--tinta); font: inherit; font-size: .68rem; font-weight: 800; cursor: pointer; }
 .nav-icon { display: grid; place-items: center; min-height: 38px; font-size: 2rem; line-height: 1; }.nav-item.is-active { color: #fff; }.nav-item:nth-child(3) .nav-icon { width: 67px; height: 67px; margin-top: -34px; border-radius: 50%; color: #fff; background: var(--azul-claro); font-size: 2.5rem; box-shadow: 0 3px 0 var(--azul-medio); }
-.modal-backdrop { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 20px; background: rgba(5, 24, 53, .7); }.challenge-modal { position: relative; width: min(100%, 480px); padding: 38px 30px 30px; border-radius: 24px; color: #fff; background: #20599c; box-shadow: 0 20px 60px rgba(0,0,0,.3); text-align: center; }.modal-kicker { color: var(--acento); font-weight: 900; }.challenge-modal h2 { margin: 14px 0; color: #fff; font-size: clamp(2rem, 7vw, 3.5rem); line-height: .9; }.challenge-modal p { color: var(--texto-tenue); }.close-button { position: absolute; top: 12px; right: 16px; border: 0; background: none; color: #fff; font-size: 2rem; cursor: pointer; }.modal-action { width: 100%; margin-top: 25px; }
+/* Por encima del header, que va en 20 */
+.modal-backdrop { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 20px; background: rgba(5, 24, 53, .7); }.challenge-modal { position: relative; width: min(100%, 480px); padding: 38px 30px 30px; border-radius: 24px; color: #fff; background: #20599c; box-shadow: 0 20px 60px rgba(0,0,0,.3); text-align: center; }.modal-kicker { color: var(--acento); font-weight: 900; }.challenge-modal h2 { margin: 14px 0; color: #fff; font-size: clamp(2rem, 7vw, 3.5rem); line-height: .9; }.challenge-modal p { color: var(--texto-tenue); }.close-button { position: absolute; top: 12px; right: 16px; border: 0; background: none; color: #fff; font-size: 2rem; cursor: pointer; }.modal-action { width: 100%; margin-top: 25px; }
 .team-detail-shell { min-height: 100svh; background: var(--superficie); color: #fff; }
 .profile-shell { min-height: 100svh; background: var(--superficie); color: var(--tinta); }
 .profile-topbar { padding: 24px 14px 14px; background: var(--azul); }
@@ -182,8 +183,17 @@
 .photo-placeholder { position: relative; display: block; min-height: 94px; padding: 0; overflow: hidden; border: 0; border-radius: 10px; background: var(--gris-bloque); cursor: pointer; }
 .photo-placeholder.is-selected { outline: 4px solid var(--azul); outline-offset: -4px; }
 .photo-placeholder span { position: absolute; bottom: 5px; left: 8px; color: var(--azul-medio); font-family: var(--fuente-mono); font-size: .52rem; font-weight: 900; }
-.gallery-actions { position: fixed; right: 14px; bottom: 77px; left: 14px; z-index: 6; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; max-width: 492px; margin: 0 auto; }
-.gallery-action { min-height: 37px; border: 0; border-radius: 7px; color: var(--acento); background: var(--azul-medio); font: inherit; font-size: .78rem; font-weight: 900; cursor: pointer; }
+.photo-placeholder { aspect-ratio: 3 / 4; }
+.photo-placeholder img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.photo-placeholder img + span { z-index: 1; padding: 2px 6px; border-radius: 5px; background: var(--acento); }
+/* El fondo blanco se ve a traves de la palomita recortada del circulo */
+.photo-check { position: absolute; top: 6px; right: 6px; z-index: 1; border-radius: 50%; color: var(--azul); background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .3); }
+/* Botones redondos a la derecha; la columna deja pasar los toques a la cuadricula */
+.gallery-actions { position: fixed; bottom: 92px; z-index: 6; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; pointer-events: none; }
+.gallery-action { position: relative; display: grid; width: 54px; height: 54px; place-items: center; padding: 0; border: 0; border-radius: 50%; color: var(--acento); background: var(--azul-medio); box-shadow: 0 6px 16px rgba(0, 0, 0, .25); font: inherit; font-size: .72rem; font-weight: 900; cursor: pointer; pointer-events: auto; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.gallery-action__etiqueta { position: absolute; top: 50%; right: calc(100% + 10px); padding: 6px 10px; border-radius: 8px; color: #fff; background: var(--azul-profundo); white-space: nowrap; opacity: 0; transform: translate(6px, -50%); transition: opacity .15s ease, transform .15s ease; pointer-events: none; }
+.gallery-action.is-etiqueta .gallery-action__etiqueta { opacity: 1; transform: translate(0, -50%); }
+@media (hover: hover) { .gallery-action:hover .gallery-action__etiqueta { opacity: 1; transform: translate(0, -50%); } }
 .gallery-placeholder { display: grid; min-height: 150px; place-items: center; padding: 18px; border-radius: 16px; color: #fff; background: var(--azul-profundo); text-align: center; }
 .gallery-placeholder > span { color: var(--acento); font-size: 3rem; line-height: 1; }
 .gallery-placeholder h2 { margin: 5px 0; font-size: 1.7rem; }

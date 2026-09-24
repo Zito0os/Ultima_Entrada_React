@@ -17,18 +17,10 @@ const filtros = [
   { id: 'logro', nombre: 'LOGROS' },
 ]
 
-// El ganado se puede abrir para ver la copa en 3D con su nombre
+// Por ahora todos abren su modelo 3D; los no ganados solo se ven en gris en la lista
 function TarjetaTrofeo({ trofeo, ganado, onVer }) {
-  if (!ganado) {
-    return (
-      <article className="trophy-card is-locked" title={trofeo.pista}>
-        <span className="trophy-mark"><Icono nombre="trofeo" /></span>
-        <strong>{trofeo.nombre}</strong>
-      </article>
-    )
-  }
   return (
-    <button className="trophy-card is-unlocked" type="button" title={trofeo.pista} onClick={() => onVer(trofeo)}>
+    <button className={ganado ? 'trophy-card is-unlocked' : 'trophy-card is-locked'} type="button" title={trofeo.pista} onClick={() => onVer(trofeo)}>
       <span className="trophy-mark"><Icono nombre="trofeo" /></span>
       <strong>{trofeo.nombre}</strong>
     </button>
@@ -115,7 +107,7 @@ export default function Perfil() {
         {visto && (
           <div className="modal-backdrop" onClick={() => setVisto(null)} role="presentation">
             <div className="trofeo-visor" onClick={(evento) => evento.stopPropagation()} role="presentation">
-              <TrofeoGanado nombre={visto.nombre} pista={visto.pista} kicker="TU COLECCIÓN" conSonido={false} onCerrar={() => setVisto(null)} />
+              <TrofeoGanado trofeo={visto} kicker={perfil.trofeos.includes(visto.id) ? 'TU COLECCIÓN' : 'AÚN NO LO GANAS'} conSonido={false} onCerrar={() => setVisto(null)} />
             </div>
           </div>
         )}
