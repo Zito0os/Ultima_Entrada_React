@@ -60,6 +60,14 @@ body {
   margin: 0;
   min-width: 320px;
   background: #0A1B33;
+  /* Android pinta un recuadro azul al tocar, y el toque largo selecciona texto */
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, .nav-item, [role="tab"], [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 #root {

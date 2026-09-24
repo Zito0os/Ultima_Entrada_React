@@ -60,7 +60,38 @@ function golpe() {
   fuente.start()
 }
 
+// Ruido que sube de tono: el papel del sobre al rasgarse
+function rasgado() {
+  const audio = ctx()
+  if (!audio) {
+    return
+  }
+  const duracion = 0.32
+  const muestras = Math.floor(audio.sampleRate * duracion)
+  const buffer = audio.createBuffer(1, muestras, audio.sampleRate)
+  const datos = buffer.getChannelData(0)
+  for (let i = 0; i < muestras; i += 1) {
+    // Rafagas cortas en vez de ruido parejo: suena a fibras que se rompen
+    const rafaga = Math.random() > 0.55 ? 1 : 0.25
+    datos[i] = (Math.random() * 2 - 1) * rafaga * (1 - i / muestras) ** 1.5
+  }
+  const fuente = audio.createBufferSource()
+  fuente.buffer = buffer
+  const filtro = audio.createBiquadFilter()
+  filtro.type = 'bandpass'
+  filtro.Q.value = 0.9
+  filtro.frequency.setValueAtTime(900, audio.currentTime)
+  filtro.frequency.exponentialRampToValueAtTime(3800, audio.currentTime + duracion)
+  const ganancia = audio.createGain()
+  ganancia.gain.value = 0.4
+  fuente.connect(filtro).connect(ganancia).connect(audio.destination)
+  fuente.start()
+}
+
 const receta = {
+  rasgar: () => {
+    rasgado()
+  },
   bate: () => {
     golpe()
     tono({ desde: 420, frecuencia: 180, duracion: 0.16, tipo: 'triangle', volumen: 0.25 })
@@ -71,6 +102,33 @@ const receta = {
   },
   carta: () => {
     tono({ desde: 300, frecuencia: 1200, duracion: 0.32, tipo: 'sine', volumen: 0.16 })
+  },
+  // El sobre al abrirse: el papel, el aire que sale y un brillo corto encima
+  sobre: () => {
+    rasgado()
+    tono({ desde: 150, frecuencia: 560, duracion: 0.5, tipo: 'sine', volumen: 0.16, retraso: 0.06 })
+    tono({ frecuencia: 1568, duracion: 0.24, tipo: 'triangle', volumen: 0.09, retraso: 0.2 })
+  },
+  // Cada rareza suena distinto al voltearse: se oye lo que te toco
+  especial: () => {
+    tono({ desde: 300, frecuencia: 1200, duracion: 0.3, tipo: 'sine', volumen: 0.14 })
+    tono({ frecuencia: 784, duracion: 0.16, tipo: 'sine', volumen: 0.16, retraso: 0.08 })
+    tono({ frecuencia: 1047, duracion: 0.28, tipo: 'sine', volumen: 0.14, retraso: 0.17 })
+  },
+  holo: () => {
+    tono({ desde: 300, frecuencia: 1200, duracion: 0.3, tipo: 'sine', volumen: 0.12 })
+    const escala = [1047, 1319, 1568, 2093]
+    escala.forEach((frecuencia, n) => tono({ frecuencia, duracion: 0.34, tipo: 'triangle', volumen: 0.1, retraso: 0.08 + n * 0.07 }))
+  },
+  // El reloj de la trivia: un tic seco por segundo, mas alto al final
+  tic: () => {
+    tono({ frecuencia: 1200, duracion: 0.05, tipo: 'square', volumen: 0.06 })
+  },
+  ticUrgente: () => {
+    tono({ frecuencia: 1600, duracion: 0.07, tipo: 'square', volumen: 0.12 })
+  },
+  tiempo: () => {
+    tono({ desde: 700, frecuencia: 180, duracion: 0.5, tipo: 'sawtooth', volumen: 0.18 })
   },
   acierto: () => {
     tono({ frecuencia: 660, duracion: 0.12, tipo: 'sine', volumen: 0.2 })

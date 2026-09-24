@@ -1,0 +1,200 @@
+/* Apertura de sobre. Las duraciones de rasgado y volteo estan tambien en
+   AperturaSobre.jsx: si cambian aqui, cambian alla. */
+.apertura {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  color: #fff;
+  background: radial-gradient(circle at 50% 38%, #1d5fae 0%, #0a2344 55%, #050f20 100%);
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.apertura__barra { display: flex; min-height: 52px; align-items: center; justify-content: space-between; gap: 12px; padding: max(12px, env(safe-area-inset-top)) 16px 6px; font-family: var(--fuente-mono); font-size: .78rem; letter-spacing: .08em; }
+.apertura__saltar { min-height: 36px; padding: 0 14px; border: 2px solid rgba(255, 255, 255, .4); border-radius: 999px; color: #fff; background: transparent; font: inherit; font-weight: 700; cursor: pointer; }
+.apertura__escena { position: relative; display: grid; min-height: 0; place-items: center; }
+.apertura__escena > * { grid-area: 1 / 1; }
+.apertura__pie { display: grid; min-height: 110px; align-content: start; justify-items: center; gap: 8px; padding: 6px 16px max(18px, env(safe-area-inset-bottom)); }
+.apertura__rareza { margin: 0; padding: 4px 12px; border-radius: 999px; color: var(--tinta); background: #C9D3DE; font-family: var(--fuente-mono); font-size: .72rem; font-weight: 700; letter-spacing: .08em; }
+.apertura__rareza.rareza--especial { background: var(--acento); }
+.apertura__rareza.rareza--holo { background: linear-gradient(90deg, #ffb3c6, #ffe8a3, #b8ffcf, #b3e6ff, #d9b8ff); }
+.apertura__pista { margin: 0; font-family: var(--fuente-mono); font-size: .72rem; font-weight: 700; opacity: .75; }
+.apertura__siguiente { align-self: end; justify-self: center; min-height: 44px; padding: 0 22px; border: 0; border-radius: 10px; color: var(--tinta); background: var(--acento); font-family: var(--fuente-titulo); font-size: 1rem; font-weight: 700; cursor: pointer; }
+.apertura__siguiente:disabled { visibility: hidden; opacity: 0; }
+.solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* Sobre sellado */
+.sobre-zona { display: grid; justify-items: center; gap: 14px; }
+/* La escena da la profundidad; useInclinacion escribe aqui --px, --py y --rx */
+.sobre-escena { perspective: 1200px; perspective-origin: 50% 45%; }
+.sobre {
+  --corte: 0;
+  position: relative;
+  width: min(62vw, 260px);
+  aspect-ratio: 5 / 7.4;
+  touch-action: none;
+  cursor: grab;
+  transform: rotateY(calc((var(--rx, 0) * .6 + var(--corte) * -14) * 1deg)) rotateX(calc(var(--ry, 0) * .4deg));
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, .45));
+}
+.sobre--bronce { --sobre-fondo: linear-gradient(150deg, #E7B77A, #A8672F 55%, #6E3F1A); }
+.sobre--plata { --sobre-fondo: linear-gradient(150deg, #F4F7FA, #A9B4C0 55%, #6B7684); }
+.sobre--oro { --sobre-fondo: linear-gradient(150deg, #FFE9A3, #E0B12E 50%, #96690B); }
+
+/* El canto le da grosor: es la cara lateral, parada a 90 grados */
+.sobre__canto {
+  position: absolute;
+  top: 2%;
+  bottom: 2%;
+  left: 0;
+  width: 14px;
+  border-radius: 8px 0 0 8px;
+  background: var(--sobre-fondo);
+  filter: brightness(.6);
+  transform: rotateY(-78deg);
+  transform-origin: 0 50%;
+}
+
+.sobre__cuerpo {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  overflow: hidden;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding-top: 16%;
+  border-radius: 10px;
+  background: var(--sobre-fondo);
+  isolation: isolate;
+  text-align: center;
+}
+
+/* La tira de arriba: se rasga de izquierda a derecha y se levanta hacia atras */
+.sobre__tapa {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 16%;
+  border-radius: 10px 10px 0 0;
+  background: var(--sobre-fondo);
+  filter: brightness(calc(1 - var(--corte) * .25));
+  transform: rotateX(calc(var(--corte) * 118deg)) rotateY(calc(var(--corte) * -12deg));
+  transform-origin: 50% 100%;
+  transform-style: preserve-3d;
+  isolation: isolate;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, calc(var(--corte) * .5));
+}
+
+/* Foil del sobre: el arcoiris corre con el dedo o con el giroscopio */
+.sobre__foil {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: repeating-linear-gradient(115deg,
+    hsl(2 95% 64%) 0%, hsl(48 96% 60%) 7%, hsl(115 80% 58%) 14%,
+    hsl(185 95% 60%) 21%, hsl(245 90% 70%) 28%, hsl(305 90% 68%) 35%, hsl(2 95% 64%) 42%);
+  background-size: 280% 280%;
+  background-position: calc(var(--px, .5) * 100%) calc(var(--py, .5) * 100%);
+  mix-blend-mode: color-dodge;
+  filter: brightness(.6) contrast(1.3);
+  opacity: calc(.3 + var(--fuerza, 0) * .5);
+  pointer-events: none;
+}
+
+.sobre__corte { position: absolute; right: 4%; bottom: -1px; left: 4%; height: 2px; background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .85) 0 8px, transparent 8px 14px); }
+.sobre__corte::after { position: absolute; top: -2px; left: 0; width: calc(var(--corte) * 100%); height: 6px; border-radius: 3px; background: #fff; box-shadow: 0 0 12px #fff, 0 0 26px var(--acento); content: ''; }
+
+.sobre__marca { color: #fff; font-family: var(--fuente-titulo); font-size: clamp(1.7rem, 9vw, 2.3rem); font-weight: 700; line-height: .85; text-shadow: 0 3px 14px rgba(0, 0, 0, .35); }
+.sobre__nombre { padding: 4px 10px; border-radius: 6px; color: #fff; background: rgba(0, 0, 0, .28); font-family: var(--fuente-mono); font-size: .72rem; letter-spacing: .1em; }
+.sobre__cantidad { color: rgba(255, 255, 255, .9); font-family: var(--fuente-mono); font-size: .66rem; font-weight: 700; letter-spacing: .1em; }
+.sobre__pista { margin: 0; font-family: var(--fuente-mono); font-size: .72rem; font-weight: 700; letter-spacing: .06em; }
+.sobre__abrir { min-height: 36px; border: 0; color: rgba(255, 255, 255, .72); background: none; font-family: var(--fuente-mono); font-size: .7rem; text-decoration: underline; cursor: pointer; }
+
+/* Pila: --n es la profundidad (0 arriba) y --abanico la abre al arrastrar */
+.pila { --abanico: 0; position: relative; width: min(64vw, 270px); aspect-ratio: 600 / 840; }
+.pila__carta {
+  position: absolute;
+  inset: 0;
+  transform:
+    translate(calc(var(--n) * (5px + var(--abanico) * 34px)), calc(var(--n) * 4px))
+    rotate(calc(var(--n) * (1.2deg + var(--abanico) * 6deg)));
+  transition: transform .28s var(--curva);
+}
+/* Las de abajo solo aparecen al abrir el abanico: quietas, sus orillas
+   asomaban alrededor de la de arriba y parecian un halo */
+.pila__carta:not(.es-tope) { opacity: var(--abanico); transition: opacity .2s ease; }
+.pila__carta.es-tope { cursor: grab; touch-action: none; }
+.pila__carta.es-tope:active { cursor: grabbing; }
+
+/* Volteo: boca abajo gira 180 grados y enseña el dorso */
+.volteable { position: relative; width: 100%; height: 100%; transform: rotateY(180deg); transform-style: preserve-3d; transition: transform .45s var(--curva); }
+.volteable.es-revelada { transform: rotateY(0deg); }
+.volteable__dorso, .volteable__frente { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.volteable__dorso { display: block; width: 100%; height: 100%; border-radius: 5% / 3.571%; box-shadow: 0 10px 22px rgba(0, 0, 0, .4); transform: rotateY(180deg); }
+
+
+/* Cierre con la carta especial */
+.final {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 16px;
+  padding: 24px 16px max(24px, env(safe-area-inset-bottom));
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 46%, var(--halo) 0%, rgba(5, 15, 32, .94) 62%);
+  cursor: pointer;
+}
+.final--especial { --halo: rgba(245, 198, 75, .5); }
+.final--holo { --halo: rgba(176, 107, 255, .55); }
+.final__confeti { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.final__titulo { position: relative; margin: 0; color: #fff; font-family: var(--fuente-titulo); font-size: clamp(2rem, 10vw, 3.1rem); font-weight: 700; text-shadow: 0 4px 22px var(--halo); }
+.final__carta { position: relative; width: min(70vw, 310px); }
+.final__nueva { position: absolute; top: -12px; right: -12px; z-index: 2; padding: 6px 12px; border-radius: 999px; color: #fff; background: var(--confirmacion); font-family: var(--fuente-mono); font-size: .75rem; font-weight: 700; letter-spacing: .08em; box-shadow: 0 6px 16px rgba(0, 0, 0, .35); }
+.final__continuar { position: relative; min-height: 44px; padding: 0 16px; border: 0; color: #fff; background: none; font-family: var(--fuente-mono); font-size: .78rem; font-weight: 700; letter-spacing: .1em; cursor: pointer; }
+
+/* Resumen */
+.resumen { display: grid; height: 100%; align-content: start; gap: 18px; padding: max(22px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); overflow-y: auto; }
+.resumen__titulo { margin: 0; color: #fff; font-family: var(--fuente-titulo); font-size: 2rem; text-align: center; }
+.resumen__rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 14px 10px; width: min(100%, 560px); margin: 0 auto; padding: 0; list-style: none; }
+.resumen__rejilla li { display: grid; justify-items: center; gap: 8px; }
+.resumen__marca { padding: 3px 9px; border-radius: 999px; color: var(--tinta); background: #C9D3DE; font-family: var(--fuente-mono); font-size: .6rem; font-weight: 700; letter-spacing: .06em; }
+.resumen__marca.es-nueva { color: #fff; background: var(--confirmacion); }
+.resumen__monedas { margin: 0; color: var(--acento); font-family: var(--fuente-mono); font-size: .8rem; font-weight: 700; text-align: center; }
+.resumen__acciones { display: grid; gap: 10px; width: min(100%, 360px); margin: 0 auto; }
+.resumen__boton { min-height: 48px; border: 2px solid rgba(255, 255, 255, .5); border-radius: 12px; color: #fff; background: transparent; font-family: var(--fuente-titulo); font-size: 1.05rem; font-weight: 700; cursor: pointer; }
+.resumen__boton.is-principal { border-color: var(--acento); color: var(--tinta); background: var(--acento); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .sobre__pista { animation: pista-derecha 1.6s ease-in-out infinite; }
+  .sobre-zona.es-abierto .sobre__tapa { animation: tapa-vuela .55s var(--curva) forwards; }
+  .sobre-zona.es-abierto .sobre__cuerpo { animation: cuerpo-cae .65s .25s ease-in forwards; }
+  .apertura.es-rasgando .pila { animation: cartas-salen .7s .2s var(--curva) both; }
+  .final { animation: aparecer .3s ease both; }
+  .final__titulo { animation: brinco-final .5s .15s var(--curva) both; }
+  .final__carta { animation: zoom-carta .7s var(--curva) both; }
+  .final__continuar { animation: latido-final 1.6s ease-in-out infinite; }
+  .resumen__rejilla li { animation: entra-carta .4s var(--curva) both; animation-delay: calc(var(--i) * 70ms); }
+}
+
+@keyframes pista-derecha { 0%, 100% { transform: translateX(-6px); opacity: .65; } 50% { transform: translateX(6px); opacity: 1; } }
+@keyframes tapa-vuela { to { opacity: 0; transform: translateY(-260%) rotateX(160deg) rotateZ(6deg); } }
+@keyframes cuerpo-cae { to { opacity: 0; transform: translateY(75%); } }
+@keyframes cartas-salen { from { opacity: 0; transform: translateY(38%) scale(.88); } }
+@keyframes aparecer { from { opacity: 0; } }
+@keyframes brinco-final { from { opacity: 0; transform: scale(.6); } 60% { transform: scale(1.1); } }
+@keyframes zoom-carta { from { transform: scale(.72) translateY(10%); } 60% { transform: scale(1.07); } to { transform: none; } }
+@keyframes latido-final { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+@keyframes entra-carta { from { opacity: 0; transform: translateY(14px) scale(.94); } }
+
+/* Volteo en WebGL: el sombreador pinta las dos caras */
+.volteable-3d { position: relative; width: 100%; height: 100%; }

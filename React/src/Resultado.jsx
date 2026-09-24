@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import Icono from './Icono'
-import { TOTAL_TROFEOS } from './trofeosData'
+import TrofeoGanado from './TrofeoGanado'
+import { TOTAL_TROFEOS, buscarTrofeo } from './trofeosData'
 import { finals } from './finalsData'
 import { useJugador } from './almacen/useJugador'
 
@@ -17,6 +18,7 @@ export default function Resultado() {
   const final = finals.find((item) => item.id === finalId)
   const pagado = useRef(false)
   const [yaLaTenia] = useState(() => Boolean(perfil.finales[finalId]?.ganada))
+  const [cerrado, setCerrado] = useState(false)
 
   useEffect(() => {
     if (!final || pagado.current) {
@@ -28,6 +30,18 @@ export default function Resultado() {
 
   if (!final) {
     return null
+  }
+
+  // La copa en 3D sale solo la primera vez que se gana esta final
+  const trofeo = ganada && !yaLaTenia && !cerrado ? buscarTrofeo(`final-${final.id}`) : null
+  if (trofeo) {
+    return (
+      <main className="result-shell-final">
+        <section className="result-content-final">
+          <TrofeoGanado nombre={trofeo.nombre} pista={trofeo.pista} onCerrar={() => setCerrado(true)} />
+        </section>
+      </main>
+    )
   }
 
   return (

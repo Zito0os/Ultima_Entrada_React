@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
 
-import { cartaAlAzar } from './cartasData'
+import { cartaAlAzar } from './cartas/cartasData'
 import { useJugador } from './almacen/useJugador'
 import { auth } from './firebase'
 

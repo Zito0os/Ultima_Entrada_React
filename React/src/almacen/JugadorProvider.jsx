@@ -118,15 +118,28 @@ export function JugadorProvider({ children }) {
         : { trofeos: [...actual.trofeos, trofeoId] }))
     },
 
-    guardarTrivia(equipoId, aciertos, total) {
+    // El avance se guarda por epoca. La ronda perfecta da su trofeo, y las tres
+    // epocas perfectas del mismo equipo dan el trofeo del club.
+    guardarTrivia(equipoId, epocaId, aciertos, total, epocasDelEquipo = []) {
       actualizar((actual) => {
-        const previo = actual.trivia[equipoId] || { mejor: 0, jugadas: 0 }
+        const delEquipo = actual.trivia[equipoId] || {}
+        const previo = delEquipo[epocaId] || { mejor: 0, jugadas: 0 }
+        const epocas = { ...delEquipo, [epocaId]: { mejor: Math.max(previo.mejor, aciertos), jugadas: previo.jugadas + 1 } }
+        const perfecta = aciertos === total
+        const trofeos = [...actual.trofeos]
+        const suyo = `trivia-${equipoId}-${epocaId}`
+        if (perfecta && !trofeos.includes(suyo)) {
+          trofeos.push(suyo)
+        }
+        const completo = epocasDelEquipo.length > 0
+          && epocasDelEquipo.every((id) => trofeos.includes(`trivia-${equipoId}-${id}`))
+        if (completo && !trofeos.includes(`trivia-${equipoId}`)) {
+          trofeos.push(`trivia-${equipoId}`)
+        }
         return {
-          trivia: { ...actual.trivia, [equipoId]: { mejor: Math.max(previo.mejor, aciertos), jugadas: previo.jugadas + 1 } },
-          monedas: actual.monedas + aciertos * 5 + (aciertos === total ? 30 : 0),
-          trofeos: aciertos === total && !actual.trofeos.includes(`trivia-${equipoId}`)
-            ? [...actual.trofeos, `trivia-${equipoId}`]
-            : actual.trofeos,
+          trivia: { ...actual.trivia, [equipoId]: epocas },
+          monedas: actual.monedas + aciertos * 5 + (perfecta ? 30 : 0),
+          trofeos,
         }
       })
     },

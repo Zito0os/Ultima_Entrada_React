@@ -1,0 +1,10 @@
+Aqui va el HDRI que refleja el metal del trofeo, con este nombre exacto:
+
+  estudio.hdr
+
+Si el archivo no esta, el trofeo arma su propio entorno de colores planos y se
+ve bien igual: no se rompe nada.
+
+Donde conseguir uno gratis y libre de derechos: polyhaven.com/hdris, en la
+categoria de estudio. Con la version de 1k (1 o 2 MB) alcanza y sobra, porque
+solo se usa para los reflejos, nunca se ve de fondo.

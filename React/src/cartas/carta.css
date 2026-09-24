@@ -1,0 +1,135 @@
+/* Carta con brillo holografico. useInclinacion escribe --px y --py (0 a 1),
+   --rx y --ry (grados) y --fuerza (0 en reposo, 1 con el dedo encima). */
+.carta {
+  --px: .5;
+  --py: .5;
+  --rx: 0;
+  --ry: 0;
+  --fuerza: 0;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 600 / 840;
+  perspective: 900px;
+  /* Quieta deja pasar el dedo para desplazar; solo la interactiva atrapa el gesto */
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.carta.es-interactiva { touch-action: none; }
+
+/* El radio es 5% del ancho: en vertical son 600/840 de eso */
+.carta__giro {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 5% / 3.571%;
+  box-shadow: 0 12px 26px rgba(4, 16, 36, .38);
+  transform: rotateY(calc(var(--rx) * 1deg)) rotateX(calc(var(--ry) * 1deg));
+  transform-style: preserve-3d;
+}
+
+.carta__cara { display: block; width: 100%; height: 100%; -webkit-user-drag: none; }
+
+.carta__respaldo {
+  display: grid;
+  height: 100%;
+  align-content: center;
+  gap: 6px;
+  padding: 12%;
+  color: #fff;
+  background: var(--azul-profundo, #0D3767);
+  font-family: var(--fuente-mono, monospace);
+  text-align: center;
+}
+.carta__respaldo strong { font-family: var(--fuente-titulo, sans-serif); font-size: 1.1em; }
+
+.carta__foil, .carta__oro, .carta__chispas, .carta__brillo { position: absolute; inset: 0; pointer-events: none; }
+
+/* Las mascaras salen del mapa de foil de cada carta, ya partido por tono */
+.carta__foil, .carta__oro, .carta__chispas {
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
+.carta__foil {
+  -webkit-mask-image: var(--mascara-arco);
+  mask-image: var(--mascara-arco);
+  background-image: repeating-linear-gradient(115deg,
+    hsl(2 95% 64%) 0%, hsl(48 96% 60%) 7%, hsl(115 80% 58%) 14%,
+    hsl(185 95% 60%) 21%, hsl(245 90% 70%) 28%, hsl(305 90% 68%) 35%, hsl(2 95% 64%) 42%);
+  background-size: 280% 280%;
+  background-position: calc(var(--px) * 100%) calc(var(--py) * 100%);
+  mix-blend-mode: color-dodge;
+  filter: brightness(.55) contrast(1.3) saturate(1.05);
+  opacity: calc(.12 + var(--fuerza) * .45);
+}
+
+/* El oro no cambia de color al moverse: solo corre la franja de luz */
+.carta__oro {
+  -webkit-mask-image: var(--mascara-oro);
+  mask-image: var(--mascara-oro);
+  background-image: linear-gradient(115deg,
+    hsl(42 70% 42%) 0%, hsl(45 85% 62%) 38%, hsl(48 100% 88%) 50%,
+    hsl(45 85% 62%) 62%, hsl(38 65% 38%) 100%);
+  background-size: 260% 260%;
+  background-position: calc(var(--px) * 100%) calc(var(--py) * 100%);
+  mix-blend-mode: color-dodge;
+  filter: brightness(.6) contrast(1.15);
+  opacity: calc(.18 + var(--fuerza) * .42);
+}
+
+.carta--especial .carta__foil { opacity: calc(.16 + var(--fuerza) * .48); }
+
+.carta__chispas {
+  -webkit-mask-image: var(--mascara-oro);
+  mask-image: var(--mascara-oro);
+  background-image: var(--chispas);
+  background-size: 34% auto;
+  background-position: calc(var(--px) * 60px) calc(var(--py) * 60px);
+  mix-blend-mode: color-dodge;
+  opacity: calc(.15 + var(--fuerza) * .85);
+}
+
+.carta__brillo {
+  background: radial-gradient(farthest-corner circle at calc(var(--px) * 100%) calc(var(--py) * 100%),
+    hsl(0 0% 100% / .8) 0%, hsl(0 0% 100% / .22) 24%, hsl(0 0% 0% / .32) 92%);
+  mix-blend-mode: overlay;
+  opacity: calc(var(--fuerza) * .75);
+}
+
+.carta--comun .carta__brillo { opacity: calc(var(--fuerza) * .5); }
+
+/* Quietas en el album, las holograficas se mueven solas para que se note el foil */
+@media (prefers-reduced-motion: no-preference) {
+  .carta--holo:not(.es-interactiva) .carta__foil { animation: foil-quieto 7s linear infinite; }
+}
+
+@keyframes foil-quieto {
+  from { background-position: 0% 30%; }
+  to { background-position: 100% 70%; }
+}
+
+/* Visor WebGL: el lienzo aparece cuando ya hay textura, sin parpadeo en negro */
+.visor-carta { position: relative; width: 100%; aspect-ratio: 600 / 840; touch-action: none; }
+.visor-carta__lienzo { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .3s ease; }
+.visor-carta.es-listo .visor-carta__lienzo { opacity: 1; }
+
+.boton-giroscopio { min-height: 44px; padding: 0 16px; border: 0; border-radius: 10px; color: var(--tinta, #0F1A2B); background: var(--acento, #F5C64B); font-family: var(--fuente-mono, monospace); font-size: .78rem; font-weight: 700; letter-spacing: .06em; cursor: pointer; }
+.aviso-giroscopio { margin: 0; color: inherit; font-family: var(--fuente-mono, monospace); font-size: .72rem; font-weight: 700; line-height: 1.4; opacity: .8; }
+
+/* La carta con las dos versiones encimadas: CSS abajo, WebGL arriba */
+.carta-viva { position: relative; width: 100%; }
+.carta-viva__visor { position: absolute; inset: 0; }
+
+/* En el album son miniaturas quietas: el foil ahi va bajito para que no griten */
+.carta:not(.es-interactiva) .carta__foil { opacity: .07; }
+.carta:not(.es-interactiva) .carta__oro { opacity: .12; }
+
+/* Con el visor listo, la version CSS de abajo estorba: las dos no miden igual */
+.carta-viva:has(.visor-carta.es-listo) > .carta { opacity: 0; }
+
+/* Sin mascaras, el foil cubriria la carta entera: mejor no pintarlo */
+@supports not ((mask-image: url(#a)) or (-webkit-mask-image: url(#a))) {
+  .carta__foil, .carta__oro, .carta__chispas { display: none; }
+}
