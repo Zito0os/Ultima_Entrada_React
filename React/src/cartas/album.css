@@ -1,0 +1,38 @@
+.album { display: grid; gap: 14px; }
+.album__resumen { display: flex; align-items: center; gap: 14px; }
+.album__resumen strong { font-family: var(--fuente-titulo); font-size: 2rem; }
+.album__resumen strong span { font-size: 1rem; opacity: .6; }
+.album__barra { flex: 1; height: 10px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--azul-texto, #195CA6) 18%, transparent); }
+.album__barra span { display: block; height: 100%; border-radius: inherit; background: var(--acento); transition: width .4s var(--curva); }
+
+.album__filtros { display: flex; flex-wrap: wrap; gap: 6px; }
+.album__filtro { min-height: 38px; padding: 0 12px; border: 2px solid var(--azul-texto, #195CA6); border-radius: 999px; color: var(--azul-texto, #195CA6); background: transparent; font-family: var(--fuente-mono); font-size: .68rem; font-weight: 700; letter-spacing: .06em; cursor: pointer; }
+.album__filtro.is-activo { border-color: var(--acento); color: var(--tinta); background: var(--acento); }
+
+.album__rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px 10px; margin: 0; padding: 0; list-style: none; }
+/* Fuera de pantalla no se pintan: 45 cartas con capas de mezcla pesan en un telefono modesto */
+.album__rejilla li { overflow: visible; }
+.album__carta { position: relative; display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.album__carta:focus-visible { outline: 3px solid var(--acento); outline-offset: 3px; border-radius: 6px; }
+.album__repetida { position: absolute; top: -9px; right: -9px; z-index: 2; padding: 2px 7px; border-radius: 999px; color: #fff; background: var(--azul-medio); font-family: var(--fuente-mono); font-size: .62rem; }
+.album__hueco { display: grid; aspect-ratio: 600 / 840; place-items: center; border: 2px dashed currentColor; border-radius: 5% / 3.571%; color: color-mix(in srgb, var(--azul-texto, #195CA6) 55%, transparent); font-family: var(--fuente-mono); font-size: .8rem; font-weight: 700; }
+.hueco--especial { border-color: color-mix(in srgb, #C9960F 70%, transparent); }
+.hueco--holo { border-color: color-mix(in srgb, #8C5AE6 70%, transparent); }
+
+.detalle { display: grid; justify-items: center; gap: 14px; }
+.detalle__carta { width: min(76vw, 320px); }
+.detalle__datos { display: grid; gap: 4px; text-align: center; }
+.detalle__datos p { margin: 0; font-family: var(--fuente-mono); font-size: .78rem; font-weight: 700; }
+.detalle__titulo { margin: 0; font-family: var(--fuente-titulo); font-size: 1.7rem; }
+.detalle__veces { opacity: .7; }
+.detalle__acciones { display: grid; gap: 10px; width: min(100%, 340px); }
+/* El detalle va siempre sobre fondo oscuro: en claro el foil apenas se nota */
+.detalle { color: #fff; }
+.detalle__boton { min-height: 48px; border: 2px solid rgba(255, 255, 255, .6); border-radius: 12px; color: #fff; background: transparent; font-family: var(--fuente-titulo); font-size: 1.05rem; font-weight: 700; cursor: pointer; }
+.detalle__boton.is-principal { border-color: var(--acento); color: var(--tinta-fija, #0F1A2B); background: var(--acento); }
+
+/* Pagina de prueba: la misma carta en CSS y en WebGL, lado a lado */
+.prueba-cartas__comparar { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+.prueba-cartas__comparar figure { margin: 0; }
+.prueba-cartas__comparar figcaption { margin-top: 6px; font-family: var(--fuente-mono); font-size: .62rem; font-weight: 700; letter-spacing: .08em; text-align: center; }
+.prueba-cartas__acciones { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 12px; }

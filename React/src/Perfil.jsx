@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import BottomNav from './Navigation'
 import PageHeader from './PageHeader'
 import Icono from './Icono'
+import TrofeoGanado from './TrofeoGanado'
 
 import { TOTAL_TROFEOS, trofeos } from './trofeosData'
 import { useJugador } from './almacen/useJugador'
@@ -16,12 +17,13 @@ const filtros = [
   { id: 'logro', nombre: 'LOGROS' },
 ]
 
-function TarjetaTrofeo({ trofeo, ganado }) {
+// Por ahora todos abren su modelo 3D; los no ganados solo se ven en gris en la lista
+function TarjetaTrofeo({ trofeo, ganado, onVer }) {
   return (
-    <article className={ganado ? 'trophy-card is-unlocked' : 'trophy-card is-locked'} title={trofeo.pista}>
+    <button className={ganado ? 'trophy-card is-unlocked' : 'trophy-card is-locked'} type="button" title={trofeo.pista} onClick={() => onVer(trofeo)}>
       <span className="trophy-mark"><Icono nombre="trofeo" /></span>
       <strong>{trofeo.nombre}</strong>
-    </article>
+    </button>
   )
 }
 
@@ -38,6 +40,8 @@ export default function Perfil() {
   const { perfil, acciones } = useJugador()
   const { tema, conSonido } = useTema()
   const [filtro, setFiltro] = useState('todos')
+  // El trofeo que se esta viendo en 3D
+  const [visto, setVisto] = useState(null)
 
   const ganados = perfil.trofeos.length
   const visibles = trofeos.filter((trofeo) => filtro === 'todos' || trofeo.tipo === filtro)
@@ -96,9 +100,17 @@ export default function Perfil() {
 
         <section className="trophy-grid" aria-label="Colección de trofeos">
           {visibles.map((trofeo) => (
-            <TarjetaTrofeo trofeo={trofeo} ganado={perfil.trofeos.includes(trofeo.id)} key={trofeo.id} />
+            <TarjetaTrofeo trofeo={trofeo} ganado={perfil.trofeos.includes(trofeo.id)} onVer={setVisto} key={trofeo.id} />
           ))}
         </section>
+
+        {visto && (
+          <div className="modal-backdrop" onClick={() => setVisto(null)} role="presentation">
+            <div className="trofeo-visor" onClick={(evento) => evento.stopPropagation()} role="presentation">
+              <TrofeoGanado trofeo={visto} kicker={perfil.trofeos.includes(visto.id) ? 'TU COLECCIÓN' : 'AÚN NO LO GANAS'} conSonido={false} onCerrar={() => setVisto(null)} />
+            </div>
+          </div>
+        )}
 
         {!perfil.cuenta.invitado && (
           <button className="profile-logout" type="button" onClick={() => acciones.cerrarSesion()}>

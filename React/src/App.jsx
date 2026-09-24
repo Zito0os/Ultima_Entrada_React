@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useLayoutEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { collection, getDocs } from 'firebase/firestore'
 
@@ -10,11 +10,12 @@ import { JugadorProvider } from './almacen/JugadorProvider'
 import { useTema } from './useTema'
 import { useJugador } from './almacen/useJugador'
 import Album from './Album'
-import AbriendoSobre from './Abriendo_sobre'
+import AbrirSobre from './AbrirSobre'
 import Entrar from './Entrar'
 import Escudos from './Escudos'
 import EquipoDetalle from './EquipoDetalle'
 import Equipos from './Equipos'
+import DetalleCartaPagina from './DetalleCartaPagina'
 import DetalleFinal from './Detalle_Final'
 import Finales from './Finales'
 import FotoFiltros from './FotoFiltros'
@@ -38,8 +39,11 @@ import { db } from './firebase'
 
 // three.js solo se descarga al entrar a la prueba 3D
 const PruebaEscudo = lazy(() => import('./PruebaEscudo'))
+const PruebaCartas = lazy(() => import('./PruebaCartas'))
+const PruebaTrofeo = lazy(() => import('./PruebaTrofeo'))
 const CompilarMarcador = lazy(() => import('./CompilarMarcador'))
 const VerEscudoAR = lazy(() => import('./VerEscudoAR'))
+const VerCartaARPagina = lazy(() => import('./VerCartaARPagina'))
 
 const CLAVE_CARGA = 'ue_carga_vista'
 
@@ -162,6 +166,15 @@ function HomePage() {
   )
 }
 
+// Al cambiar de pantalla se vuelve arriba: si no, el navegador conserva el
+// punto donde quedo la vez anterior
+function IrAlInicio({ ruta }) {
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [ruta])
+  return null
+}
+
 function AppRoutes() {
   const location = useLocation()
   const { acciones } = useJugador()
@@ -172,6 +185,8 @@ function AppRoutes() {
   }, [acciones])
 
   return (
+    <>
+    <IrAlInicio ruta={location.pathname} />
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/entrar" element={<Entrar />} />
@@ -182,8 +197,11 @@ function AppRoutes() {
       <Route path="/ar/escudos" element={<Escudos />} />
       <Route path="/ar/ver/:escudoId" element={<Suspense fallback={<p className="prueba-cargando">Encendiendo la camara...</p>}><VerEscudoAR /></Suspense>} />
       <Route path="/ar/tarjetas" element={<Tarjetas />} />
-      <Route path="/ar/tarjetas/anclado" element={<Tarjetas />} />
+      <Route path="/ar/carta/:cartaId" element={<Suspense fallback={<p className="prueba-cargando">Encendiendo la camara...</p>}><VerCartaARPagina /></Suspense>} />
+      <Route path="/album/prueba" element={<Suspense fallback={<p className="prueba-cargando">Cargando las cartas...</p>}><PruebaCartas /></Suspense>} />
+      <Route path="/trofeo/prueba" element={<Suspense fallback={<p className="prueba-cargando">Cargando el trofeo...</p>}><PruebaTrofeo /></Suspense>} />
       <Route path="/album" element={<Album />} />
+      <Route path="/album/:cartaId" element={<DetalleCartaPagina />} />
       <Route path="/equipos" element={<Equipos />} />
       <Route path="/equipos/:teamId" element={<EquipoDetalle />} />
       <Route path="/historia" element={<Historia />} />
@@ -192,19 +210,21 @@ function AppRoutes() {
       <Route path="/galeria" element={<Galeria />} />
       <Route path="/galeria/:fotoId" element={<FotoFiltros />} />
       <Route path="/sobres" element={<Sobres />} />
-      <Route path="/sobres/:packId" element={<AbriendoSobre />} />
+      <Route path="/sobres/:packId" element={<AbrirSobre />} />
       <Route path="/finales" element={<Finales />} />
       <Route path="/finales/:finalId" element={<DetalleFinal />} />
       <Route path="/finales/:finalId/jugar" element={<JuegoFinal />} />
       <Route path="/finales/:finalId/resultado" element={<Resultado />} />
       <Route path="/trivia" element={<Trivia />} />
-      <Route path="/trivia/:mode" element={<Trivia />} />
+      <Route path="/trivia/:teamId" element={<Trivia />} />
+      <Route path="/trivia/:teamId/:epocaId" element={<Trivia />} />
       <Route path="/mejores-jugadas" element={<MejoresJugadas />} />
       <Route path="/mejores-jugadas/:playId" element={<Videos />} />
       <Route path="/videos/:eventId" element={<Videos />} />
       <Route path="/videos" element={<Videos />} />
       <Route path="*" element={<Navigate to={location.pathname.startsWith('/equipos') ? '/equipos' : '/'} replace />} />
     </Routes>
+    </>
   )
 }
 

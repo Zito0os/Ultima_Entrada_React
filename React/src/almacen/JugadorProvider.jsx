@@ -4,6 +4,7 @@ import { signOut } from 'firebase/auth'
 import { INVITADO, almacen } from './index'
 import { JugadorContexto } from './JugadorContexto'
 import { CARTAS_TOTAL, PERFIL_BASE, hoy, normalizar } from './esquema'
+import { borrarImagen, guardarImagen, moverImagenes } from './fotos'
 import { auth } from '../firebase'
 
 const CLAVE_SESION = 'ue_sesion'
@@ -79,6 +80,10 @@ export function JugadorProvider({ children }) {
         siguiente.cartas = cartas
       }
       await almacen.guardar(id, siguiente)
+      if (!existente && perfilActual.cuenta.invitado) {
+        // Si falla, las imagenes siguen en el navegador y no se pierde la cuenta
+        await moverImagenes(INVITADO, id, siguiente.galeria.map((foto) => foto.id)).catch(() => {})
+      }
       if (!existente && id !== usuario.trim().toLowerCase()) {
         await almacen.borrar(usuario.trim().toLowerCase())
       }
@@ -118,15 +123,28 @@ export function JugadorProvider({ children }) {
         : { trofeos: [...actual.trofeos, trofeoId] }))
     },
 
-    guardarTrivia(equipoId, aciertos, total) {
+    // El avance se guarda por epoca. La ronda perfecta da su trofeo, y las tres
+    // epocas perfectas del mismo equipo dan el trofeo del club.
+    guardarTrivia(equipoId, epocaId, aciertos, total, epocasDelEquipo = []) {
       actualizar((actual) => {
-        const previo = actual.trivia[equipoId] || { mejor: 0, jugadas: 0 }
+        const delEquipo = actual.trivia[equipoId] || {}
+        const previo = delEquipo[epocaId] || { mejor: 0, jugadas: 0 }
+        const epocas = { ...delEquipo, [epocaId]: { mejor: Math.max(previo.mejor, aciertos), jugadas: previo.jugadas + 1 } }
+        const perfecta = aciertos === total
+        const trofeos = [...actual.trofeos]
+        const suyo = `trivia-${equipoId}-${epocaId}`
+        if (perfecta && !trofeos.includes(suyo)) {
+          trofeos.push(suyo)
+        }
+        const completo = epocasDelEquipo.length > 0
+          && epocasDelEquipo.every((id) => trofeos.includes(`trivia-${equipoId}-${id}`))
+        if (completo && !trofeos.includes(`trivia-${equipoId}`)) {
+          trofeos.push(`trivia-${equipoId}`)
+        }
         return {
-          trivia: { ...actual.trivia, [equipoId]: { mejor: Math.max(previo.mejor, aciertos), jugadas: previo.jugadas + 1 } },
-          monedas: actual.monedas + aciertos * 5 + (aciertos === total ? 30 : 0),
-          trofeos: aciertos === total && !actual.trofeos.includes(`trivia-${equipoId}`)
-            ? [...actual.trofeos, `trivia-${equipoId}`]
-            : actual.trofeos,
+          trivia: { ...actual.trivia, [equipoId]: epocas },
+          monedas: actual.monedas + aciertos * 5 + (perfecta ? 30 : 0),
+          trofeos,
         }
       })
     },
@@ -175,12 +193,19 @@ export function JugadorProvider({ children }) {
       })
     },
 
-    agregarFotos(nuevas) {
-      actualizar((actual) => ({ galeria: [...nuevas, ...actual.galeria] }))
+    // Primero la imagen: si no se pudo subir, la foto no aparece vacia en la galeria
+    async guardarFoto(nombre, imagen, editada = false) {
+      const id = `foto-${Date.now()}`
+      await guardarImagen(usuarioId, id, imagen)
+      actualizar((actual) => ({ galeria: [{ id, nombre, editada, creada: new Date().toISOString() }, ...actual.galeria] }))
+      return id
     },
 
     borrarFoto(fotoId) {
       actualizar((actual) => ({ galeria: actual.galeria.filter((foto) => foto.id !== fotoId) }))
+      borrarImagen(usuarioId, fotoId).catch(() => {
+        // la foto ya no aparece aunque el archivo se quede
+      })
     },
 
     marcarPreferencia(clave, valor) {
@@ -221,7 +246,7 @@ export function JugadorProvider({ children }) {
         return { preferencias: { ...actual.preferencias, escudosVistos: siguiente }, trofeos }
       })
     },
-  }), [actualizar])
+  }), [actualizar, usuarioId])
 
   const valor = useMemo(() => ({ perfil, usuarioId, acciones }), [perfil, usuarioId, acciones])
 

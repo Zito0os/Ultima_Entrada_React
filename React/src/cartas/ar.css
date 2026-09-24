@@ -1,0 +1,30 @@
+.ar-carta { position: fixed; inset: 0; z-index: 40; overflow: hidden; color: #fff; background: #000; }
+/* MindAR mete aqui su video y su lienzo con position absolute */
+.ar-carta__camara { position: absolute; inset: 0; }
+.ar-carta__camara video, .ar-carta__camara canvas { position: absolute; }
+
+.ar-carta__marco { position: absolute; top: 50%; left: 50%; width: min(56vw, 240px); aspect-ratio: 600 / 840; transform: translate(-50%, -50%); pointer-events: none; }
+.ar-carta__marco span { position: absolute; width: 28px; height: 28px; border: 0 solid var(--acento); }
+.ar-carta__marco span:nth-child(1) { top: 0; left: 0; border-width: 4px 0 0 4px; }
+.ar-carta__marco span:nth-child(2) { top: 0; right: 0; border-width: 4px 4px 0 0; }
+.ar-carta__marco span:nth-child(3) { bottom: 0; left: 0; border-width: 0 0 4px 4px; }
+.ar-carta__marco span:nth-child(4) { right: 0; bottom: 0; border-width: 0 4px 4px 0; }
+
+.ar-carta__barra { position: absolute; top: 0; right: 0; left: 0; display: flex; align-items: center; justify-content: space-between; padding: max(12px, env(safe-area-inset-top)) 14px 10px; background: linear-gradient(rgba(0, 0, 0, .55), transparent); }
+.ar-carta__salir, .ar-carta__estado { min-height: 36px; padding: 0 14px; border-radius: 999px; font-family: var(--fuente-mono); font-size: .72rem; font-weight: 700; letter-spacing: .06em; }
+.ar-carta__salir { border: 2px solid rgba(255, 255, 255, .6); color: #fff; background: rgba(0, 0, 0, .3); cursor: pointer; }
+.ar-carta__estado { display: inline-flex; align-items: center; color: var(--tinta); background: #fff; }
+.ar-carta__estado.is-anclada { background: var(--acento); }
+
+.ar-carta__pista, .ar-carta__aviso { position: absolute; top: 72px; right: 16px; left: 16px; margin: 0; padding: 10px 12px; border-radius: 10px; background: rgba(0, 0, 0, .55); font-family: var(--fuente-mono); font-size: .74rem; font-weight: 700; text-align: center; }
+
+.ar-carta__controles { position: absolute; right: 0; bottom: 0; left: 0; display: grid; gap: 10px; padding: 18px 14px max(18px, env(safe-area-inset-bottom)); background: linear-gradient(transparent, rgba(0, 0, 0, .7)); text-align: center; }
+.ar-carta__controles strong { font-family: var(--fuente-mono); font-size: .78rem; letter-spacing: .06em; }
+.ar-carta__acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ar-carta__accion { min-height: 48px; border: 2px solid rgba(255, 255, 255, .6); border-radius: 12px; color: #fff; background: rgba(13, 55, 103, .7); font-family: var(--fuente-titulo); font-size: 1rem; font-weight: 700; cursor: pointer; }
+.ar-carta__accion.is-activa { border-color: var(--acento); color: var(--tinta); background: var(--acento); }
+.ar-carta__accion:disabled { opacity: .45; cursor: not-allowed; }
+
+.ar-carta__error { position: absolute; inset: auto 16px 50% 16px; display: grid; gap: 10px; padding: 18px; border-radius: 14px; color: var(--tinta); background: #fff; transform: translateY(50%); }
+.ar-carta__error p { margin: 0; font-size: .85rem; line-height: 1.4; }
+.ar-carta__error button { min-height: 44px; border: 0; border-radius: 10px; color: var(--tinta); background: var(--acento); font-family: var(--fuente-titulo); font-weight: 700; cursor: pointer; }

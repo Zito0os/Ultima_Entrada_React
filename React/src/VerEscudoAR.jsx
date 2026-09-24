@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Icono from './Icono'
 import { configDe, filtroDeEstabilidad } from './configEscudos'
 import { useJugador } from './almacen/useJugador'
+import { comprimir } from './almacen/fotos'
 import { buscarEscudo } from './escudosData'
 import { componerCaptura, crearEfectos } from './efectosAR'
 import { cargarSVG, crearEntorno, crearExplosion, extruirDesdeSVG } from './extruirEscudo'
@@ -181,20 +182,11 @@ export default function VerEscudoAR() {
     actual.renderer.render(actual.scene, actual.camera)
     const compuesta = componerCaptura(actual.mindar.video, actual.renderer.domElement)
 
-    compuesta.toBlob((blob) => {
-      const enlace = document.createElement('a')
-      enlace.href = URL.createObjectURL(blob)
-      enlace.download = `ultima-entrada-${escudo.id}.png`
-      enlace.click()
-      acciones.agregarFotos([{
-        id: `foto-${Date.now()}`,
-        nombre: `${escudo.nombre} en AR`,
-        editada: false,
-        creada: new Date().toISOString(),
-      }])
-      setAviso('Foto guardada con el escudo incluido.')
-      setTimeout(() => setAviso(''), 3000)
-    }, 'image/png')
+    // Va directo a la galeria; desde ahi se exporta al celular
+    acciones.guardarFoto(`${escudo.nombre} en AR`, comprimir(compuesta))
+      .then(() => setAviso('Foto guardada en tu galería.'))
+      .catch(() => setAviso('No se pudo guardar la foto. Revisa tu conexión.'))
+      .finally(() => setTimeout(() => setAviso(''), 3000))
   }, [escudo, acciones])
 
   const rotulo = estado === 'error' ? 'ERROR'

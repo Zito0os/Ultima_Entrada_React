@@ -102,20 +102,19 @@
 /* La nota del hito se abre en alto, sin saltar */
 
 /* Escaner: las escuadras laten mientras busca */
-.ar-ver-marco span, .scan-corner { animation: latido 1.6s ease-in-out infinite; }
+.ar-ver-marco span { animation: latido 1.6s ease-in-out infinite; }
 .ar-ver-estado.is-anclado { animation: pulso-premio var(--lento) var(--curva); }
 
 /* Transiciones de estado en todo lo que cambia de color */
-.video-filter, .plays-filter, .profile-filter, .album-filter, .gallery-filter,
-.region-filter, .prueba-seccion, .ajuste-opcion, .capa-tono, .capa-chip, .mode-chip {
+.video-filter, .plays-filter, .profile-filter, .gallery-filter, .region-filter, .prueba-seccion, .ajuste-opcion, .capa-tono, .capa-chip {
   transition: background var(--rapido) ease, color var(--rapido) ease, border-color var(--rapido) ease;
 }
 
 /* Las tarjetas se hunden un poco al tocarlas */
-.team-card, .play-card, .pack-card, .album-card, .trophy-card, .history-event, .final-row {
+.team-card, .play-card, .pack-card, .trophy-card, .history-event, .final-row {
   transition: transform var(--rapido) var(--curva), box-shadow var(--rapido) ease;
 }
-.team-card:active, .play-card:active, .pack-card:active, .album-card:active, .history-event:active {
+.team-card:active, .play-card:active, .pack-card:active, .history-event:active {
   transform: scale(.98);
 }
 
@@ -127,4 +126,64 @@
   .correct-answer { animation: entrar-elemento var(--medio) var(--curva) both; }
   .batting-fin { animation: entrar-modal var(--medio) var(--curva) both; }
   .milestone-nota { animation: entrar-elemento var(--rapido) var(--curva) both; }
+}
+
+/* La respuesta entra creciendo y regresa a su tamano */
+@keyframes entra-respuesta {
+  0% { opacity: 0; transform: scale(.82); }
+  60% { opacity: 1; transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes entra-pregunta {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes reloj-urgente {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Trivia: primero la pregunta, luego las respuestas una por una */
+  .trivia-tablero { animation: entra-pregunta var(--medio) var(--curva) both; }
+  .answer-button { animation: entra-respuesta var(--medio) var(--curva) both; animation-delay: calc(.22s + var(--i) * .1s); }
+  .correct-answer { animation: entra-elemento var(--medio) var(--curva) both; }
+  .trivia-reloj.es-urgente { animation: reloj-urgente 1s ease-in-out infinite; }
+
+  /* El resultado entra por partes, como una premiacion */
+  .trivia-resumen h1 { animation: brinco var(--lento) var(--curva) both; animation-delay: .1s; }
+  .trivia-resumen-kicker { animation: entra-elemento var(--medio) var(--curva) both; }
+  .trivia-resumen-premios > * { animation: brinco var(--medio) var(--curva) both; }
+  .trivia-resumen-premios > *:nth-child(1) { animation-delay: .35s; }
+  .trivia-resumen-premios > *:nth-child(2) { animation-delay: .5s; }
+  .trivia-resumen-premios > *:nth-child(3) { animation-delay: .65s; }
+  .trivia-resumen-club { animation: brinco var(--medio) var(--curva) both; animation-delay: .8s; }
+
+  /* Las pantallas nuevas tambien entran escalonadas */
+  .album__rejilla > *, .trivia-escudos > *, .trivia-epocas > *, .tienda-sobres > *, .resumen__rejilla > * {
+    animation: entra-elemento var(--medio) var(--curva) both;
+  }
+  .trivia-escudos > *:nth-child(n+4), .album__rejilla > *:nth-child(n+4) { animation-delay: .06s; }
+  .trivia-escudos > *:nth-child(n+7), .album__rejilla > *:nth-child(n+7) { animation-delay: .1s; }
+  .trivia-epocas > *:nth-child(2) { animation-delay: .08s; }
+  .trivia-epocas > *:nth-child(3) { animation-delay: .16s; }
+  .tienda-sobres > *:nth-child(2) { animation-delay: .07s; }
+  .tienda-sobres > *:nth-child(3) { animation-delay: .14s; }
+
+  /* La ficha de la tienda cambia con el sobre elegido */
+  .tienda-ficha { animation: entra-elemento var(--rapido) var(--curva) both; }
+}
+
+/* Lo que cambia de estado tambien transiciona */
+.nav-item, .tienda-comprar, .album__filtro, .tienda-sobre, .carta-detalle-accion {
+  transition: background var(--rapido) ease, color var(--rapido) ease, transform var(--rapido) var(--curva);
+}
+.nav-item:active, .tienda-comprar:active, .album__filtro:active { transform: scale(.97); }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* El detalle de una carta entra por partes */
+  .carta-detalle-content > * { animation: entra-elemento var(--medio) var(--curva) both; }
+  .carta-detalle-content > *:nth-child(2) { animation-delay: .08s; }
 }

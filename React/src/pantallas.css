@@ -60,7 +60,16 @@
 /* P-21 foto con filtros */
 .editor-shell { min-height: 100svh; background: var(--superficie); color: var(--tinta); }
 .editor-content { max-width: 520px; padding: 100px 14px 95px; margin: 0 auto; }
-.editor-lienzo { display: block; width: 100%; height: auto; border-radius: 13px; background: var(--azul-profundo); }
+.editor-lienzo { display: block; width: 100%; height: auto; border-radius: 13px; }
+/* Foto vertical: controles a un lado, la foto se queda fija al bajar */
+.editor-content.es-vertical { display: grid; grid-template-columns: minmax(0, 44%) minmax(0, 1fr); gap: 12px; align-items: start; }
+.editor-content.es-vertical .editor-lienzo { position: sticky; top: 96px; }
+.editor-content.es-vertical .filter-heading { margin-top: 0; }
+.editor-content.es-vertical .editor-acciones { grid-template-columns: 1fr; }
+.editor-giro { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 9px; }
+.editor-giro .editor-accion { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.editor-giro .es-izquierda svg { transform: scaleX(-1); }
+.editor-accion:disabled { opacity: .5; cursor: not-allowed; }
 .editor-acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 9px; }
 .editor-accion { min-height: 40px; border: 0; border-radius: 8px; color: var(--acento); background: var(--azul-medio); font-family: var(--fuente-titulo); font-size: 1rem; font-weight: 700; cursor: pointer; }
 .editor-accion.is-active { color: var(--azul-medio); background: var(--acento); }
@@ -96,7 +105,8 @@
 /* P-20 galeria y hoja de reglas de P-01 */
 .gallery-vacia { margin: 26px 0; color: var(--tinta); font-family: var(--fuente-mono); font-size: .74rem; font-weight: 700; text-align: center; }
 .gallery-action.is-principal { color: var(--tinta-fija); background: var(--acento); }
-.gallery-action:disabled { opacity: .45; cursor: not-allowed; }
+.gallery-action[aria-disabled="true"] { cursor: not-allowed; }
+.gallery-action[aria-disabled="true"] svg { opacity: .4; }
 .rules-modal { text-align: left; }
 .rules-modal h2 { text-align: center; }
 .rules-list { display: grid; gap: 8px; margin: 16px 0 0; padding-left: 20px; color: var(--texto-tenue); font-family: var(--fuente-mono); font-size: .72rem; font-weight: 700; line-height: 1.35; }
@@ -111,8 +121,6 @@
 .trophy-icon svg { width: 20px; height: 20px; vertical-align: -4px; }
 .trophy-mark svg { width: 30px; height: 30px; }
 .result-trophy svg { width: 120px; height: 120px; }
-.album-card-mark svg { width: 16px; height: 16px; }
-.ar-card-icon svg { width: 18px; height: 18px; }
 
 /* Solo celular: lo que esta fijo se ancla a la columna, no a la ventana */
 .page-header, .bottom-nav, .gallery-actions, .modal-backdrop { right: auto; left: 50%; width: 100%; max-width: var(--ancho-app); transform: translateX(-50%); box-sizing: border-box; }
@@ -209,12 +217,9 @@
 .escudo-opcion .flecha-avance svg { width: 26px; height: 26px; }
 .ar-ver-atras { background: transparent; filter: drop-shadow(0 2px 6px rgba(0,0,0,.7)); }
 .ar-ver-atras svg { width: 32px; height: 32px; }
-.mode-back { background: transparent; border: 0; color: #fff; cursor: pointer; }
-.mode-back svg { width: 26px; height: 26px; }
 .ar-mode-choice span svg { width: 44px; height: 44px; }
 .model-choice { background: var(--azul-profundo); }
 .card-icon svg { width: 1em; height: 1em; }
-.herramienta-bate svg { width: 24px; height: 24px; color: var(--azul-claro); }
 
 /* Controles de la ventana AR */
 .ar-ver-pista { position: absolute; right: 20px; bottom: 42%; left: 20px; z-index: 4; margin: 0; color: #fff; font-family: var(--fuente-mono); font-size: .64rem; font-weight: 700; text-align: center; text-shadow: 0 2px 6px rgba(0,0,0,.8); }
@@ -233,9 +238,7 @@ body { letter-spacing: .015em; }
 .acceso-titulo, .compilar-copia small, .prueba-controles span, .ar-ver-estado, .ar-ver-equipo { letter-spacing: .06em; }
 
 /* Los rotulos de boton usan la tipografia de titulos, como el resto */
-.video-filter, .album-filter, .gallery-filter, .plays-filter, .profile-filter,
-.region-filter, .detail-tab, .statistics-subtab, .ar-region, .mode-chip, .gallery-action,
-.ar-ver-accion, .compilar-descarga, .trivia-mode, .ar-selector-prueba, .editor-volver, .cuenta-valor {
+.video-filter, .gallery-filter, .plays-filter, .profile-filter, .region-filter, .detail-tab, .statistics-subtab, .gallery-action, .ar-ver-accion, .compilar-descarga, .trivia-mode, .ar-selector-prueba, .editor-volver, .cuenta-valor {
   font-family: var(--fuente-titulo); letter-spacing: .04em;
 }
 .ar-ver-accion span { font-family: var(--fuente-titulo); letter-spacing: .05em; }
@@ -262,18 +265,7 @@ body { letter-spacing: .015em; }
 .team-detail-identity .team-badge img { width: 88%; height: 88%; }
 .trivia-mode.is-pendiente { opacity: .5; cursor: not-allowed; }
 .equipos-vacio { grid-column: 1 / -1; margin: 26px 0; color: var(--tinta); font-family: var(--fuente-mono); font-size: .74rem; font-weight: 700; text-align: center; }
-
-.album-card img { width: 76%; height: 76%; margin: 12%; object-fit: contain; }
-.album-card.is-bloqueada { background: var(--gris-bloque); opacity: .55; }
-.album-card.is-bloqueada .album-card-mark { position: static; display: block; color: var(--bloqueado-marca); font-family: var(--fuente-titulo); font-size: 1.6rem; }
-.album-card.is-especial { background: #d9e3f2; box-shadow: inset 0 0 0 2px var(--azul-medio); }
-.album-card.is-holo { background: linear-gradient(135deg, #ffe9a8 0%, #d6f0ff 50%, #f3d0ff 100%); box-shadow: inset 0 0 0 2px var(--acento); }
-.album-card-repetida { position: absolute; right: 4px; bottom: 4px; padding: 1px 5px; border-radius: 6px; color: #fff; background: var(--azul-profundo); font-family: var(--fuente-mono); font-size: .5rem; }
-.album-progress span, .progress-track span { width: 0; transition: width .25s ease; }
-.card-progress span:nth-child(-n + 3) { background: var(--azul-profundo); }
-.card-progress span.is-hecha { background: var(--confirmacion); }
-.opening-card img { width: 96px; height: 96px; margin: 0 auto 10px; object-fit: contain; }
-.opening-card strong, .opening-card small { text-align: center; }
+.progress-track span { width: 0; transition: width .25s ease; }
 .prueba-aviso.is-alerta { background: var(--alerta); }
 .trophy-card strong { padding: 0 4px; font-family: var(--fuente-mono); font-size: .5rem; letter-spacing: .04em; line-height: 1.2; }
 
@@ -449,3 +441,108 @@ body { letter-spacing: .015em; }
 .filtro-opcion:last-child { border-bottom: 0; }
 .filtro-opcion.is-active { color: var(--tinta-fija); background: var(--acento); }
 .filtro-opcion:focus-visible { outline: 3px solid var(--acento); outline-offset: -3px; }
+
+/* Cartas: tienda, detalle y eleccion de carta para AR */
+.packs-nota { margin: 10px 4px 0; color: var(--azul-texto); font-family: var(--fuente-mono); font-size: .66rem; font-weight: 700; line-height: 1.4; }
+.carta-detalle-shell { min-height: 100svh; color: #fff; background: radial-gradient(circle at 50% 30%, #1d5fae 0%, #0a2344 58%, #050f20 100%); }
+.carta-detalle-content { max-width: 520px; padding: 96px 14px 110px; margin: 0 auto; }
+.carta-detalle-shell > .bottom-nav { position: fixed; }
+.tarjetas-intro { margin: 0 4px 14px; color: var(--azul-texto); font-family: var(--fuente-mono); font-size: .75rem; font-weight: 700; line-height: 1.45; }
+.tarjetas-tienda { width: 100%; min-height: 48px; border: 0; border-radius: 12px; color: var(--tinta-fija); background: var(--acento); font-family: var(--fuente-titulo); font-size: 1.05rem; font-weight: 700; cursor: pointer; }
+.tarjetas-tienda:focus-visible { outline: 3px solid var(--azul-medio); outline-offset: 3px; }
+
+/* Tienda: los tres sobres para elegir, con su diseño */
+.tienda-sobres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: end; }
+.tienda-sobre { display: grid; justify-items: center; gap: 8px; padding: 10px 4px; border: 2px solid transparent; border-radius: 14px; background: transparent; font: inherit; cursor: pointer; transition: transform .2s ease, background .2s ease; }
+.tienda-sobre .sobre { pointer-events: none; }
+.tienda-sobre b { min-width: 52px; padding: 3px 8px; border-radius: 999px; color: var(--azul-texto); background: var(--gris-bloque); font-family: var(--fuente-mono); font-size: .72rem; font-weight: 900; text-align: center; }
+.tienda-sobre.is-elegido { border-color: var(--acento); background: var(--gris-bloque); transform: translateY(-4px); }
+.tienda-sobre.is-elegido b { color: var(--tinta-fija); background: var(--acento); }
+.tienda-sobre:focus-visible { outline: 3px solid var(--acento); outline-offset: 2px; }
+.sobre--mini { width: 100%; max-width: 92px; }
+.sobre--mini .sobre__marca { font-size: .68rem; }
+.sobre--mini .sobre__nombre { padding: 2px 5px; font-size: .42rem; }
+.sobre--mini .sobre__cantidad { font-size: .38rem; }
+
+.tienda-ficha { display: grid; justify-items: center; gap: 6px; margin-top: 14px; padding: 14px; border-radius: 16px; color: #fff; background: var(--azul-medio); }
+.tienda-ficha strong { font-family: var(--fuente-titulo); font-size: 1.3rem; }
+.tienda-ficha small { font-family: var(--fuente-mono); font-size: .7rem; font-weight: 700; }
+.tienda-probabilidades { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 4px 0 2px; padding: 0; list-style: none; }
+.tienda-probabilidades li { padding: 3px 9px; border-radius: 999px; color: var(--tinta-fija); background: #C9D3DE; font-family: var(--fuente-mono); font-size: .58rem; font-weight: 700; }
+.tienda-probabilidades .rareza--especial { background: var(--acento); }
+.tienda-probabilidades .rareza--holo { background: linear-gradient(90deg, #ffb3c6, #ffe8a3, #b8ffcf, #b3e6ff, #d9b8ff); }
+.tienda-comprar { width: 100%; min-height: 50px; margin-top: 6px; border: 0; border-radius: 12px; color: var(--tinta-fija); background: var(--acento); font-family: var(--fuente-titulo); font-size: 1.05rem; font-weight: 700; cursor: pointer; }
+.tienda-comprar:disabled { color: #fff; background: rgba(255, 255, 255, .18); cursor: not-allowed; }
+.tienda-comprar:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.sobre--mini .sobre__foil { opacity: calc(.16 + var(--fuerza, 0) * .3); }
+
+/* Trivia: elegir equipo por su escudo */
+.trivia-escudos { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; }
+.trivia-escudo { display: grid; justify-items: center; gap: 6px; padding: 12px 8px 10px; border: 0; border-radius: 18px; background: var(--gris-bloque); font: inherit; cursor: pointer; transition: transform var(--rapido) var(--curva), background var(--rapido) ease; }
+.trivia-escudo img { width: 100%; max-width: 78px; aspect-ratio: 1; object-fit: contain; }
+.trivia-escudo span { color: var(--tinta); font-family: var(--fuente-titulo); font-size: .95rem; font-weight: 700; line-height: 1; text-align: center; }
+.trivia-escudo small { color: var(--azul-texto); font-family: var(--fuente-mono); font-size: .58rem; font-weight: 700; }
+.trivia-escudo:hover { transform: translateY(-3px); background: #fff; }
+.trivia-escudo:active { transform: scale(.97); }
+.trivia-escudo:focus-visible { outline: 3px solid var(--acento); outline-offset: 3px; }
+
+/* Trivia: las tres epocas de un equipo */
+.trivia-epocas-content { max-width: 520px; padding: 100px 14px 95px; margin: 0 auto; }
+.trivia-epocas-cabecera { display: grid; justify-items: center; gap: 6px; margin-bottom: 16px; }
+.trivia-epocas-cabecera img { width: 96px; height: 96px; object-fit: contain; }
+.trivia-epocas-cabecera h2 { margin: 0; color: var(--tinta); font-size: 1.8rem; }
+.trivia-completo { padding: 3px 10px; border-radius: 999px; color: var(--tinta-fija); background: var(--acento); font-family: var(--fuente-mono); font-size: .6rem; font-weight: 700; }
+.trivia-epocas { display: grid; gap: 10px; padding: 0; margin: 0; list-style: none; }
+.trivia-epoca { display: grid; width: 100%; gap: 3px; padding: 14px 16px; border: 0; border-radius: 16px; color: #fff; background: var(--azul-medio); font: inherit; text-align: left; cursor: pointer; transition: transform var(--rapido) var(--curva), filter var(--rapido) ease; }
+.trivia-epoca strong { font-family: var(--fuente-titulo); font-size: 1.3rem; line-height: 1; }
+.trivia-epoca__anios { color: var(--acento); font-family: var(--fuente-mono); font-size: .6rem; font-weight: 700; letter-spacing: .08em; }
+.trivia-epoca__avance { font-family: var(--fuente-mono); font-size: .62rem; font-weight: 700; opacity: .85; }
+.trivia-epoca:hover { transform: translateY(-2px); filter: brightness(1.08); }
+.trivia-epoca:active { transform: scale(.99); }
+.trivia-epoca.is-perfecta { background: var(--confirmacion); }
+.trivia-epoca:focus-visible { outline: 3px solid var(--acento); outline-offset: 3px; }
+
+/* Trivia: el reloj junto a la pregunta */
+.trivia-tablero { display: flex; align-items: stretch; gap: 10px; }
+.trivia-tablero .question-card { flex: 1; }
+.trivia-reloj { position: relative; display: grid; width: 64px; height: 64px; flex: 0 0 64px; place-items: center; align-self: center; }
+.trivia-reloj svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.trivia-reloj circle { fill: none; stroke-width: 6; stroke-linecap: round; }
+.trivia-reloj__pista { stroke: var(--gris-bloque); }
+.trivia-reloj__arco { stroke: var(--acento); transition: stroke-dashoffset 1s linear, stroke var(--rapido) ease; }
+.trivia-reloj strong { color: var(--tinta); font-family: var(--fuente-mono); font-size: 1.1rem; font-weight: 700; }
+.trivia-reloj.es-urgente .trivia-reloj__arco { stroke: var(--alerta); }
+.trivia-reloj.es-urgente strong { color: var(--alerta); }
+.trivia-reloj.es-detenido .trivia-reloj__arco { transition: none; opacity: .3; }
+
+.trivia-resumen-club { margin: 2px 0 6px; color: var(--acento); font-family: var(--fuente-mono); font-size: .68rem; font-weight: 700; text-align: center; }
+
+/* Revelacion del trofeo: la copa en 3D con su nombre */
+.trofeo3d { display: grid; justify-items: center; gap: 10px; }
+.trofeo3d__kicker { margin: 0; color: var(--acento); font-family: var(--fuente-mono); font-size: .7rem; font-weight: 700; letter-spacing: .12em; }
+.trofeo3d__escena { width: 100%; max-width: 380px; min-height: 280px; max-height: 60svh; aspect-ratio: 4 / 5; opacity: 0; transition: opacity .35s ease; touch-action: none; cursor: grab; }
+.trofeo3d__escena:active { cursor: grabbing; }
+.trofeo3d { width: 100%; }
+.trofeo3d__escena.es-listo { opacity: 1; }
+.trofeo3d__lienzo { display: block; width: 100%; height: 100%; }
+.trofeo3d__nombre { color: var(--tinta); font-family: var(--fuente-titulo); font-size: 1.7rem; line-height: 1; text-align: center; }
+.trofeo3d__ayuda { margin: -4px 0 0; color: var(--azul-texto); font-family: var(--fuente-mono); font-size: .58rem; font-weight: 700; letter-spacing: .04em; opacity: .75; }
+.trofeo3d__pista { color: var(--azul-texto); font-family: var(--fuente-mono); font-size: .66rem; font-weight: 700; text-align: center; }
+.trofeo3d .next-question-button { width: min(100%, 320px); margin-top: 8px; }
+
+.trofeo-visor { width: 100%; max-width: 420px; max-height: 100%; overflow-y: auto; padding: 18px 16px 16px; border-radius: 22px; background: var(--superficie); }
+.trofeo-visor .trofeo3d__nombre { font-size: 1.4rem; }
+.prueba-trofeo .trofeo3d__escena { max-width: 480px; margin: 18px auto 0; }
+.trofeo3d__plano { width: 60%; max-width: 200px; color: var(--acento); }
+
+/* Trivia: el titulo con la tipografia de la app */
+.trivia-menu-content h2 { font-family: var(--fuente-titulo); font-size: 1.9rem; font-weight: 700; letter-spacing: .01em; text-transform: uppercase; }
+
+
+/* Inicio: las cuatro tarjetas en dos por fila, con sus iconos detras */
+.content-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+.content-card { min-height: 128px; padding: 16px; }
+.content-card .card-copy strong { font-size: clamp(1.5rem, 7vw, 2.4rem); }
+.content-card .card-copy small { font-size: clamp(.62rem, 2.4vw, .8rem); line-height: 1.15; }
+.content-card .card-icon { right: -6%; font-size: clamp(5rem, 26vw, 9rem); }
+.content-card .card-icon svg { width: 1em; height: 1em; }
