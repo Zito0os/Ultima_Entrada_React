@@ -1,6 +1,6 @@
 import { PERFIL_BATE, crearBate } from './bate'
 import { crearEscudoDorado } from './escudo'
-import { crearGuante } from './guante'
+import { cargarGuante } from './guante'
 import { ORO, crearMaterial } from './materiales'
 import { PELOTA, crearPelota } from './pelota'
 import { crearPlaca } from './placa'
@@ -15,9 +15,12 @@ export const ARMADO = {
   // Trofeo de equipo: ancho mayor del escudo y alto del poste que lo levanta, en cm
   anchoEscudo: 17,
   poste: { radio: 1.2, alto: 3 },
-  // Trofeo de final: el guante va a 60% y un poco echado hacia atras para lucir la bolsa
+  // Trofeo de final: el guante va a 60% y echado hacia atras para lucir la bolsa.
+  // La pelota se agranda para que se lea a esa escala; adelante va en cm hacia la placa
   escalaGuante: 0.6,
-  inclinacionGuante: -0.15,
+  inclinacionGuante: -0.35,
+  escalaPelotaGuante: 1.35,
+  adelanteGuante: 2,
 }
 
 function montarBates(THREE, grupo, arriba) {
@@ -60,16 +63,26 @@ async function montarEscudo(THREE, grupo, arriba, equipo) {
   grupo.add(escudo)
 }
 
-function montarGuante(THREE, grupo, arriba) {
-  const guante = crearGuante(THREE)
+async function montarGuante(THREE, grupo, arriba) {
+  const guante = await cargarGuante(THREE)
+  // La misma pelota del trofeo de bates, dentro de la bolsa y a la escala del guante
+  const { bolsa } = guante.userData
+  if (bolsa) {
+    // Asentada en el fondo de la bolsa; con 0.3 cm de mas no roza los costados
+    const pelota = crearPelota(THREE)
+    pelota.scale.setScalar(ARMADO.escalaPelotaGuante)
+    pelota.position.copy(bolsa.punto).addScaledVector(bolsa.normal, PELOTA.radio * ARMADO.escalaPelotaGuante + 0.3)
+    pelota.rotation.set(0.4, 0.6, 0)
+    guante.add(pelota)
+  }
   guante.scale.setScalar(ARMADO.escalaGuante)
   guante.rotation.x = ARMADO.inclinacionGuante
   const soporte = new THREE.Group()
   soporte.add(guante)
-  // El talon se asienta en el disco dorado, centrado sobre la base
+  // El talon se asienta en el disco dorado, centrado sobre la base y corrido al frente
   const caja = new THREE.Box3().setFromObject(soporte)
   const centro = caja.getCenter(new THREE.Vector3())
-  guante.position.set(-centro.x, arriba - caja.min.y - 0.3, -centro.z)
+  guante.position.set(-centro.x, arriba - caja.min.y - 0.3, ARMADO.adelanteGuante - centro.z)
   grupo.add(soporte)
 }
 
@@ -89,7 +102,7 @@ export async function crearTrofeo(THREE, { nombre, subtitulo, forma = 'bates', e
   if (forma === 'escudo') {
     await montarEscudo(THREE, grupo, arriba, equipo)
   } else if (forma === 'guante') {
-    montarGuante(THREE, grupo, arriba)
+    await montarGuante(THREE, grupo, arriba)
   } else {
     montarBates(THREE, grupo, arriba)
   }

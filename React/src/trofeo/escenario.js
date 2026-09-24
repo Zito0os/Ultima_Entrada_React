@@ -108,7 +108,8 @@ export async function montarEscenario(nodo, construir, sigueVivo) {
   })
 
   const alto = medidas.y
-  const ancho = Math.max(medidas.x, medidas.z)
+  // El modelo gira: la diagonal de la base es lo mas ancho que llega a verse
+  const ancho = Math.hypot(medidas.x, medidas.z)
   const mitad = Math.tan((camara.fov * Math.PI) / 360)
 
   const controles = new OrbitControls(camara, renderer.domElement)

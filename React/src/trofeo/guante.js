@@ -275,3 +275,36 @@ export function crearGuante(THREE) {
   })
   return grupo
 }
+
+// Modelo low poly hecho en Blender (contexto/blender/guante.py), en cm y con los mismos ejes
+const RUTA_GLB = `${import.meta.env.BASE_URL}modelos/guante.glb`
+// Fondo de la bolsa del modelo y su normal, medidos en Blender
+export const BOLSA = { punto: [2.5, 12.5, 0.48], normal: [0.14, -0.15, 0.98] }
+const MATERIALES_GLB = { Oro: ORO, OroViejo: ORO_VIEJO }
+
+// El guante de Blender; si no carga, el hecho en codigo, que no trae userData.bolsa
+export async function cargarGuante(THREE) {
+  try {
+    const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js')
+    const { scene } = await new GLTFLoader().loadAsync(RUTA_GLB)
+    const materiales = {}
+    scene.traverse((malla) => {
+      if (!malla.isMesh) {
+        return
+      }
+      const nombre = malla.material.name
+      materiales[nombre] ??= crearMaterial(THREE, MATERIALES_GLB[nombre] ?? ORO)
+      malla.material = materiales[nombre]
+      malla.castShadow = true
+      malla.receiveShadow = true
+    })
+    scene.name = 'guante'
+    scene.userData.bolsa = {
+      punto: new THREE.Vector3(...BOLSA.punto),
+      normal: new THREE.Vector3(...BOLSA.normal).normalize(),
+    }
+    return scene
+  } catch {
+    return crearGuante(THREE)
+  }
+}

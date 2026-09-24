@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import PageHeader from './PageHeader'
 import { crearBate } from './trofeo/bate'
 import { montarEscenario } from './trofeo/escenario'
-import { crearGuante } from './trofeo/guante'
+import { cargarGuante } from './trofeo/guante'
 import { crearPelota } from './trofeo/pelota'
 import { crearPlaca } from './trofeo/placa'
 import { crearTrofeo, formaDe } from './trofeo/trofeo'
@@ -15,7 +15,7 @@ import './cartas/album.css'
 const PIEZAS = [
   { id: 'pelota', nombre: 'PELOTA', crear: (THREE) => crearPelota(THREE) },
   { id: 'bate', nombre: 'BATE', crear: (THREE) => crearBate(THREE) },
-  { id: 'guante', nombre: 'GUANTE', crear: (THREE) => crearGuante(THREE) },
+  { id: 'guante', nombre: 'GUANTE', crear: (THREE) => cargarGuante(THREE) },
   { id: 'placa', nombre: 'PLACA', crear: (THREE) => crearPlaca(THREE, { titulo: 'SERIE 1975' }) },
   { id: 'epoca', nombre: 'ÉPOCA', crear: (THREE) => armar(THREE, buscarTrofeo(`trivia-yankees-${epocasDe('yankees')[0].id}`)) },
   { id: 'final', nombre: 'FINAL', crear: (THREE) => armar(THREE, buscarTrofeo('final-1975')) },
