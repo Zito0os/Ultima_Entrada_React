@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import './Juego_Final.css'
 
 function JuegoFinal() {
     const containerRef = useRef(null);
@@ -31,6 +32,93 @@ function JuegoFinal() {
     });
     const [lanzamientos, setLanzamientos] = useState(0);
 
+    const ZONA_LANZAMIENTO = { columnas: 3, filas: 3, ancho: 180, alto: 180 };
+    const RADIO_CIRCULO_OBJETIVO = 34;
+    const RADIO_PUNTO_CONTACTO = 9;
+    const VELOCIDAD_JOYSTICK = 150;
+
+    const puntoContactoRef = useRef(null);
+    const circuloObjetivoRef = useRef(null);
+    const joystickBaseRef = useRef(null);
+    const joystickStickRef = useRef(null);
+    const contactoPosRef = useRef({
+        x: ZONA_LANZAMIENTO.ancho / 2,
+        y: ZONA_LANZAMIENTO.alto / 2
+    });
+    const objetivoPosRef = useRef({
+        x: ZONA_LANZAMIENTO.ancho / 2,
+        y: ZONA_LANZAMIENTO.alto / 2
+    });
+    const joystickVectorRef = useRef({ x: 0, y: 0 });
+    const joystickActivoRef = useRef(false);
+
+    function generarObjetivoAleatorio() {
+        const { columnas, filas, ancho, alto } = ZONA_LANZAMIENTO;
+        const col = Math.floor(Math.random() * columnas);
+        const fila = Math.floor(Math.random() * filas);
+        const x = (ancho / columnas) * col + ancho / columnas / 2;
+        const y = (alto / filas) * fila + alto / filas / 2;
+        objetivoPosRef.current = { x, y };
+        if (circuloObjetivoRef.current) {
+            circuloObjetivoRef.current.style.left = `${x}px`;
+            circuloObjetivoRef.current.style.top = `${y}px`;
+            circuloObjetivoRef.current.style.opacity = "1";
+        }
+    }
+
+    function ocultarObjetivo() {
+        if (circuloObjetivoRef.current) circuloObjetivoRef.current.style.opacity = "0";
+    }
+
+    function estaDentroDelCirculo() {
+        return Math.hypot(
+            contactoPosRef.current.x - objetivoPosRef.current.x,
+            contactoPosRef.current.y - objetivoPosRef.current.y
+        ) <= RADIO_CIRCULO_OBJETIVO - RADIO_PUNTO_CONTACTO / 2;
+    }
+
+    function reiniciarContacto() {
+        contactoPosRef.current = {
+            x: ZONA_LANZAMIENTO.ancho / 2,
+            y: ZONA_LANZAMIENTO.alto / 2
+        };
+        if (puntoContactoRef.current) {
+            puntoContactoRef.current.style.left = `${contactoPosRef.current.x}px`;
+            puntoContactoRef.current.style.top = `${contactoPosRef.current.y}px`;
+        }
+    }
+
+    function manejarJoystickInicio(event) {
+        joystickActivoRef.current = true;
+        event.currentTarget.setPointerCapture(event.pointerId);
+    }
+
+    function manejarJoystickMover(event) {
+        if (!joystickActivoRef.current || !joystickBaseRef.current) return;
+        const rect = joystickBaseRef.current.getBoundingClientRect();
+        const radioMax = rect.width / 2;
+        let dx = event.clientX - (rect.left + radioMax);
+        let dy = event.clientY - (rect.top + rect.height / 2);
+        const distancia = Math.hypot(dx, dy);
+        if (distancia > radioMax) {
+            dx = (dx / distancia) * radioMax;
+            dy = (dy / distancia) * radioMax;
+        }
+        joystickVectorRef.current = { x: dx / radioMax, y: dy / radioMax };
+        if (joystickStickRef.current) {
+            joystickStickRef.current.style.transform = `translate(${dx}px, ${dy}px)`;
+        }
+    }
+
+    function manejarJoystickFin(event) {
+        joystickActivoRef.current = false;
+        joystickVectorRef.current = { x: 0, y: 0 };
+        if (event?.currentTarget?.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+        if (joystickStickRef.current) joystickStickRef.current.style.transform = "translate(0px, 0px)";
+    }
+
     function irAlResultado() {
         navigate(`/finales/${finalId}/resultado`, {
             state: {
@@ -50,11 +138,13 @@ function JuegoFinal() {
 
         startPitcherAnimationRef.current();
         lanzamientoPendienteRef.current = true;
+        reiniciarContacto();
+        generarObjetivoAleatorio();
         updateGameState({
             phase: "countdown",
             countdown: tiempoAntesDeLanzar,
             bateoBloqueado: false
-        });
+    });
         readyTimerRef.current = window.setTimeout(() => {
             readyTimerRef.current = null;
             startPitchRef.current();
@@ -831,6 +921,7 @@ function JuegoFinal() {
         }
 
         function resolverPelotaDejadaPasar() {
+            ocultarObjetivo();
             const strikes = gameRef.current.strikes + 1;
 
             ballInFlight = false;
@@ -894,6 +985,12 @@ function JuegoFinal() {
             ) return;
 
             if (gameRef.current.phase === "countdown") {
+                if (readyTimerRef.current) {
+                    window.clearTimeout(readyTimerRef.current);
+                    readyTimerRef.current = null;
+                }
+
+                lanzamientoPendienteRef.current = false;
                 lanzamientoAnticipadoRef.current = true;
                 registrarStrike(true);
                 return;
@@ -919,6 +1016,10 @@ function JuegoFinal() {
             );
             const seraHit = distanciaPrevista < hitDistance;
 
+            const golpeEnCirculo = estaDentroDelCirculo();
+            const golpeValido = seraHit && golpeEnCirculo;
+
+            reproducirAnimacion(golpeValido ? "Hit" : "Strike");
             console.log("[JuegoFinal] Resultado previsto del bateo", {
                 progresoActual: pitchProgress,
                 progresoPrevisto,
@@ -926,24 +1027,15 @@ function JuegoFinal() {
                 seraHit
             });
 
-            /*
-             * La animacion se decide ahora usando la posicion que tendra
-             * la pelota cuando termine el retardo logico.
-             */
-            reproducirAnimacion(seraHit ? "Hit" : "Strike");
-
             bateoTimer = window.setTimeout(() => {
                 bateoPendiente = false;
                 bateoTimer = null;
 
-                if (componentUnmounted || gameRef.current.phase !== "pitching") {
-                    return;
-                }
+                if (componentUnmounted || gameRef.current.phase !== "pitching") return;
 
-                if (seraHit) {
-                    console.log("[JuegoFinal] Contacto HIT confirmado", {
-                        distanciaPrevista
-                    });
+                ocultarObjetivo();
+
+                if (golpeValido) {
                     hit = true;
                     ballInFlight = false;
                     hitDirection = (Math.random() - 0.5) * 2;
@@ -951,9 +1043,6 @@ function JuegoFinal() {
                     return;
                 }
 
-                console.log("[JuegoFinal] Bateo fallido confirmado", {
-                    distanciaPrevista
-                });
                 registrarStrike(false);
             }, retardoLogicaBateo);
         };
@@ -1083,40 +1172,8 @@ function JuegoFinal() {
             Math.PI / 4
         );
 
-        // ==========================================
-        // CÍRCULO DEL PITCHER
-        // ==========================================
-        /*
-        const ringGeometry =
-            new THREE.RingGeometry(
-                1.35,
-                1.45,
-                64
-            );
 
-        const ringMaterial =
-            new THREE.MeshBasicMaterial({
-                color: 0xffffff,
-                side: THREE.DoubleSide
-            });
-
-        const ring =
-            new THREE.Mesh(
-                ringGeometry,
-                ringMaterial
-            );
-
-        ring.rotation.x =
-            -Math.PI / 2;
-
-        ring.position.set(
-            0,
-            0.31,
-            1
-        );
-
-        stadium.add(ring);
-        */
+        
         // ==========================================
         // GRADAS
         // ==========================================
@@ -1245,6 +1302,23 @@ function JuegoFinal() {
                     animate
                 );
             const delta = clock.getDelta();
+            // Mover el punto de contacto según el joystick
+            const vector = joystickVectorRef.current;
+            if (vector.x !== 0 || vector.y !== 0) {
+                const { ancho, alto } = ZONA_LANZAMIENTO;
+                let nuevaX = contactoPosRef.current.x + vector.x * VELOCIDAD_JOYSTICK * delta;
+                let nuevaY = contactoPosRef.current.y + vector.y * VELOCIDAD_JOYSTICK * delta;
+
+                nuevaX = Math.min(ancho, Math.max(0, nuevaX));
+                nuevaY = Math.min(alto, Math.max(0, nuevaY));
+
+                contactoPosRef.current = { x: nuevaX, y: nuevaY };
+
+                if (puntoContactoRef.current) {
+                    puntoContactoRef.current.style.left = `${nuevaX}px`;
+                    puntoContactoRef.current.style.top = `${nuevaY}px`;
+                }
+            }
 
             if (ballInFlight && !hit) {
                 pitchProgress +=
@@ -1337,31 +1411,16 @@ function JuegoFinal() {
 
         animate();
 
-        // ==========================================
-        // RESPONSIVE
-        // ==========================================
-
         function resize() {
-            camera.aspect =
-                container.clientWidth /
-                container.clientHeight;
-
+            camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
-
             renderer.setSize(
                 container.clientWidth,
                 container.clientHeight
             );
         }
 
-        window.addEventListener(
-            "resize",
-            resize
-        );
-
-        // ==========================================
-        // LIMPIEZA
-        // ==========================================
+        window.addEventListener("resize", resize);
 
         return () => {
             componentUnmounted = true;
@@ -1383,30 +1442,13 @@ function JuegoFinal() {
             batearRef.current = () => {};
             lanzamientoPendienteRef.current = false;
             lanzamientoAnticipadoRef.current = false;
+            manejarJoystickFin();
 
-            window.removeEventListener(
-                "keydown",
-                teclaBatear
-            );
-
-            renderer.domElement.removeEventListener(
-                "click",
-                clickBatear
-            );
-
-            cancelAnimationFrame(
-                animationId
-            );
-
-            renderer.domElement.removeEventListener(
-                "mousemove",
-                mouseMove
-            );
-
-            window.removeEventListener(
-                "resize",
-                resize
-            );
+            window.removeEventListener("keydown", teclaBatear);
+            renderer.domElement.removeEventListener("click", clickBatear);
+            cancelAnimationFrame(animationId);
+            renderer.domElement.removeEventListener("mousemove", mouseMove);
+            window.removeEventListener("resize", resize);
 
             renderer.dispose();
 
@@ -1461,11 +1503,36 @@ function JuegoFinal() {
                 position: "relative"
             }}
         >
-            <div className="juego-final-scoreboard" aria-label="Marcador de la última entrada">
-                <span>ÚLTIMA ENTRADA</span>
-                <strong>STRIKES: {gameState.strikes} / 3</strong>
-                
+        <div className="juego-final-scoreboard" aria-label="Marcador de la última entrada">
+            <div className="marcador-header">
+                <span className="marcador-liga">MLB · FINAL</span>
+                <span className="marcador-entrada">
+                    <span className="marcador-entrada-num">9</span>
+                    <span className="marcador-entrada-txt">ÚLTIMA ENTRADA</span>
+                </span>
             </div>
+            <div className="marcador-conteo">
+                <div className="marcador-fila">
+                    <span className="marcador-label">B</span>
+                    <div className="marcador-dots">
+                        <span className="dot bola" />
+                        <span className="dot bola" />
+                        <span className="dot bola" />
+                    </div>
+                </div>
+                <div className="marcador-fila">
+                    <span className="marcador-label">S</span>
+                    <div className="marcador-dots">
+                        {[0, 1, 2].map((i) => (
+                            <span
+                                key={i}
+                                className={`dot strike ${i < gameState.strikes ? "activo" : ""}`}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
 
             <div className="juego-final-actions">
                 {gameState.phase === "ready" && (
@@ -1489,6 +1556,29 @@ function JuegoFinal() {
                         </button>
                     </>
                 )}
+            </div>
+            <div className="zona-lanzamiento-wrapper">
+                <div
+                    className="zona-lanzamiento"
+                    style={{ width: ZONA_LANZAMIENTO.ancho, height: ZONA_LANZAMIENTO.alto }}
+                >
+                    {Array.from({ length: ZONA_LANZAMIENTO.columnas * ZONA_LANZAMIENTO.filas }).map((_, i) => (
+                        <div key={i} className="zona-celda" />
+                    ))}
+                    <div className="zona-circulo-objetivo" ref={circuloObjetivoRef} />
+                    <div className="zona-punto-contacto" ref={puntoContactoRef} />
+                </div>
+
+                <div
+                    className="joystick-base"
+                    ref={joystickBaseRef}
+                    onPointerDown={manejarJoystickInicio}
+                    onPointerMove={manejarJoystickMover}
+                    onPointerUp={manejarJoystickFin}
+                    onPointerCancel={manejarJoystickFin}
+                >
+                    <div className="joystick-stick" ref={joystickStickRef} />
+                </div>
             </div>
 
             {gameState.phase === "won" && (
