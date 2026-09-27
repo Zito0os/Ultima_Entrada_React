@@ -154,19 +154,30 @@
 
 .zona-lanzamiento-wrapper {
     position: absolute;
-    right: 8%;
-    bottom: 28%;
+    left: 50%;
+    bottom: 30%;
     z-index: 10;
 
     display: flex;
     align-items: center;
+    transform: translateX(-50%);
 
     user-select: none;
 }
 
-/* Cuadricula 3x3 sobre la zona visual de primera base */
-.zona-lanzamiento {
+/* Area total donde puede caer cualquier lanzamiento (strike o bola).
+   Es el contenedor relativo del que cuelgan el cuadro de strike,
+   el circulo de prediccion y el punto de contacto. */
+.zona-lanzamiento-total {
     position: relative;
+    background: rgba(11, 61, 145, 0.08);
+    border: 1px dashed rgba(255, 255, 255, 0.35);
+    border-radius: 10px;
+}
+
+/* Cuadricula 3x3: el cuadro real de strike, ahora posicionado
+   dentro de .zona-lanzamiento-total (ver estilo inline left/top). */
+.zona-lanzamiento {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, 1fr);
@@ -255,8 +266,8 @@
     }
 
     .zona-lanzamiento-wrapper {
-        right: 5%;
-        bottom: 25%;
+        left: 50%;
+        bottom: 15%;
     }
 
     .joystick-base {

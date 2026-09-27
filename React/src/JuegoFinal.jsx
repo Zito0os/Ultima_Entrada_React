@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import * as THREE from "three";
@@ -12,10 +11,13 @@ function JuegoFinal() {
     const gameRef = useRef({
         phase: "ready",
         strikes: 0,
+        bolas: 0,
         countdown: 0,
         animation: "Idle"
     });
     const readyTimerRef = useRef(null);
+    const objetivoTimerRef = useRef(null);
+    const inicioCierreCirculoRef = useRef(null);
     const animationTimerRef = useRef(null);
     const startPitchRef = useRef(() => {});
     const startPitcherAnimationRef = useRef(() => {});
@@ -24,49 +26,140 @@ function JuegoFinal() {
     const lanzamientoAnticipadoRef = useRef(false);
     const strikeTerminadoRef = useRef(true);
     const tiempoAntesDeLanzar = 1.7;
+    const TIEMPO_CIRCULO_ANTES_DE_LANZAR = 0.7;
     const [gameState, setGameState] = useState({
         phase: "ready",
         strikes: 0,
+        bolas: 0,
         countdown: 0,
         animation: "Idle"
     });
     const [lanzamientos, setLanzamientos] = useState(0);
 
-    const ZONA_LANZAMIENTO = { columnas: 3, filas: 3, ancho: 180, alto: 180 };
+    // Cuadro real de strike (la cuadrícula 3x3 donde el umpire canta strike si no bateas).
+    // Más pequeño y con proporción real (más alto que ancho, como la zona de strike de verdad).
+    const ZONA_STRIKE = { columnas: 3, filas: 3, ancho: 120, alto: 120};
+    // Margen alrededor del cuadro de strike donde el pitcher puede tirar "bolas malas"
+    const MARGEN_BOLA = 44;
+    // Área total donde puede caer cualquier lanzamiento (strike o bola)
+    const ZONA_TOTAL = {
+        ancho: ZONA_STRIKE.ancho + MARGEN_BOLA * 2,
+        alto: ZONA_STRIKE.alto + MARGEN_BOLA * 2
+    };
+    // Probabilidad de que un lanzamiento sea bola (fuera del cuadro de strike)
+    const PROBABILIDAD_BOLA = 0.35;
+    // Bolas necesarias para que el bateador se gane la base (igual que en beisbol real)
+    const BOLAS_PARA_BASE = 4;
+    const PROBABILIDAD_LANZAMIENTO_CURVO = 0.70;
+    const DESVIACION_MAXIMA_CURVA = 0.65;
+    const FACTOR_CURVA = 12;
+
     const RADIO_CIRCULO_OBJETIVO = 34;
+    const TAMANO_CIRCULO_MAX = 210;
+    const TAMANO_CIRCULO_MIN = 50;
+    const MULTIPLICADOR_CIERRE_CIRCULO = 2;
     const RADIO_PUNTO_CONTACTO = 9;
-    const VELOCIDAD_JOYSTICK = 150;
+    const VELOCIDAD_JOYSTICK = 400;
+
+    // ---- Mapeo del punto 2D (círculo de predicción) a una posición 3D real ----
+    // Altura a la que vive el centro de la zona de strike: la altura real
+    // aproximada de la zona de bateo (entre la rodilla y el pecho del bateador).
+    const ALTURA_ZONA_STRIKE_CENTRO = 0.85;
+    // Medio ancho / medio alto reales (unidades del mundo 3D) que representan el
+    // borde del cuadro de strike. Una bola (fuera del cuadro 2D) se traduce en un
+    // desplazamiento mayor a estos valores, así que el lanzamiento se ve claramente
+    // más arriba, más abajo, más a la izquierda o más a la derecha.
+    const MEDIO_ANCHO_ZONA_3D = 0.42;
+    const MEDIO_ALTO_ZONA_3D = 0.5;
+    // Profundidad (eje Z) donde el bate realmente contacta la pelota, y de dónde
+    // parte/hasta dónde llega su trayectoria.
+    const Z_LANZAMIENTO = 0.5;
+    const Z_CONTACTO = 8.0;
+    const Z_LLEGADA = 14.2;
+    // Altura a la que el pitcher suelta la pelota (hombro), para que el
+    // lanzamiento baje realmente hacia la zona en vez de ir en línea recta.
+    const ALTURA_LIBERACION_PITCHER = 1.55;
+
+    // Convierte el punto 2D del círculo de predicción (en px, dentro de
+    // ZONA_TOTAL) en la posición 3D real donde la pelota debe cruzar el plato.
+    function calcularPuntoContactoDesdeObjetivo(objetivo2D) {
+        const centroX = ZONA_TOTAL.ancho / 2;
+        const centroY = ZONA_TOTAL.alto / 2;
+        const offsetXNorm = (objetivo2D.x - centroX) / (ZONA_STRIKE.ancho / 2);
+        const offsetYNorm = (objetivo2D.y - centroY) / (ZONA_STRIKE.alto / 2);
+
+        return new THREE.Vector3(
+            offsetXNorm * MEDIO_ANCHO_ZONA_3D,
+            // En pantalla Y crece hacia abajo; en Three.js Y crece hacia arriba, se invierte.
+            ALTURA_ZONA_STRIKE_CENTRO - offsetYNorm * MEDIO_ALTO_ZONA_3D,
+            Z_CONTACTO
+        );
+    }
 
     const puntoContactoRef = useRef(null);
     const circuloObjetivoRef = useRef(null);
     const joystickBaseRef = useRef(null);
     const joystickStickRef = useRef(null);
     const contactoPosRef = useRef({
-        x: ZONA_LANZAMIENTO.ancho / 2,
-        y: ZONA_LANZAMIENTO.alto / 2
+        x: ZONA_TOTAL.ancho / 2,
+        y: ZONA_TOTAL.alto / 2
     });
     const objetivoPosRef = useRef({
-        x: ZONA_LANZAMIENTO.ancho / 2,
-        y: ZONA_LANZAMIENTO.alto / 2
+        x: ZONA_TOTAL.ancho / 2,
+        y: ZONA_TOTAL.alto / 2
     });
+    // Marca si el lanzamiento actual es una bola (cae fuera del cuadro de strike) o no
+    const pitchEsBolaRef = useRef(false);
     const joystickVectorRef = useRef({ x: 0, y: 0 });
     const joystickActivoRef = useRef(false);
 
     function generarObjetivoAleatorio() {
-        const { columnas, filas, ancho, alto } = ZONA_LANZAMIENTO;
-        const col = Math.floor(Math.random() * columnas);
-        const fila = Math.floor(Math.random() * filas);
-        const x = (ancho / columnas) * col + ancho / columnas / 2;
-        const y = (alto / filas) * fila + alto / filas / 2;
+        const esBola = Math.random() < PROBABILIDAD_BOLA;
+        pitchEsBolaRef.current = esBola;
+
+        let x;
+        let y;
+
+        if (!esBola) {
+            // Lanzamiento dentro de la zona de strike: se elige una celda al azar de la cuadrícula 3x3
+            const { columnas, filas, ancho, alto } = ZONA_STRIKE;
+            const col = Math.floor(Math.random() * columnas);
+            const fila = Math.floor(Math.random() * filas);
+            x = MARGEN_BOLA + (ancho / columnas) * col + ancho / columnas / 2;
+            y = MARGEN_BOLA + (alto / filas) * fila + alto / filas / 2;
+        } else {
+            // Bola: se sortean puntos dentro del área total hasta que caiga
+            // fuera del rectángulo del cuadro de strike.
+            do {
+                x = Math.random() * ZONA_TOTAL.ancho;
+                y = Math.random() * ZONA_TOTAL.alto;
+            } while (
+                x >= MARGEN_BOLA &&
+                x <= MARGEN_BOLA + ZONA_STRIKE.ancho &&
+                y >= MARGEN_BOLA &&
+                y <= MARGEN_BOLA + ZONA_STRIKE.alto
+            );
+        }
+
         objetivoPosRef.current = { x, y };
+        inicioCierreCirculoRef.current = null;
         if (circuloObjetivoRef.current) {
             circuloObjetivoRef.current.style.left = `${x}px`;
             circuloObjetivoRef.current.style.top = `${y}px`;
-            circuloObjetivoRef.current.style.opacity = "1";
+            circuloObjetivoRef.current.style.width = `${TAMANO_CIRCULO_MAX}px`;
+            circuloObjetivoRef.current.style.height = `${TAMANO_CIRCULO_MAX}px`;
+            circuloObjetivoRef.current.style.opacity = "0";
         }
+
+        console.log("[JuegoFinal] Nuevo lanzamiento generado.", {
+            esBola,
+            x,
+            y
+        });
     }
 
     function ocultarObjetivo() {
+        inicioCierreCirculoRef.current = null;
         if (circuloObjetivoRef.current) circuloObjetivoRef.current.style.opacity = "0";
     }
 
@@ -79,8 +172,8 @@ function JuegoFinal() {
 
     function reiniciarContacto() {
         contactoPosRef.current = {
-            x: ZONA_LANZAMIENTO.ancho / 2,
-            y: ZONA_LANZAMIENTO.alto / 2
+            x: ZONA_TOTAL.ancho / 2,
+            y: ZONA_TOTAL.alto / 2
         };
         if (puntoContactoRef.current) {
             puntoContactoRef.current.style.left = `${contactoPosRef.current.x}px`;
@@ -123,7 +216,9 @@ function JuegoFinal() {
         navigate(`/finales/${finalId}/resultado`, {
             state: {
                 ganada: gameRef.current.phase === "won",
-                lanzamientos
+                lanzamientos,
+                strikes: gameRef.current.strikes,
+                bolas: gameRef.current.bolas
             }
         });
     }
@@ -136,10 +231,29 @@ function JuegoFinal() {
     function prepararLanzamiento() {
         if (gameRef.current.phase !== "ready") return;
 
+        if (objetivoTimerRef.current) {
+            window.clearTimeout(objetivoTimerRef.current);
+        }
+
         startPitcherAnimationRef.current();
         lanzamientoPendienteRef.current = true;
         reiniciarContacto();
         generarObjetivoAleatorio();
+        const esperaParaMostrarObjetivo = Math.max(
+            0,
+            tiempoAntesDeLanzar - TIEMPO_CIRCULO_ANTES_DE_LANZAR
+        );
+        objetivoTimerRef.current = window.setTimeout(() => {
+            objetivoTimerRef.current = null;
+            if (
+                lanzamientoPendienteRef.current &&
+                gameRef.current.phase !== "lost" &&
+                circuloObjetivoRef.current
+            ) {
+                circuloObjetivoRef.current.style.opacity = "1";
+                inicioCierreCirculoRef.current = performance.now();
+            }
+        }, esperaParaMostrarObjetivo * 1000);
         updateGameState({
             phase: "countdown",
             countdown: tiempoAntesDeLanzar,
@@ -267,15 +381,41 @@ function JuegoFinal() {
         stadium.add(ball);                                  
 
 
-        //donde empieza y donde termina la pelota
-        const pitchStart = new THREE.Vector3(0, 0.7, 0.5);
-        const pitchEnd = new THREE.Vector3(0, 0.7, 14.2);
+        // Punto fijo de liberación del pitcher (arriba, como un brazo real).
+        const pitchStart = new THREE.Vector3(0, ALTURA_LIBERACION_PITCHER, Z_LANZAMIENTO);
+        // pitchEnd y puntoContactoPelota se recalculan en cada lanzamiento
+        // (ver startPitchRef.current) según hacia dónde apunte el círculo de
+        // predicción, para que la pelota realmente vaya más arriba, más abajo,
+        // más a la izquierda o más a la derecha, y pase por ese punto exacto.
+        let pitchEnd = new THREE.Vector3(0, ALTURA_ZONA_STRIKE_CENTRO, Z_LLEGADA);
+        let puntoContactoPelota = new THREE.Vector3(0, ALTURA_ZONA_STRIKE_CENTRO, Z_CONTACTO);
 
         ball.position.copy(pitchStart);
         ball.visible = false;
 
         const pitchSpeed = 0.8; // Velocidad de la pelota (ajustable)
         let pitchProgress = 0;
+        const duracionCierreCirculo = .8;
+        const progresoContacto =
+            (Z_CONTACTO - pitchStart.z) / (Z_LLEGADA - pitchStart.z);
+        let curvaLanzamiento = { eje: null, direccion: 0, intensidad: 0 };
+
+        function calcularPosicionPelota(progreso) {
+            const posicion = new THREE.Vector3().lerpVectors(
+                pitchStart,
+                pitchEnd,
+                progreso
+            );
+
+            if (curvaLanzamiento.eje) {
+                const desviacion = progreso * (1 - progreso) *
+                    (progreso - progresoContacto) * FACTOR_CURVA *
+                    curvaLanzamiento.direccion * curvaLanzamiento.intensidad;
+                posicion[curvaLanzamiento.eje] += desviacion;
+            }
+
+            return posicion;
+        }
 
         const clock = new THREE.Clock();
 
@@ -484,7 +624,7 @@ function JuegoFinal() {
 
         const homeMaterial =
             new THREE.MeshStandardMaterial({
-                color: 0xffffff
+                color: 0x404040
             });
 
         const home =
@@ -920,19 +1060,50 @@ function JuegoFinal() {
             });
         }
 
+        function registrarBola() {
+            const bolas = gameRef.current.bolas + 1;
+
+            console.log("[JuegoFinal] Bola cantada (lanzamiento fuera de zona, sin swing).", {
+                bolas
+            });
+
+            if (bolas >= BOLAS_PARA_BASE) {
+                // Base por bolas: el bateador se gana la base.
+                updateGameState({ phase: "won", bolas });
+                return;
+            }
+
+            updateGameState({ phase: "ball", bolas });
+
+            animationTimerRef.current = window.setTimeout(() => {
+                if (!componentUnmounted && gameRef.current.phase === "ball") {
+                    updateGameState({ phase: "ready" });
+                }
+            }, 1000);
+        }
+
         function resolverPelotaDejadaPasar() {
             ocultarObjetivo();
-            const strikes = gameRef.current.strikes + 1;
+            const esBola = pitchEsBolaRef.current;
 
             ballInFlight = false;
             pitchActive = false;
             strikeTerminadoRef.current = true;
             ball.position.copy(pitchEnd);
 
-            console.log("[JuegoFinal] Pelota dejada pasar: strike sin animacion Strike.", {
+            reproducirAnimacion("Idle");
+
+            if (esBola) {
+                // La pelota cayó fuera del cuadro de strike y el jugador no bateó: BOLA.
+                registrarBola();
+                return;
+            }
+
+            // La pelota cayó dentro del cuadro de strike y el jugador no bateó: STRIKE cantado.
+            const strikes = gameRef.current.strikes + 1;
+            console.log("[JuegoFinal] Pelota dejada pasar dentro de la zona: strike cantado.", {
                 strikes
             });
-            reproducirAnimacion("Idle");
             updateGameState({
                 phase: strikes >= 3 ? "lost" : "strike",
                 strikes
@@ -953,11 +1124,57 @@ function JuegoFinal() {
                 gameRef.current.phase === "lost"
             ) return;
 
+            if (objetivoTimerRef.current) {
+                window.clearTimeout(objetivoTimerRef.current);
+                objetivoTimerRef.current = null;
+            }
+
             lanzamientoPendienteRef.current = false;
 
-            console.log("[JuegoFinal] Lanzamiento iniciado.");
+            const esLanzamientoCurvo =
+                Math.random() < PROBABILIDAD_LANZAMIENTO_CURVO;
+            curvaLanzamiento = esLanzamientoCurvo
+                ? {
+                    eje: Math.random() < 0.5 ? "x" : "y",
+                    direccion: Math.random() < 0.5 ? -1 : 1,
+                    intensidad: 0.45 + Math.random() * 0.55
+                }
+                : { eje: null, direccion: 0, intensidad: 0 };
+
+            // Se traduce el punto del círculo de predicción (2D) a la posición
+            // real en el mundo 3D donde la pelota debe cruzar el plato, y se
+            // extiende esa misma línea (desde donde el pitcher suelta la
+            // pelota) para que la trayectoria completa pase literalmente por
+            // ahí, ya sea que el lanzamiento vaya más arriba, más abajo, más a
+            // la izquierda o más a la derecha.
+            puntoContactoPelota = calcularPuntoContactoDesdeObjetivo(objetivoPosRef.current);
+            const fraccionLlegada =
+                (Z_LLEGADA - pitchStart.z) / (puntoContactoPelota.z - pitchStart.z);
+            pitchEnd = new THREE.Vector3().lerpVectors(
+                pitchStart,
+                puntoContactoPelota,
+                fraccionLlegada
+            );
+
+            console.log("[JuegoFinal] Lanzamiento iniciado.", {
+                esBola: pitchEsBolaRef.current,
+                tipo: curvaLanzamiento.eje === "x"
+                    ? "curva horizontal"
+                    : curvaLanzamiento.eje === "y"
+                        ? "curva vertical"
+                        : "recta",
+                direccionCurva: curvaLanzamiento.direccion,
+                puntoContactoPelota,
+                pitchEnd
+            });
 
             pitchProgress = 0;
+            if (circuloObjetivoRef.current) {
+                circuloObjetivoRef.current.style.opacity = "1";
+            }
+            if (inicioCierreCirculoRef.current === null) {
+                inicioCierreCirculoRef.current = performance.now();
+            }
             setLanzamientos((total) => total + 1);
             hit = false;
             swing = false;
@@ -985,12 +1202,10 @@ function JuegoFinal() {
             ) return;
 
             if (gameRef.current.phase === "countdown") {
-                if (readyTimerRef.current) {
-                    window.clearTimeout(readyTimerRef.current);
-                    readyTimerRef.current = null;
-                }
-
-                lanzamientoPendienteRef.current = false;
+                // No se cancela el timer ni se lanza de inmediato: el pitcher
+                // debe completar su lanzamiento en el tiempo que ya estaba
+                // previsto (el mismo timer de prepararLanzamiento se encarga
+                // de llamar a startPitchRef.current() cuando corresponda).
                 lanzamientoAnticipadoRef.current = true;
                 registrarStrike(true);
                 return;
@@ -1001,26 +1216,28 @@ function JuegoFinal() {
             swingTimer = swingDuration;
             pitchActive = false;
 
-            const puntoContacto = new THREE.Vector3(0, 0.7, 8.0);
+            // El punto de contacto real de ESTE lanzamiento (calculado en
+            // startPitchRef a partir del círculo de predicción), no uno fijo,
+            // para que el timing se evalúe contra la trayectoria verdadera.
             const progresoPrevisto = Math.min(
                 1,
                 pitchProgress + pitchSpeed * (retardoLogicaBateo / 1000)
             );
-            const posicionPrevista = new THREE.Vector3().lerpVectors(
-                pitchStart,
-                pitchEnd,
-                progresoPrevisto
-            );
+            const posicionPrevista = calcularPosicionPelota(progresoPrevisto);
             const distanciaPrevista = posicionPrevista.distanceTo(
-                puntoContacto
+                puntoContactoPelota
             );
             const seraHit = distanciaPrevista < hitDistance;
 
+            // Sea bola o strike, si tu punto de contacto cae dentro del círculo
+            // de predicción y el timing es correcto, es hit (igual que en beisbol
+            // real, puedes conectar una bola mala si decides perseguirla).
             const golpeEnCirculo = estaDentroDelCirculo();
             const golpeValido = seraHit && golpeEnCirculo;
 
             reproducirAnimacion(golpeValido ? "Hit" : "Strike");
             console.log("[JuegoFinal] Resultado previsto del bateo", {
+                esBola: pitchEsBolaRef.current,
                 progresoActual: pitchProgress,
                 progresoPrevisto,
                 distanciaPrevista,
@@ -1043,6 +1260,8 @@ function JuegoFinal() {
                     return;
                 }
 
+                // Swing y falla: siempre es strike, sin importar si el
+                // lanzamiento era bola o estaba en la zona.
                 registrarStrike(false);
             }, retardoLogicaBateo);
         };
@@ -1302,10 +1521,31 @@ function JuegoFinal() {
                     animate
                 );
             const delta = clock.getDelta();
+
+            if (
+                inicioCierreCirculoRef.current !== null &&
+                circuloObjetivoRef.current
+            ) {
+                const tiempoTranscurrido =
+                    (performance.now() - inicioCierreCirculoRef.current) / 1000;
+                const progresoCierreCirculo = Math.min(
+                    1,
+                    tiempoTranscurrido / duracionCierreCirculo
+                );
+                const tamanoCirculo = TAMANO_CIRCULO_MAX -
+                    (TAMANO_CIRCULO_MAX - TAMANO_CIRCULO_MIN) * progresoCierreCirculo;
+                circuloObjetivoRef.current.style.width = `${tamanoCirculo}px`;
+                circuloObjetivoRef.current.style.height = `${tamanoCirculo}px`;
+
+                if (progresoCierreCirculo >= 1) {
+                    inicioCierreCirculoRef.current = null;
+                }
+            }
+
             // Mover el punto de contacto según el joystick
             const vector = joystickVectorRef.current;
             if (vector.x !== 0 || vector.y !== 0) {
-                const { ancho, alto } = ZONA_LANZAMIENTO;
+                const { ancho, alto } = ZONA_TOTAL;
                 let nuevaX = contactoPosRef.current.x + vector.x * VELOCIDAD_JOYSTICK * delta;
                 let nuevaY = contactoPosRef.current.y + vector.y * VELOCIDAD_JOYSTICK * delta;
 
@@ -1329,11 +1569,7 @@ function JuegoFinal() {
                     ballInFlight = false;
                 }
 
-                ball.position.lerpVectors(
-                    pitchStart,
-                    pitchEnd,
-                    pitchProgress
-                );
+                ball.position.copy(calcularPosicionPelota(pitchProgress));
 
                 if (pitchProgress >= 1) {
                     if (pitchActive) {
@@ -1429,6 +1665,10 @@ function JuegoFinal() {
                 window.clearTimeout(readyTimerRef.current);
             }
 
+            if (objetivoTimerRef.current) {
+                window.clearTimeout(objetivoTimerRef.current);
+            }
+
             if (animationTimerRef.current) {
                 window.clearTimeout(animationTimerRef.current);
             }
@@ -1515,9 +1755,12 @@ function JuegoFinal() {
                 <div className="marcador-fila">
                     <span className="marcador-label">B</span>
                     <div className="marcador-dots">
-                        <span className="dot bola" />
-                        <span className="dot bola" />
-                        <span className="dot bola" />
+                        {[0, 1, 2, 3].map((i) => (
+                            <span
+                                key={i}
+                                className={`dot bola ${i < gameState.bolas ? "activo" : ""}`}
+                            />
+                        ))}
                     </div>
                 </div>
                 <div className="marcador-fila">
@@ -1541,6 +1784,7 @@ function JuegoFinal() {
                     </button>
                 )}
                 {gameState.phase === "strike" && <p>¡STRIKE!</p>}
+                {gameState.phase === "ball" && <p>¡BOLA!</p>}
                 {gameState.phase === "countdown" || (
                     gameState.phase === "pitching" && !gameState.bateoBloqueado
                 ) ? (
@@ -1559,26 +1803,37 @@ function JuegoFinal() {
             </div>
             <div className="zona-lanzamiento-wrapper">
                 <div
-                    className="zona-lanzamiento"
-                    style={{ width: ZONA_LANZAMIENTO.ancho, height: ZONA_LANZAMIENTO.alto }}
+                    className="zona-lanzamiento-total"
+                    style={{ width: ZONA_TOTAL.ancho, height: ZONA_TOTAL.alto, position: "relative" }}
                 >
-                    {Array.from({ length: ZONA_LANZAMIENTO.columnas * ZONA_LANZAMIENTO.filas }).map((_, i) => (
-                        <div key={i} className="zona-celda" />
-                    ))}
+                    <div
+                        className="zona-lanzamiento"
+                        style={{
+                            position: "absolute",
+                            left: MARGEN_BOLA,
+                            top: MARGEN_BOLA,
+                            width: ZONA_STRIKE.ancho,
+                            height: ZONA_STRIKE.alto
+                        }}
+                    >
+                        {Array.from({ length: ZONA_STRIKE.columnas * ZONA_STRIKE.filas }).map((_, i) => (
+                            <div key={i} className="zona-celda" />
+                        ))}
+                    </div>
                     <div className="zona-circulo-objetivo" ref={circuloObjetivoRef} />
                     <div className="zona-punto-contacto" ref={puntoContactoRef} />
                 </div>
+            </div>
 
-                <div
-                    className="joystick-base"
-                    ref={joystickBaseRef}
-                    onPointerDown={manejarJoystickInicio}
-                    onPointerMove={manejarJoystickMover}
-                    onPointerUp={manejarJoystickFin}
-                    onPointerCancel={manejarJoystickFin}
-                >
-                    <div className="joystick-stick" ref={joystickStickRef} />
-                </div>
+            <div
+                className="joystick-base"
+                ref={joystickBaseRef}
+                onPointerDown={manejarJoystickInicio}
+                onPointerMove={manejarJoystickMover}
+                onPointerUp={manejarJoystickFin}
+                onPointerCancel={manejarJoystickFin}
+            >
+                <div className="joystick-stick" ref={joystickStickRef} />
             </div>
 
             {gameState.phase === "won" && (
@@ -1596,4 +1851,3 @@ function JuegoFinal() {
 }
 
 export default JuegoFinal;
-
