@@ -96,6 +96,14 @@ function JuegoFinal() {
     // lanzamiento baje realmente hacia la zona en vez de ir en línea recta.
     const ALTURA_LIBERACION_PITCHER = 1.55;
 
+    // ---- PELOTA EN LA MANO DEL PITCHER (durante el pre-lanzamiento) ----
+    // Radio de la pelota que sostiene en la mano (unidades del mundo; el pitcher mide 0.3).
+    const PELOTA_MANO_RADIO = 0.045;
+    // Que tan adentro de la palma queda (0 = en la muñeca, 1 = en la linea de los nudillos).
+    const PELOTA_MANO_PROFUNDIDAD = .7;
+    // Ajuste fino en unidades del mundo, sobre los ejes del hueso de la mano [x, y, z].
+    const PELOTA_MANO_AJUSTE = [.025, 0, .035];
+
     // Convierte el punto 2D del círculo de predicción (en px, dentro de
     // ZONA_TOTAL) en la posición 3D real donde la pelota debe cruzar el plato.
     function calcularPuntoContactoDesdeObjetivo(objetivo2D) {
@@ -680,6 +688,9 @@ function JuegoFinal() {
         let pitcherMixer = null;
         const pitcherAnimationActions = {};
         const pitcherAnimationMeshes = new Map();
+        // Pelotas fijadas a la mano derecha del pitcher: { pelota, mallas }
+        const pelotasEnMano = [];
+        let pelotaEnManoActiva = false;
         let pitcherSkinnedMeshes = [];
         let componentUnmounted = false;
 
@@ -1032,11 +1043,99 @@ function JuegoFinal() {
                     mesh.visible = true;
                 });
             }
+            sincronizarPelotasEnMano();
         }
 
         startPitcherAnimationRef.current = () => {
+            // Empieza el pre-lanzamiento: el pitcher sostiene la pelota en la mano
+            // hasta el momento de soltarla (ver startPitchRef).
+            pelotaEnManoActiva = true;
             reproducirAnimacionPitcher("Pitching");
         };
+
+        // Fija una pelota al hueso de la mano derecha de cada esqueleto del pitcher
+        // (igual que el bate: al ser hija del hueso, sigue toda la animacion de Mixamo).
+        function adjuntarPelotasAManoDerechaPitcher(raiz) {
+            raiz.updateMatrixWorld(true);
+            const yaAdjuntadas = new Map();
+            const geometria = new THREE.SphereGeometry(PELOTA_MANO_RADIO, 24, 24);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.5
+            });
+
+            pitcherSkinnedMeshes.forEach((malla) => {
+                const mano = malla.skeleton.bones.find((hueso) =>
+                    /^mixamorigRightHand(_\d+)?$/.test(hueso.name)
+                );
+                if (!mano) return;
+
+                // Varias mallas pueden compartir esqueleto: una sola pelota por hueso.
+                if (yaAdjuntadas.has(mano)) {
+                    yaAdjuntadas.get(mano).mallas.push(malla);
+                    return;
+                }
+
+                const escalaMano = mano.getWorldScale(new THREE.Vector3());
+                const inversa = new THREE.Vector3(
+                    escalaMano.x ? 1 / escalaMano.x : 1,
+                    escalaMano.y ? 1 / escalaMano.y : 1,
+                    escalaMano.z ? 1 / escalaMano.z : 1
+                );
+
+                // Centro de la palma: entre la muñeca (origen del hueso) y los nudillos.
+                const nudillos = ["Index1", "Middle1", "Ring1", "Pinky1"]
+                    .map((dedo) =>
+                        mano.children.find((hijo) => hijo.name.includes(`RightHand${dedo}`))
+                    )
+                    .filter(Boolean);
+
+                const centro = new THREE.Vector3();
+                if (nudillos.length > 0) {
+                    nudillos.forEach((n) => centro.add(n.position));
+                    centro.divideScalar(nudillos.length).multiplyScalar(PELOTA_MANO_PROFUNDIDAD);
+                } else {
+                    console.warn("[JuegoFinal] Pitcher: no se encontraron los huesos de los dedos; se usa una posicion aproximada.");
+                    centro.set(0, PELOTA_MANO_RADIO * 1.5 * inversa.y, 0);
+                }
+                centro.add(new THREE.Vector3(...PELOTA_MANO_AJUSTE).multiply(inversa));
+
+                const pelota = new THREE.Mesh(geometria, material);
+                pelota.name = "PelotaEnManoPitcher";
+                pelota.castShadow = true;
+                pelota.frustumCulled = false;
+                pelota.position.copy(centro);
+                // Se compensa la escala del hueso para que mida PELOTA_MANO_RADIO en el mundo.
+                pelota.scale.copy(inversa);
+                pelota.visible = false;
+
+                mano.add(pelota);
+
+                const registro = { pelota, mallas: [malla] };
+                yaAdjuntadas.set(mano, registro);
+                pelotasEnMano.push(registro);
+
+                console.log("[JuegoFinal] Pelota fijada a la mano del pitcher:", mano.name, {
+                    centro: centro.toArray(),
+                    escalaMano: escalaMano.toArray()
+                });
+            });
+
+            if (pelotasEnMano.length === 0) {
+                console.error("[JuegoFinal] No se encontro mixamorigRightHand en el pitcher; no se pudo poner la pelota en su mano.");
+            }
+            sincronizarPelotasEnMano();
+        }
+
+        // La pelota de la mano solo se ve durante el pre-lanzamiento y solo cuando
+        // se ve la malla de su esqueleto (el modelo intercambia mallas por animacion).
+        function sincronizarPelotasEnMano() {
+            const fase = gameRef.current.phase;
+            const permitida = pelotaEnManoActiva && fase !== "lost" && fase !== "won";
+            pelotasEnMano.forEach(({ pelota, mallas }) => {
+                pelota.visible = permitida && mallas.some((malla) => malla.visible);
+            });
+        }
 
         pitcherLoader.load(
             `${import.meta.env.BASE_URL}modelos/Pitcher_anim.glb`,
@@ -1124,6 +1223,8 @@ function JuegoFinal() {
                     child.castShadow = true;
                     child.receiveShadow = true;
                 });
+
+                adjuntarPelotasAManoDerechaPitcher(loadedPitcher);
 
                 stadium.add(loadedPitcher);
                 reproducirAnimacionPitcher("Idle_Pitching");
@@ -1343,6 +1444,9 @@ function JuegoFinal() {
             ballInFlight = true;
             ball.position.copy(pitchStart);
             ball.visible = true;
+            // La pelota sale de la mano: deja de mostrarse en ella.
+            pelotaEnManoActiva = false;
+            sincronizarPelotasEnMano();
             if (gameRef.current.animation !== "Strike") {
                 reproducirAnimacion("Idle");
             }
@@ -1785,6 +1889,7 @@ function JuegoFinal() {
 
             if (pitcherMixer) {
                 pitcherMixer.update(delta);
+                sincronizarPelotasEnMano();
             }
             // Movimiento muy pequeño
             // para dar sensación de cámara viva
