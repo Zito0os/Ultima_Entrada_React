@@ -50,7 +50,23 @@ function JuegoFinal() {
     const PROBABILIDAD_BOLA = 0.35;
     // Bolas necesarias para que el bateador se gane la base (igual que en beisbol real)
     const BOLAS_PARA_BASE = 4;
-    const PROBABILIDAD_LANZAMIENTO_CURVO = 0.70;
+
+    // ---- BATE DE MADERA (se fija al hueso de la mano derecha de Mixamo) ----
+    // Medidas en unidades del mundo (el jugador mide 0.3 de alto, ver alturaJugador).
+    const BATE_LONGITUD = .8;
+    // Radio (ancho) de la parte SUPERIOR del bate (el barril, donde se golpea la pelota).
+    const BATE_ANCHO_SUPERIOR = 0.0196;
+    // Radio (ancho) de la parte INFERIOR del bate (el mango que se agarra).
+    // Mantén el superior mayor que el inferior para que el bate se ensanche hacia la punta.
+    const BATE_ANCHO_INFERIOR = 0.0030;
+    // Punto del mango (0 = perilla, 1 = punta) que queda dentro del puño.
+    const BATE_PUNTO_AGARRE = 0.14;
+    // Si el bate te queda con la punta hacia el lado contrario, cambia a true.
+    const BATE_INVERTIR = true;
+    // Ajuste fino en el espacio local del hueso de la mano (x, y, z) y giro extra (radianes).
+    const BATE_AJUSTE_POSICION = [0, 15, 0];
+    const BATE_AJUSTE_ROTACION = [0, 0, 0];
+    const PROBABILIDAD_LANZAMIENTO_CURVO = 0.75;
     const DESVIACION_MAXIMA_CURVA = 0.65;
     const FACTOR_CURVA = 12;
 
@@ -114,7 +130,11 @@ function JuegoFinal() {
     const joystickActivoRef = useRef(false);
 
     function generarObjetivoAleatorio() {
-        const esBola = Math.random() < PROBABILIDAD_BOLA;
+        // Si ya hay 3 bolas, el siguiente lanzamiento SIEMPRE es strike:
+        // el pitcher no puede dar la 4ta bola y el jugador debe batear.
+        const bolasActuales = gameRef.current.bolas;
+        const puedeSerBola = bolasActuales < BOLAS_PARA_BASE - 1;
+        const esBola = puedeSerBola && Math.random() < PROBABILIDAD_BOLA;
         pitchEsBolaRef.current = esBola;
 
         let x;
@@ -437,6 +457,8 @@ function JuegoFinal() {
         const animationActions = {};
         const animationMeshes = new Map();
         let skinnedMeshes = [];
+        // Bates fijados a los huesos de la mano: { bate, mallas }
+        const batesAdjuntos = [];
 
         const swingDuration = 0.20;
         const hitDistance = 1.0;
@@ -681,6 +703,141 @@ function JuegoFinal() {
             return preparedClip;
         }
 
+        // Bate de madera: perfil torneado (perilla, mango delgado, barril grueso).
+        function crearMeshBate() {
+            const L = BATE_LONGITUD;
+            const sup = BATE_ANCHO_SUPERIOR;
+            const inf = BATE_ANCHO_INFERIOR;
+
+            // Perilla y mango (ancho inferior)
+            const perfil = [
+                [0.0, 0],
+                [inf * 1.5, 0],
+                [inf * 1.65, 0.02 * L],
+                [inf * 1.1, 0.045 * L],
+                [inf, 0.12 * L]
+            ];
+
+            // Transicion suave del mango al barril: el radio crece de "inf" a "sup".
+            const pasos = 8;
+            for (let i = 1; i <= pasos; i++) {
+                const t = i / pasos;
+                const suave = t * t * (3 - 2 * t);
+                perfil.push([
+                    inf + (sup - inf) * suave,
+                    (0.12 + (0.94 - 0.12) * t) * L
+                ]);
+            }
+
+            // Punta redondeada del barril (ancho superior)
+            perfil.push([sup * 0.85, 0.995 * L]);
+            perfil.push([0.0, L]);
+
+            const puntosPerfil = perfil.map(([r, y]) => new THREE.Vector2(r, y));
+
+            const geometria = new THREE.LatheGeometry(puntosPerfil, 20);
+            // El origen queda en el punto de agarre, para que sea el que se coloque en el puño.
+            geometria.translate(0, -BATE_PUNTO_AGARRE * L, 0);
+
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xc8934f,
+                roughness: 0.65,
+                metalness: 0.05
+            });
+
+            const bate = new THREE.Mesh(geometria, material);
+            bate.name = "BateMadera";
+            bate.castShadow = true;
+            bate.receiveShadow = true;
+            bate.frustumCulled = false;
+            return bate;
+        }
+
+        // Busca el hueso de la mano derecha de cada esqueleto del modelo (Mixamo puede
+        // traer varios esqueletos con nombres tipo mixamorigRightHand_1) y le fija un bate.
+        function adjuntarBatesAManoDerecha(raiz) {
+            raiz.updateMatrixWorld(true);
+            const yaAdjuntados = new Map();
+
+            skinnedMeshes.forEach((malla) => {
+                const mano = malla.skeleton.bones.find((hueso) =>
+                    /^mixamorigRightHand(_\d+)?$/.test(hueso.name)
+                );
+                if (!mano) return;
+
+                // Varias mallas pueden compartir el mismo esqueleto: un solo bate por hueso.
+                if (yaAdjuntados.has(mano)) {
+                    yaAdjuntados.get(mano).mallas.push(malla);
+                    return;
+                }
+
+                const dedo = (fragmento) =>
+                    mano.children.find((hijo) => hijo.name.includes(fragmento));
+                const indice = dedo("RightHandIndex1");
+                const medio = dedo("RightHandMiddle1");
+                const anular = dedo("RightHandRing1");
+                const menique = dedo("RightHandPinky1");
+
+                const bate = crearMeshBate();
+
+                // Eje del bate = linea de los nudillos (menique -> indice), que es
+                // la direccion en la que un puño cerrado atraviesa un mango.
+                // Posicion = centro de los nudillos. Todo en el espacio local del hueso,
+                // asi el bate acompaña cualquier animacion de la mano.
+                const eje = new THREE.Vector3(-1, 0, 1);
+                const centro = new THREE.Vector3();
+                if (indice && menique) {
+                    eje.copy(indice.position).sub(menique.position).normalize();
+                    const nudillos = [indice, medio, anular, menique].filter(Boolean);
+                    nudillos.forEach((n) => centro.add(n.position));
+                    centro.divideScalar(nudillos.length);
+                } else {
+                    console.warn("[JuegoFinal] No se encontraron los huesos de los dedos; se usa la orientacion por defecto del bate.");
+                }
+                if (BATE_INVERTIR) eje.negate();
+
+                bate.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), eje);
+                bate.quaternion.multiply(
+                    new THREE.Quaternion().setFromEuler(new THREE.Euler(...BATE_AJUSTE_ROTACION))
+                );
+                bate.position.copy(centro).add(new THREE.Vector3(...BATE_AJUSTE_POSICION));
+
+                // Los huesos de Mixamo traen escala (ej. 0.01 o la del modelo). Se compensa
+                // para que el bate mida BATE_LONGITUD en el mundo sin importar el rig.
+                const escalaMano = mano.getWorldScale(new THREE.Vector3());
+                bate.scale.set(
+                    escalaMano.x ? 1 / escalaMano.x : 1,
+                    escalaMano.y ? 1 / escalaMano.y : 1,
+                    escalaMano.z ? 1 / escalaMano.z : 1
+                );
+
+                mano.add(bate);
+
+                const registro = { bate, mallas: [malla] };
+                yaAdjuntados.set(mano, registro);
+                batesAdjuntos.push(registro);
+
+                console.log("[JuegoFinal] Bate fijado al hueso:", mano.name, {
+                    eje: eje.toArray(),
+                    centro: centro.toArray(),
+                    escalaMano: escalaMano.toArray()
+                });
+            });
+
+            if (batesAdjuntos.length === 0) {
+                console.error("[JuegoFinal] No se encontro mixamorigRightHand en el modelo; no se pudo poner el bate.");
+            }
+            sincronizarBates();
+        }
+
+        // El bate solo se ve cuando se ve la malla de su esqueleto
+        // (el modelo intercambia mallas segun la animacion).
+        function sincronizarBates() {
+            batesAdjuntos.forEach(({ bate, mallas }) => {
+                bate.visible = mallas.some((malla) => malla.visible);
+            });
+        }
+
         homePlateLoader.load(
             `${import.meta.env.BASE_URL}modelos/Modelo_base_anim.glb`,
             (gltf) => {
@@ -818,6 +975,8 @@ function JuegoFinal() {
                         material.needsUpdate = true;
                     });
                 });
+
+                adjuntarBatesAManoDerecha(loadedHomePlate);
 
                 stadium.add(loadedHomePlate);
             },
@@ -1027,6 +1186,7 @@ function JuegoFinal() {
                 skinnedMeshes.forEach((mesh) => {
                     mesh.visible = visibleMeshes.includes(mesh);
                 });
+                sincronizarBates();
             }
 
             console.log("[JuegoFinal] Estado de accion", {
@@ -1615,6 +1775,7 @@ function JuegoFinal() {
 
             if (animationMixer) {
                 animationMixer.update(delta);
+                sincronizarBates();
 
                 if (!mixerUpdateLogged) {
                     mixerUpdateLogged = true;
