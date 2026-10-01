@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import BottomNav from './Navigation'
+import Icono from './Icono'
 import PageHeader from './PageHeader'
 import TeamBadge from './TeamBadge'
 import { regions, teams } from './teamsData'
@@ -22,8 +23,8 @@ export default function Equipos() {
         <div className="team-tools">
           <label className="team-search">
             <span className="sr-only">Buscar equipo, estadio o ciudad</span>
-            <input type="search" placeholder="Buscar equipo, estadio o ciudad" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} />
-            <span aria-hidden="true">⌕</span>
+            <Icono nombre="buscar" size={18} />
+            <input type="search" placeholder="Equipo, estadio o ciudad" value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} />
           </label>
 
           <div className="region-filters" aria-label="Filtrar equipos por región">
@@ -44,7 +45,7 @@ export default function Equipos() {
               <h2>{team.name}</h2>
               <p>{team.titles} TÍTULOS</p>
               <button className="team-link" type="button" onClick={() => navigate(`/equipos/${team.id}`)}>
-                LEER MÁS <span aria-hidden="true">-&gt;</span>
+                LEER MÁS <Icono nombre="siguiente" size={14} />
               </button>
             </div>
           </article>

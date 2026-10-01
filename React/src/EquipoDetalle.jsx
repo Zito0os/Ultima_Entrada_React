@@ -1,12 +1,17 @@
-import { useState } from 'react'
+import { Suspense, lazy, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import BottomNav from './Navigation'
-import Icono from './Icono'
 import PageHeader from './PageHeader'
 import TablaAnotacion from './TablaAnotacion'
+import TarjetaVideo from './TarjetaVideo'
 import TeamBadge from './TeamBadge'
+import { historiaDe } from './historiaEquipos'
 import { teams } from './teamsData'
+import { videosDeEquipo } from './videosData'
+
+// three.js solo se descarga al abrir una ficha
+const EscudoGiratorio = lazy(() => import('./EscudoGiratorio'))
 
 const detailTabs = ['HISTORIA', 'ESTADÍSTICAS', 'VIDEOS']
 const statsTabs = ['BATEO', 'PITCHEO', 'FRANQUICIA']
@@ -24,6 +29,17 @@ export default function EquipoDetalle() {
   }
 
   const leaders = team.lideres[statsTab]
+  const historia = historiaDe(team.id)
+  const videos = videosDeEquipo(team.id)
+
+  // Sin clips propios la pestana lleva directo al catalogo de jugadas
+  const elegirPestana = (tab) => {
+    if (tab === 'VIDEOS' && !videos.length) {
+      navigate('/mejores-jugadas')
+      return
+    }
+    setActiveTab(tab)
+  }
   const mayor = Math.max(...leaders.map((leader) => leader.value))
 
   return (
@@ -32,14 +48,16 @@ export default function EquipoDetalle() {
 
       <section className="team-detail-content" aria-labelledby="team-detail-title">
         <div className="team-detail-identity">
-          <TeamBadge team={team} />
+          <Suspense fallback={<TeamBadge team={team} />}>
+            <EscudoGiratorio team={team} key={team.id} />
+          </Suspense>
           <h2 id="team-detail-title">{team.name}</h2>
         </div>
         <p className="team-location">{team.founded} · {team.stadium} · {team.city}</p>
 
         <div className="detail-tabs" role="tablist" aria-label="Información del equipo">
           {detailTabs.map((tab) => (
-            <button className={activeTab === tab ? 'detail-tab is-active' : 'detail-tab'} type="button" role="tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)} key={tab}>
+            <button className={activeTab === tab ? 'detail-tab is-active' : 'detail-tab'} type="button" role="tab" aria-selected={activeTab === tab} onClick={() => elegirPestana(tab)} key={tab}>
               {tab}
             </button>
           ))}
@@ -54,6 +72,27 @@ export default function EquipoDetalle() {
             </div>
             <h2>HISTORIA</h2>
             <p>{team.history}</p>
+            {historia.parrafos.map((parrafo) => <p className="historia-parrafo" key={parrafo.slice(0, 24)}>{parrafo}</p>)}
+
+            {historia.momentos.length > 0 && (
+              <>
+                <h3 className="historia-subtitulo">MOMENTOS CLAVE</h3>
+                <ol className="historia-momentos">
+                  {historia.momentos.map(([anio, texto]) => (
+                    <li key={anio}><strong>{anio}</strong><span>{texto}</span></li>
+                  ))}
+                </ol>
+              </>
+            )}
+
+            {historia.leyendas.length > 0 && (
+              <>
+                <h3 className="historia-subtitulo">LEYENDAS</h3>
+                <ul className="historia-leyendas">
+                  {historia.leyendas.map((nombre) => <li key={nombre}>{nombre}</li>)}
+                </ul>
+              </>
+            )}
           </article>
         )}
 
@@ -87,14 +126,18 @@ export default function EquipoDetalle() {
         {activeTab === 'VIDEOS' && (
           <article className="videos-panel">
             <h2>VIDEOS</h2>
-            <p>Clips históricos de {team.name}. Al abrir uno entras al reproductor con filtros.</p>
-            <div className="era-video-list">
-              {[1, 2, 3].map((numero) => (
-                <button className={`era-video era-video-${numero}`} type="button" onClick={() => navigate('/videos')} aria-label={`Reproducir video ${numero} de ${team.name}`} key={numero}>
-                  <span><Icono nombre="reproducir" size={15} /></span>
-                </button>
+            <p>Clips donde aparece {team.name}. Al abrir uno entras al reproductor con filtros.</p>
+            <div className="plays-list equipo-videos">
+              {videos.map((clip) => (
+                <TarjetaVideo
+                  clip={clip}
+                  detalle={[clip.anio ? `${clip.anio} · ${clip.evento}` : clip.periodo, clip.equipos]}
+                  onAbrir={() => navigate(clip.ruta)}
+                  key={clip.id}
+                />
               ))}
             </div>
+            <button className="team-detail-salida equipo-mas-videos" type="button" onClick={() => navigate('/mejores-jugadas')}>VER TODOS LOS VIDEOS</button>
           </article>
         )}
 

@@ -106,3 +106,10 @@ export function buscarFinal(id) {
 export function finalAbierta(final, trofeosGanados) {
   return trofeosGanados >= final.abre
 }
+
+// Cambia cada dia entre las finales que el jugador ya puede jugar
+export function retoDelDia(trofeosGanados, fecha = new Date()) {
+  const abiertas = finals.filter((final) => finalAbierta(final, trofeosGanados))
+  const dia = Math.floor((fecha.getTime() - fecha.getTimezoneOffset() * 60000) / 86400000)
+  return abiertas[dia % abiertas.length]
+}

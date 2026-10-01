@@ -8,9 +8,13 @@ import { comprimir } from './almacen/fotos'
 import { buscarEscudo } from './escudosData'
 import { componerCaptura, crearEfectos } from './efectosAR'
 import { cargarSVG, crearEntorno, crearExplosion, extruirDesdeSVG } from './extruirEscudo'
+import { crearJugadores } from './jugadorAR'
 
 // La extrusion mide 100 unidades y el marcador de MindAR mide 1
 const ESCALA = 0.006
+// Radianes por pixel al arrastrar, y cuanto se puede inclinar
+const GIRO_POR_PIXEL = 0.01
+const INCLINACION_MAXIMA = 0.8
 
 export default function VerEscudoAR() {
   const { escudoId } = useParams()
@@ -21,6 +25,9 @@ export default function VerEscudoAR() {
   const [anclado, setAnclado] = useState(false)
   const [girando, setGirando] = useState(true)
   const [efectos, setEfectos] = useState(false)
+  const [jugador, setJugador] = useState(false)
+  const [cargandoJugador, setCargandoJugador] = useState(false)
+  const [fijado, setFijado] = useState(false)
   const [aviso, setAviso] = useState('')
   const [error, setError] = useState('')
 
@@ -59,7 +66,8 @@ export default function VerEscudoAR() {
           uiScanning: 'no',
           uiLoading: 'no',
           uiError: 'no',
-          missTolerance: 12,
+          // Aguanta mas cuadros sin ver el marcador antes de esconder el modelo
+          missTolerance: 24,
           warmupTolerance: 3,
           ...filtroDeEstabilidad(config.estabilidad),
         })
@@ -86,6 +94,11 @@ export default function VerEscudoAR() {
         // Cada copia trae sus propias capas: sin esto la explosion solo movia
         // las del original y el boton no hacia nada en las demas variantes
         const porCopia = []
+        // Por ancla: el grupo que mueve MindAR, el soporte que se lleva FIJAR y el
+        // escudo que se gira con el dedo. El jugador va en el soporte y gira aparte.
+        const grupos = []
+        const soportes = []
+        const contenidos = []
         for (let indice = 0; indice < (escudo.marcadores || 1); indice += 1) {
           const giro = new THREE.Group()
           const copia = indice === 0 ? objeto : objeto.clone()
@@ -98,8 +111,18 @@ export default function VerEscudoAR() {
           animaciones.push(efecto)
 
           const ancla = mindar.addAnchor(indice)
-          ancla.group.add(giro)
+          const soporte = new THREE.Group()
+          const contenido = new THREE.Group()
+          contenido.add(giro)
+          soporte.add(contenido)
+          ancla.group.add(soporte)
+          grupos.push(ancla.group)
+          soportes.push(soporte)
+          contenidos.push(contenido)
           ancla.onTargetFound = () => {
+            if (motor.current) {
+              motor.current.activa = indice
+            }
             setAnclado(true)
             registrar.current(escudo.id)
           }
@@ -109,7 +132,7 @@ export default function VerEscudoAR() {
 
         const explosion = crearExplosion(porCopia)
 
-        motor.current = { mindar, giros, animaciones, explosion, renderer, scene, camera, girando: true }
+        motor.current = { THREE, medida: ESCALA * config.escala, mindar, giros, grupos, soportes, contenidos, activa: null, fijo: null, animaciones, explosion, renderer, scene, camera, girando: true, jugadores: null }
 
         setEstado('encendiendo')
         await mindar.start()
@@ -118,7 +141,10 @@ export default function VerEscudoAR() {
         }
         setEstado('buscando')
 
+        const reloj = new THREE.Clock()
         renderer.setAnimationLoop(() => {
+          const delta = reloj.getDelta()
+          motor.current?.jugadores?.forEach((uno) => uno.actualizar(delta, camera))
           if (motor.current?.girando !== false) {
             giros.forEach((giro) => { giro.rotation.y += config.velocidad / 1000 })
           }
@@ -157,6 +183,7 @@ export default function VerEscudoAR() {
         }
       }
       entorno?.dispose()
+      motor.current?.jugadores?.forEach((uno) => uno.mezclador.stopAllAction())
       motor.current = null
     }
   }, [escudo, config])
@@ -167,11 +194,132 @@ export default function VerEscudoAR() {
     }
   }, [girando])
 
+  // Arrastrar gira lo que quede mas cerca del dedo: el escudo (que tambien se
+  // inclina hacia arriba o abajo) o el jugador, que solo gira sobre si mismo
+  useEffect(() => {
+    const nodo = contenedor.current
+    let previo = null
+    let objetivo = 'escudo'
+
+    const enPantalla = (actual, punto) => {
+      const marco = actual.renderer.domElement.getBoundingClientRect()
+      punto.project(actual.camera)
+      return { x: marco.left + ((punto.x + 1) / 2) * marco.width, y: marco.top + ((1 - punto.y) / 2) * marco.height }
+    }
+
+    const elegirObjetivo = (x, y) => {
+      const actual = motor.current
+      const indice = actual?.fijo?.indice ?? actual?.activa
+      const jugador = actual?.jugadores?.[indice]
+      if (indice == null || !jugador?.raiz.visible) {
+        return 'escudo'
+      }
+      const { Vector3 } = actual.THREE
+      const escudo = enPantalla(actual, actual.contenidos[indice].getWorldPosition(new Vector3()))
+      const cuerpo = enPantalla(actual, jugador.raiz.localToWorld(new Vector3(0, jugador.altura / 2, 0)))
+      return Math.hypot(x - cuerpo.x, y - cuerpo.y) < Math.hypot(x - escudo.x, y - escudo.y) ? 'jugador' : 'escudo'
+    }
+
+    const bajar = (evento) => {
+      previo = { x: evento.clientX, y: evento.clientY }
+      objetivo = elegirObjetivo(evento.clientX, evento.clientY)
+      if (objetivo === 'escudo') {
+        setGirando(false)
+      }
+    }
+    const mover = (evento) => {
+      if (!previo || !motor.current) {
+        return
+      }
+      const dx = evento.clientX - previo.x
+      const dy = evento.clientY - previo.y
+      previo = { x: evento.clientX, y: evento.clientY }
+      if (objetivo === 'jugador') {
+        motor.current.jugadores?.forEach((uno) => uno.girar(dx * GIRO_POR_PIXEL))
+        return
+      }
+      motor.current.contenidos.forEach((contenido) => {
+        contenido.rotation.y += dx * GIRO_POR_PIXEL
+        contenido.rotation.x = Math.max(-INCLINACION_MAXIMA, Math.min(INCLINACION_MAXIMA, contenido.rotation.x + dy * GIRO_POR_PIXEL))
+      })
+    }
+    const soltar = () => {
+      previo = null
+    }
+    nodo.addEventListener('pointerdown', bajar)
+    window.addEventListener('pointermove', mover)
+    window.addEventListener('pointerup', soltar)
+    window.addEventListener('pointercancel', soltar)
+    return () => {
+      nodo.removeEventListener('pointerdown', bajar)
+      window.removeEventListener('pointermove', mover)
+      window.removeEventListener('pointerup', soltar)
+      window.removeEventListener('pointercancel', soltar)
+    }
+  }, [])
+
+  // Deja el modelo quieto en la ultima pose del marcador: deja de temblar y de
+  // desaparecer cuando el marcador tiene pocos puntos. Otra vez lo regresa al ancla.
+  const alternarFijado = useCallback(() => {
+    const actual = motor.current
+    if (!actual) {
+      return
+    }
+    if (actual.fijo) {
+      const { grupo, indice } = actual.fijo
+      actual.grupos[indice].add(actual.soportes[indice])
+      actual.scene.remove(grupo)
+      actual.fijo = null
+      setFijado(false)
+      return
+    }
+    const indice = actual.activa
+    if (indice === null || !actual.grupos[indice].visible) {
+      return
+    }
+    const grupo = new actual.THREE.Group()
+    grupo.matrixAutoUpdate = false
+    grupo.matrix.copy(actual.grupos[indice].matrix)
+    actual.scene.add(grupo)
+    grupo.add(actual.soportes[indice])
+    actual.fijo = { grupo, indice }
+    setFijado(true)
+  }, [])
+
   useEffect(() => {
     motor.current?.animaciones.forEach((efecto) => {
       efecto.grupo.visible = efectos
     })
   }, [efectos])
+
+  // El modelo se descarga hasta que se pide, para no cargar 600 KB de mas
+  const alternarJugador = useCallback(async () => {
+    const actual = motor.current
+    if (!actual || cargandoJugador) {
+      return
+    }
+    if (actual.jugadores) {
+      const visible = !jugador
+      actual.jugadores.forEach((uno) => (visible ? uno.mostrar() : uno.ocultar()))
+      setJugador(visible)
+      return
+    }
+    setCargandoJugador(true)
+    try {
+      const jugadores = await crearJugadores(actual.THREE, actual.soportes, actual.medida)
+      if (motor.current !== actual) {
+        return
+      }
+      actual.jugadores = jugadores
+      jugadores.forEach((uno) => uno.mostrar())
+      setJugador(true)
+    } catch {
+      setAviso('No se pudo cargar el jugador.')
+      setTimeout(() => setAviso(''), 3000)
+    } finally {
+      setCargandoJugador(false)
+    }
+  }, [jugador, cargandoJugador])
 
   const tomarFoto = useCallback(() => {
     const actual = motor.current
@@ -190,15 +338,16 @@ export default function VerEscudoAR() {
   }, [escudo, acciones])
 
   const rotulo = estado === 'error' ? 'ERROR'
-    : anclado ? 'ANCLADO'
-      : estado === 'buscando' ? 'BUSCANDO ESCUDO...'
-        : estado === 'encendiendo' ? 'ENCENDIENDO CÁMARA...' : 'PREPARANDO...'
+    : fijado ? 'FIJADO'
+      : anclado ? 'ANCLADO'
+        : estado === 'buscando' ? 'BUSCANDO ESCUDO...'
+          : estado === 'encendiendo' ? 'ENCENDIENDO CÁMARA...' : 'PREPARANDO...'
 
   return (
     <main className="ar-ver-shell">
       <div className="ar-ver-camara" ref={contenedor} />
 
-      {!anclado && (
+      {!anclado && !fijado && (
         <div className="ar-ver-marco" aria-hidden="true">
           <span /><span /><span /><span />
         </div>
@@ -206,12 +355,15 @@ export default function VerEscudoAR() {
 
       <header className="ar-ver-barra">
         <button className="ar-ver-atras" type="button" onClick={() => navigate('/ar/escudos')} aria-label="Salir del escaneo"><Icono nombre="flecha" /></button>
-        <span className={anclado ? 'ar-ver-estado is-anclado' : 'ar-ver-estado'}>{rotulo}</span>
+        <span className={anclado || fijado ? 'ar-ver-estado is-anclado' : 'ar-ver-estado'}>{rotulo}</span>
         <span className="ar-ver-equipo">{escudo.nombre}</span>
       </header>
 
-      {estado === 'buscando' && !anclado && (
+      {estado === 'buscando' && !anclado && !fijado && (
         <p className="ar-ver-pista">Apunta al escudo impreso a unos 30 cm, con buena luz</p>
+      )}
+      {(anclado || fijado) && (
+        <p className="ar-ver-pista es-arriba">{jugador ? 'Arrastra el escudo o al jugador para girarlo' : 'Arrastra con el dedo para girar el escudo'}</p>
       )}
 
       {aviso && <p className="ar-ver-aviso" role="status">{aviso}</p>}
@@ -224,8 +376,17 @@ export default function VerEscudoAR() {
           <button className={efectos ? 'ar-ver-accion is-activa' : 'ar-ver-accion'} type="button" onClick={() => setEfectos((e) => !e)} aria-pressed={efectos}>
             <Icono nombre="trofeo" /><span>EFECTOS</span>
           </button>
-          <button className="ar-ver-accion" type="button" onClick={() => motor.current?.explosion.disparar()} disabled={!anclado}>
+          <button className="ar-ver-accion" type="button" onClick={() => motor.current?.explosion.disparar()} disabled={!anclado && !fijado}>
             <Icono nombre="cartas" /><span>CAPAS</span>
+          </button>
+          <button className={jugador ? 'ar-ver-accion is-activa' : 'ar-ver-accion'} type="button" onClick={alternarJugador} aria-pressed={jugador} disabled={estado !== 'buscando' || cargandoJugador}>
+            <Icono nombre="jugador" /><span>{cargandoJugador ? 'CARGANDO' : 'JUGADOR'}</span>
+          </button>
+          <button className="ar-ver-accion" type="button" onClick={() => motor.current?.jugadores?.forEach((uno) => uno.batear())} disabled={!jugador}>
+            <Icono nombre="bate" /><span>BATEAR</span>
+          </button>
+          <button className={fijado ? 'ar-ver-accion is-activa' : 'ar-ver-accion'} type="button" onClick={alternarFijado} aria-pressed={fijado} disabled={!anclado && !fijado}>
+            <Icono nombre="candado" /><span>{fijado ? 'SOLTAR' : 'FIJAR'}</span>
           </button>
           <button className="ar-ver-accion" type="button" onClick={tomarFoto} disabled={estado !== 'buscando'}>
             <Icono nombre="escudo" /><span>FOTO</span>
@@ -233,7 +394,8 @@ export default function VerEscudoAR() {
         </div>
 
         <button className="ar-ver-ficha" type="button" onClick={() => navigate(escudo.equipo ? `/equipos/${escudo.equipo}` : '/equipos')}>
-          {escudo.equipo ? 'VER FICHA COMPLETA DEL EQUIPO' : 'VER TODOS LOS EQUIPOS'}
+          <Icono nombre="info" size={20} />
+          <span>{escudo.equipo ? 'INFO E HISTORIA DEL EQUIPO' : 'VER TODOS LOS EQUIPOS'}</span>
         </button>
       </footer>
 

@@ -61,3 +61,33 @@ export function buscarClip(id) {
 export function clipsDe(epocaId) {
   return clipsDeEpoca.filter((clip) => clip.epoca === epocaId)
 }
+
+// Clubes de la Liga Americana que aparecen en cada clip
+const EQUIPOS_DE_CLIP = {
+  'jonron-senalado': ['yankees'],
+  'atrapada-espaldas': ['guardians'],
+  'jonron-cierre': ['blue-jays'],
+  'cubs-campeones': ['guardians'],
+  'batazo-titulo': ['rangers'],
+  'pase-de-jeter': ['yankees', 'athletics'],
+  'bat-flip-bautista': ['blue-jays', 'rangers'],
+  'tiro-de-ichiro': ['mariners', 'athletics'],
+  'liga-americana-1': ['tigers'],
+  'liga-americana-2': ['white-sox'],
+  'babe-ruth-1': ['yankees'],
+  'babe-ruth-2': ['yankees'],
+  'integracion-2': ['guardians'],
+  'expansion-1': ['astros'],
+  'expansion-2': ['yankees'],
+  'moderna-2': ['orioles'],
+  'moderna-3': ['mariners'],
+}
+
+// Las jugadas abren en su catalogo y los clips de epoca en el reproductor de videos
+export function videosDeEquipo(equipoId) {
+  const tiene = (clip) => EQUIPOS_DE_CLIP[clip.id]?.includes(equipoId)
+  return [
+    ...jugadas.filter(tiene).map((clip) => ({ ...clip, ruta: `/mejores-jugadas/${clip.id}` })),
+    ...clipsDeEpoca.filter(tiene).map((clip) => ({ ...clip, ruta: `/videos/${clip.id}` })),
+  ]
+}

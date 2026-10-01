@@ -42,6 +42,7 @@ export default function Perfil() {
   const [filtro, setFiltro] = useState('todos')
   // El trofeo que se esta viendo en 3D
   const [visto, setVisto] = useState(null)
+  const [confirmarReinicio, setConfirmarReinicio] = useState(false)
 
   const ganados = perfil.trofeos.length
   const visibles = trofeos.filter((trofeo) => filtro === 'todos' || trofeo.tipo === filtro)
@@ -139,7 +140,30 @@ export default function Perfil() {
             aria-pressed={conSonido}
             onClick={() => { acciones.marcarPreferencia('sonido', !conSonido); if (!conSonido) { sonar('acierto') } }}
           >{conSonido ? 'SONIDO ENCENDIDO' : 'SONIDO APAGADO'}</button>
+          <button className="ajuste-opcion es-ancho es-peligro" type="button" onClick={() => setConfirmarReinicio(true)}>
+            REINICIAR ESTADÍSTICAS
+          </button>
         </section>
+
+        {confirmarReinicio && (
+          <div className="modal-backdrop" role="presentation" onClick={() => setConfirmarReinicio(false)}>
+            <section className="challenge-modal" role="alertdialog" aria-modal="true" aria-labelledby="reinicio-titulo" onClick={(evento) => evento.stopPropagation()}>
+              <button className="close-button" type="button" aria-label="Cancelar" onClick={() => setConfirmarReinicio(false)}><Icono nombre="cerrar" size={28} /></button>
+              <span className="modal-kicker">REINICIAR</span>
+              <h2 id="reinicio-titulo">¿EMPEZAR<br />DE CERO?</h2>
+              <p>Se borran tus monedas, trofeos, cartas, trivias y finales ganadas. Tu cuenta, tus fotos y tus escudos personalizados se quedan.</p>
+              <div className="reinicio-acciones">
+                <button className="button button-secondary" type="button" onClick={() => setConfirmarReinicio(false)}>CANCELAR</button>
+                <button className="button reinicio-confirmar" type="button" onClick={() => { acciones.reiniciarAvance(); setConfirmarReinicio(false) }}>REINICIAR</button>
+              </div>
+            </section>
+          </div>
+        )}
+
+        <button className="gallery-entry creditos-entry" type="button" onClick={() => navigate('/creditos')}>
+          <strong>CRÉDITOS Y FUENTES</strong>
+          <span className="flecha-avance"><Icono nombre="flecha" /></span>
+        </button>
 
       </section>
 
