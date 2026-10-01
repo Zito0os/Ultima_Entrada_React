@@ -19,6 +19,7 @@ function JuegoFinal() {
     const objetivoTimerRef = useRef(null);
     const inicioCierreCirculoRef = useRef(null);
     const animationTimerRef = useRef(null);
+    const llamadoTimerRef = useRef(null);
     const startPitchRef = useRef(() => {});
     const startPitcherAnimationRef = useRef(() => {});
     const batearRef = useRef(() => {});
@@ -35,6 +36,7 @@ function JuegoFinal() {
         animation: "Idle"
     });
     const [lanzamientos, setLanzamientos] = useState(0);
+    const [llamado, setLlamado] = useState(null);
 
     // Cuadro real de strike (la cuadrícula 3x3 donde el umpire canta strike si no bateas).
     // Más pequeño y con proporción real (más alto que ancho, como la zona de strike de verdad).
@@ -254,6 +256,17 @@ function JuegoFinal() {
     function updateGameState(changes) {
         Object.assign(gameRef.current, changes);
         setGameState({ ...gameRef.current });
+    }
+
+    function mostrarLlamado(tipo) {
+        if (llamadoTimerRef.current) {
+            window.clearTimeout(llamadoTimerRef.current);
+        }
+        setLlamado(tipo);
+        llamadoTimerRef.current = window.setTimeout(() => {
+            llamadoTimerRef.current = null;
+            setLlamado(null);
+        }, 1100);
     }
 
     function prepararLanzamiento() {
@@ -1302,6 +1315,7 @@ function JuegoFinal() {
 
         function registrarStrike(reproducirStrike = true) {
             const strikes = gameRef.current.strikes + 1;
+            mostrarLlamado("strike");
             console.log(
                 "[JuegoFinal] Strike registrado",
                 { strikes, clipsDisponibles: Object.keys(animationActions) }
@@ -1323,6 +1337,7 @@ function JuegoFinal() {
 
         function registrarBola() {
             const bolas = gameRef.current.bolas + 1;
+            mostrarLlamado("ball");
 
             console.log("[JuegoFinal] Bola cantada (lanzamiento fuera de zona, sin swing).", {
                 bolas
@@ -1362,6 +1377,7 @@ function JuegoFinal() {
 
             // La pelota cayó dentro del cuadro de strike y el jugador no bateó: STRIKE cantado.
             const strikes = gameRef.current.strikes + 1;
+            mostrarLlamado("strike");
             console.log("[JuegoFinal] Pelota dejada pasar dentro de la zona: strike cantado.", {
                 strikes
             });
@@ -1939,6 +1955,10 @@ function JuegoFinal() {
                 window.clearTimeout(animationTimerRef.current);
             }
 
+            if (llamadoTimerRef.current) {
+                window.clearTimeout(llamadoTimerRef.current);
+            }
+
             if (bateoTimer) {
                 window.clearTimeout(bateoTimer);
             }
@@ -2043,30 +2063,52 @@ function JuegoFinal() {
             </div>
         </div>
 
+            {llamado && (
+                <div className="juego-final-llamado" role="status" aria-live="assertive">
+                    <img
+                        src={`${import.meta.env.BASE_URL}UI/${llamado === "strike" ? "Strike_img.png" : "ball_img.png"}`}
+                        alt={llamado === "strike" ? "Strike" : "Bola"}
+                    />
+                </div>
+            )}
+
             <div className="juego-final-actions">
                 {gameState.phase === "ready" && (
-                    <button type="button" onClick={prepararLanzamiento}>
-                        LISTO
+                    <button className="juego-final-image-button" type="button" onClick={prepararLanzamiento} aria-label="Listo, preparar lanzamiento">
+                        <img src={`${import.meta.env.BASE_URL}UI/listo_img.png`} alt="Listo" />
                     </button>
                 )}
-                {gameState.phase === "strike" && <p>¡STRIKE!</p>}
-                {gameState.phase === "ball" && <p>¡BOLA!</p>}
                 {gameState.phase === "countdown" || (
                     gameState.phase === "pitching" && !gameState.bateoBloqueado
                 ) ? (
-                    <button type="button" onClick={() => batearRef.current()}>
-                        BATEAR
+                    <button className="juego-final-image-button" type="button" onClick={() => batearRef.current()} aria-label="Batear">
+                        <img src={`${import.meta.env.BASE_URL}UI/bate_img.png`} alt="Batear" />
                     </button>
                 ) : null}
-                {gameState.phase === "lost" && (
-                    <>
-                        <p>3 STRIKES: JUEGO TERMINADO</p>
-                        <button type="button" onClick={irAlResultado}>
-                            VER RESULTADO
-                        </button>
-                    </>
-                )}
             </div>
+
+            {gameState.phase === "lost" && (
+                <div
+                    className="juego-final-derrota"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="juego-final-derrota-titulo"
+                >
+                    <p className="juego-final-derrota-etiqueta">3 STRIKES</p>
+                    <h1 id="juego-final-derrota-titulo">TURNO TERMINADO</h1>
+                    <p className="juego-final-derrota-mensaje">
+                        Recibiste tres strikes. Tu turno ha terminado.
+                    </p>
+                    <button
+                        className="juego-final-resultado-button"
+                        type="button"
+                        onClick={irAlResultado}
+                    >
+                        VER RESULTADO
+                    </button>
+                </div>
+            )}
+
             <div className="zona-lanzamiento-wrapper">
                 <div
                     className="zona-lanzamiento-total"

@@ -142,14 +142,208 @@
 
 /* El boton de bateo queda al lado derecho, frente al joystick. */
 .juego-final-actions {
+    
     left: auto !important;
     right: 8% !important;
     bottom: 90px !important;
     transform: none !important;
 }
 
+.juego-final-actions .juego-final-image-button {
+    display: block;
+    width: clamp(84px, 14vw, 150px);
+    min-width: 0;
+    min-height: 0;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.juego-final-image-button img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.juego-final-image-button:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 4px;
+    border-radius: 50%;
+}
+
+.juego-final-llamado {
+    position: absolute;
+    top: 38%;
+    left: 50%;
+    z-index: 25;
+    width: min(46vw, 340px);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    animation: llamado-entrada 180ms ease-out both;
+}
+
+.juego-final-llamado img {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+@keyframes llamado-entrada {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -42%) scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
 .juego-final-victoria {
     z-index: 30 !important;
+}
+
+.juego-final .juego-final-derrota {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 30;
+    display: flex;
+    width: min(88vw, 390px);
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 30px 24px 26px;
+    border: 2px solid var(--alerta);
+    border-radius: 10px;
+    color: var(--fondo);
+    background: var(--azul-profundo);
+    box-shadow: 0 0 0 5px rgba(13, 55, 103, 0.65), 0 20px 50px rgba(15, 26, 43, 0.48);
+    text-align: center;
+    transform: translate(-50%, -50%);
+    animation: juego-final-aparicion 240ms ease-out both;
+}
+
+.juego-final-derrota-etiqueta {
+    margin: 0;
+    color: var(--alerta);
+    font-family: var(--fuente-mono);
+    font-size: 0.8rem;
+    font-weight: 900;
+}
+
+.juego-final .juego-final-derrota h1 {
+    margin: 0;
+    color: var(--fondo);
+    font-family: var(--fuente-titulo);
+    font-size: 2rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.juego-final-derrota-mensaje {
+    max-width: 30ch;
+    margin: 0;
+    color: var(--fondo);
+    font-family: var(--fuente-texto);
+    font-size: 1rem;
+    line-height: 1.45;
+}
+
+.juego-final .juego-final-resultado-button,
+.juego-final .juego-final-victoria button {
+    min-width: 190px;
+    min-height: 48px;
+    margin-top: 8px;
+    padding: 10px 18px;
+    border: 2px solid var(--azul-profundo);
+    border-radius: 8px;
+    color: #ffffff;
+    background: var(--alerta);
+    box-shadow: 0 4px 0 rgba(15, 26, 43, 0.65);
+    font-family: var(--fuente-titulo);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: filter 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+.juego-final .juego-final-resultado-button:hover,
+.juego-final .juego-final-victoria button:hover {
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 rgba(15, 26, 43, 0.65);
+}
+
+.juego-final .juego-final-resultado-button:focus-visible,
+.juego-final .juego-final-victoria button:focus-visible {
+    outline: 3px solid var(--acento);
+    outline-offset: 3px;
+}
+
+.juego-final .juego-final-victoria {
+    overflow: hidden;
+    width: min(88vw, 390px);
+    padding: 34px 24px 28px;
+    border: 2px solid var(--alerta);
+    border-radius: 10px;
+    color: var(--fondo);
+    background: var(--azul-profundo);
+    box-shadow: 0 0 0 5px rgba(13, 55, 103, 0.65), 0 20px 50px rgba(15, 26, 43, 0.48);
+    animation: juego-final-aparicion 280ms ease-out both;
+}
+
+.juego-final .juego-final-victoria::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 7px;
+    background: var(--alerta);
+    content: "";
+}
+
+.juego-final .juego-final-victoria p {
+    margin: 0 0 8px;
+    color: var(--fondo);
+    font-family: var(--fuente-mono);
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.juego-final .juego-final-victoria h1 {
+    margin: 0 0 12px;
+    color: var(--alerta);
+    font-family: var(--fuente-titulo);
+    font-size: 3rem;
+    font-weight: 900;
+    line-height: 0.95;
+    text-shadow: 2px 2px 0 var(--fondo), 4px 4px 0 var(--azul-profundo);
+}
+
+.juego-final .juego-final-victoria strong {
+    color: var(--fondo);
+    font-family: var(--fuente-mono);
+    font-size: 0.9rem;
+    font-weight: 900;
+}
+
+@keyframes juego-final-aparicion {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -46%) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
 }
 
 .zona-lanzamiento-wrapper {
@@ -263,6 +457,32 @@
     .juego-final-actions {
         right: 5% !important;
         bottom: 70px !important;
+    }
+
+    .juego-final-actions .juego-final-image-button {
+        width: 88px;
+    }
+
+    .juego-final-llamado {
+        top: 36%;
+        width: min(64vw, 280px);
+    }
+
+    .juego-final .juego-final-derrota {
+        width: min(88vw, 340px);
+        padding: 26px 18px 22px;
+    }
+
+    .juego-final .juego-final-derrota h1 {
+        font-size: 1.8rem;
+    }
+
+    .juego-final .juego-final-victoria {
+        padding: 30px 18px 24px;
+    }
+
+    .juego-final .juego-final-victoria h1 {
+        font-size: 2.5rem;
     }
 
     .zona-lanzamiento-wrapper {
