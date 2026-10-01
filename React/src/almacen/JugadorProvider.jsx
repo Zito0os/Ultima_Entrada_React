@@ -208,6 +208,23 @@ export function JugadorProvider({ children }) {
       })
     },
 
+    // Borra el avance del juego; la cuenta, las fotos, los escudos y el tema se quedan
+    reiniciarAvance() {
+      actualizar((actual) => {
+        const preferencias = { ...actual.preferencias }
+        delete preferencias.escudosVistos
+        return {
+          monedas: PERFIL_BASE.monedas,
+          racha: { dias: 1, ultimoDia: hoy() },
+          trofeos: [],
+          cartas: {},
+          trivia: {},
+          finales: {},
+          preferencias,
+        }
+      })
+    },
+
     marcarPreferencia(clave, valor) {
       actualizar((actual) => ({ preferencias: { ...actual.preferencias, [clave]: valor } }))
     },

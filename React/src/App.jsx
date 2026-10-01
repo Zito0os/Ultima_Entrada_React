@@ -20,12 +20,12 @@ import DetalleFinal from './Detalle_Final'
 import Finales from './Finales'
 import FotoFiltros from './FotoFiltros'
 import Galeria from './Galeria'
-import JuegoFinal from './JuegoFinal'
 import Historia from './Historia'
 import HistoriaDetalle from './HistoriaDetalle'
 import MejoresJugadas from './MejoresJugadas'
 import Icono from './Icono'
 import BottomNav from './Navigation'
+import Creditos from './Creditos'
 import PantallaCarga from './PantallaCarga'
 import Perfil from './Perfil'
 import PageHeader from './PageHeader'
@@ -36,6 +36,7 @@ import Trivia from './Trivia'
 import Resultado from './Resultado'
 import Videos from './Videos'
 import { db } from './firebase'
+import { retoDelDia } from './finalsData'
 
 // three.js solo se descarga al entrar a la prueba 3D
 const PruebaEscudo = lazy(() => import('./PruebaEscudo'))
@@ -44,6 +45,8 @@ const PruebaTrofeo = lazy(() => import('./PruebaTrofeo'))
 const CompilarMarcador = lazy(() => import('./CompilarMarcador'))
 const VerEscudoAR = lazy(() => import('./VerEscudoAR'))
 const VerCartaARPagina = lazy(() => import('./VerCartaARPagina'))
+// El minijuego trae three.js y GLTFLoader: fuera del paquete inicial
+const JuegoFinal = lazy(() => import('./JuegoFinal'))
 
 const CLAVE_CARGA = 'ue_carga_vista'
 
@@ -68,13 +71,18 @@ function HomePage() {
   const [activeTab, setActiveTab] = useState('inicio')
   const [isChallengeOpen, setIsChallengeOpen] = useState(false)
   const [areRulesOpen, setAreRulesOpen] = useState(false)
+  const { perfil } = useJugador()
+  const reto = retoDelDia(perfil.trofeos.length)
+  const retoGanado = Boolean(perfil.finales[reto.id]?.ganada)
+  const juego = reto.serie.match(/JUEGO (\d+)/)?.[1]
+  const momento = reto.situacion.split(' · ')[0]
   const [datosFirebase, setDatosFirebase] = useState([])
   const [errorFirebase, setErrorFirebase] = useState('')
 
   const contentCards = [
     { id: 'trivia', title: 'TRIVIA', subtitle: 'Pon a prueba tus conocimientos', icon: '?', tone: 'green', path: '/trivia' },
     { id: 'sobres', title: 'SOBRES', subtitle: 'Descubre premios sorpresa', icono: 'cartas', tone: 'violet', path: '/sobres' },
-    { id: 'videos', title: 'VIDEOS', subtitle: 'Las mejores jugadas de la historia', icono: 'reproducir', tone: 'red', path: '/mejores-jugadas' },
+    { id: 'videos', title: 'VIDEOS', subtitle: 'Jugadas y clips de cada época', icono: 'reproducir', tone: 'red', path: '/mejores-jugadas' },
     { id: 'finales', title: 'FINALES', subtitle: 'Batea la última entrada', icono: 'rombo', tone: 'green', path: '/finales' },
   ]
 
@@ -100,8 +108,11 @@ function HomePage() {
         <section className="daily-challenge" aria-labelledby="challenge-title">
           <p className="eyebrow">RETO DE HOY</p>
           <h2 id="challenge-title">ÚLTIMA<br />ENTRADA</h2>
-          <p className="challenge-meta">Serie Mundial 1975 · Juego 6 · Cierre del 9°</p>
-          <p className="reward"><strong>1 TROFEO</strong><span>+</span><strong>50 MONEDAS</strong></p>
+          <p className="challenge-meta">Serie Mundial {reto.year} · Juego {juego} · {momento}</p>
+          <p className="challenge-meta">{reto.local.nombre} vs {reto.rival.nombre}</p>
+          {retoGanado
+            ? <p className="reward"><strong>REVANCHA</strong><span>·</span><strong>YA TIENES ESTE TROFEO</strong></p>
+            : <p className="reward"><strong>1 TROFEO</strong><span>+</span><strong>50 MONEDAS</strong></p>}
           <div className="challenge-actions">
             <button className="button button-primary" type="button" onClick={() => setIsChallengeOpen(true)}>JUGAR</button>
             <button className="button button-secondary" type="button" onClick={() => setAreRulesOpen(true)}>REGLAS</button>
@@ -127,11 +138,12 @@ function HomePage() {
       {isChallengeOpen && (
         <div className="modal-backdrop" role="presentation" onClick={() => setIsChallengeOpen(false)}>
           <section className="challenge-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onClick={(event) => event.stopPropagation()}>
-            <button className="close-button" type="button" aria-label="Cerrar reto" onClick={() => setIsChallengeOpen(false)}>×</button>
+            <button className="close-button" type="button" aria-label="Cerrar reto" onClick={() => setIsChallengeOpen(false)}><Icono nombre="cerrar" size={28} /></button>
             <span className="modal-kicker">RETO DE HOY</span>
             <h2 id="modal-title">¿LISTO PARA<br />LA ÚLTIMA ENTRADA?</h2>
-            <p>Serie Mundial 1975, cierre del noveno con dos outs. Si resuelves la jugada te llevas el trofeo y cincuenta monedas.</p>
-            <button className="button button-primary modal-action" type="button" onClick={() => navigate('/finales/1975/jugar')}>COMENZAR</button>
+            <p>Serie Mundial {reto.year}. {reto.situacion}. {reto.descripcion}</p>
+            <p>{retoGanado ? 'Ya ganaste esta final: juégala otra vez por el gusto.' : 'Si resuelves la jugada te llevas el trofeo y cincuenta monedas.'}</p>
+            <button className="button button-primary modal-action" type="button" onClick={() => navigate(`/finales/${reto.id}/jugar`)}>COMENZAR</button>
           </section>
         </div>
       )}
@@ -139,7 +151,7 @@ function HomePage() {
       {areRulesOpen && (
         <div className="modal-backdrop" role="presentation" onClick={() => setAreRulesOpen(false)}>
           <section className="challenge-modal rules-modal" role="dialog" aria-modal="true" aria-labelledby="rules-title" onClick={(event) => event.stopPropagation()}>
-            <button className="close-button" type="button" aria-label="Cerrar reglas" onClick={() => setAreRulesOpen(false)}>×</button>
+            <button className="close-button" type="button" aria-label="Cerrar reglas" onClick={() => setAreRulesOpen(false)}><Icono nombre="cerrar" size={28} /></button>
             <span className="modal-kicker">REGLAS</span>
             <h2 id="rules-title">ÚLTIMA<br />ENTRADA</h2>
             <ol className="rules-list">
@@ -198,13 +210,14 @@ function AppRoutes() {
       <Route path="/historia" element={<Historia />} />
       <Route path="/historia/:eventId" element={<HistoriaDetalle />} />
       <Route path="/perfil" element={<Perfil />} />
+      <Route path="/creditos" element={<Creditos />} />
       <Route path="/galeria" element={<Galeria />} />
       <Route path="/galeria/:fotoId" element={<FotoFiltros />} />
       <Route path="/sobres" element={<Sobres />} />
       <Route path="/sobres/:packId" element={<AbrirSobre />} />
       <Route path="/finales" element={<Finales />} />
       <Route path="/finales/:finalId" element={<DetalleFinal />} />
-      <Route path="/finales/:finalId/jugar" element={<JuegoFinal />} />
+      <Route path="/finales/:finalId/jugar" element={<Suspense fallback={<p className="prueba-cargando">Cargando el estadio...</p>}><JuegoFinal /></Suspense>} />
       <Route path="/finales/:finalId/resultado" element={<Resultado />} />
       <Route path="/trivia" element={<Trivia />} />
       <Route path="/trivia/:teamId" element={<Trivia />} />

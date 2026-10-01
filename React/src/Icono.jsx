@@ -144,6 +144,44 @@ const trazos = {
     viewBox: '0 0 200 200',
     contenido: <path d="M100,15a85,85,0,1,0,85,85A84.93,84.93,0,0,0,100,15Zm0,150a65,65,0,1,1,65-65A64.87,64.87,0,0,1,100,165ZM116.5,57.5a9.67,9.67,0,0,0-14,0L74,86a19.92,19.92,0,0,0,0,28.5L102.5,143a9.9,9.9,0,0,0,14-14l-28-29L117,71.5C120.5,68,120.5,61.5,116.5,57.5Z" fill="currentColor" />,
   },
+  cerrar: {
+    viewBox: '0 0 24 24',
+    contenido: <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />,
+  },
+  buscar: {
+    viewBox: '0 0 24 24',
+    contenido: <path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM15.3 15.3 20 20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />,
+  },
+  mas: {
+    viewBox: '0 0 24 24',
+    contenido: <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />,
+  },
+  menos: {
+    viewBox: '0 0 24 24',
+    contenido: <path d="M5 12h14" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />,
+  },
+  siguiente: {
+    viewBox: '0 0 24 24',
+    contenido: <path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />,
+  },
+  info: {
+    viewBox: '0 0 24 24',
+    contenido: (
+      <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 11v6M12 7.5v.01" strokeWidth="2.4" />
+      </g>
+    ),
+  },
+  jugador: {
+    viewBox: '0 0 24 24',
+    contenido: (
+      <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="10" cy="4.5" r="2" />
+        <path d="M10 7.5 9 14l-3 7M9 14l4 2 1 5M9.5 9l4.5 1.5L19 5" />
+      </g>
+    ),
+  },
   bate: {
     viewBox: '0 0 32 32',
     contenido: (

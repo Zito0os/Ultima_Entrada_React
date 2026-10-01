@@ -48,7 +48,7 @@ export default function HistoriaDetalle() {
                 >
                   <strong>{milestone.year}</strong>
                   <span>{milestone.text}</span>
-                  <b aria-hidden="true">{hitoAbierto === milestone.year ? '−' : '+'}</b>
+                  <b aria-hidden="true"><Icono nombre={hitoAbierto === milestone.year ? 'menos' : 'mas'} size={18} /></b>
                 </button>
                 {hitoAbierto === milestone.year && <p className="milestone-nota">{milestone.nota}</p>}
               </div>

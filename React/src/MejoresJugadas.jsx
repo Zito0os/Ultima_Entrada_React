@@ -4,13 +4,20 @@ import { useNavigate } from 'react-router-dom'
 import BottomNav from './Navigation'
 import Icono from './Icono'
 import PageHeader from './PageHeader'
+import TarjetaVideo from './TarjetaVideo'
 import { historyEvents } from './historyData'
-import { jugadas, rutaMiniatura } from './videosData'
+import { clipsDeEpoca, jugadas } from './videosData'
 
 const filtros = [
-  { id: 'todas', nombre: 'TODAS' },
-  { id: 'jonrones', nombre: 'JONRONES' },
-  { id: 'atrapadas', nombre: 'ATRAPADAS' },
+  { id: 'todas', nombre: 'TODOS' },
+  { id: 'jugadas', nombre: 'JUGADAS' },
+  { id: 'historia', nombre: 'HISTORIA' },
+]
+
+// Las jugadas abren en su catalogo y los clips de epoca en el reproductor de videos
+const todos = [
+  ...jugadas.map((clip) => ({ ...clip, tipoVideo: 'jugadas', ruta: `/mejores-jugadas/${clip.id}`, detalle: [`${clip.anio} · ${clip.evento}`, clip.equipos] })),
+  ...clipsDeEpoca.map((clip) => ({ ...clip, tipoVideo: 'historia', ruta: `/videos/${clip.id}` })),
 ]
 
 export default function MejoresJugadas() {
@@ -27,17 +34,18 @@ export default function MejoresJugadas() {
     setEpocasAbiertas(false)
   }
 
-  const visibles = jugadas.filter((jugada) => (
-    (filtro === 'todas' || jugada.tipo === filtro)
-    && (epoca === 'todas' || jugada.epoca === epoca)
+  const visibles = todos.filter((clip) => (
+    (filtro === 'todas' || clip.tipoVideo === filtro)
+    && (epoca === 'todas' || clip.epoca === epoca)
   ))
+  const nombreDeEpoca = (id) => historyEvents.find((item) => item.id === id)?.title
 
   return (
     <main className="plays-shell">
-      <PageHeader title="MEJORES JUGADAS" backTo="/" />
+      <PageHeader title="VIDEOS" backTo="/" />
 
-      <section className="plays-content" aria-label="Mejores jugadas históricas">
-        <div className="plays-filters" role="tablist" aria-label="Filtrar por tipo de jugada">
+      <section className="plays-content" aria-label="Videos de béisbol">
+        <div className="plays-filters" role="tablist" aria-label="Filtrar por tipo de video">
           {filtros.map((item) => (
             <button className={filtro === item.id ? 'plays-filter is-active' : 'plays-filter'} type="button" role="tab" aria-selected={filtro === item.id} onClick={() => setFiltro(item.id)} key={item.id}>
               {item.nombre}
@@ -72,20 +80,18 @@ export default function MejoresJugadas() {
           )}
         </div>
 
-        <section className="plays-list" aria-label="Lista de jugadas">
-          {visibles.map((jugada) => (
-            <button className="play-card" type="button" key={jugada.id} onClick={() => navigate(`/mejores-jugadas/${jugada.id}`)}>
-              <span className="play-thumbnail" style={{ backgroundImage: `url(${rutaMiniatura(jugada.id)})` }}>
-                <span><Icono nombre="reproducir" size={15} /></span>
-              </span>
-              <span className="play-copy">
-                <span className="play-meta">{jugada.anio ? `${jugada.anio} · ` : ''}{jugada.evento}</span>
-                <strong>{jugada.titulo}</strong>
-                <small>{jugada.equipos} {jugada.duracion}</small>
-              </span>
-            </button>
+        <p className="plays-conteo">{visibles.length} {visibles.length === 1 ? 'VIDEO' : 'VIDEOS'}</p>
+
+        <section className="plays-list" aria-label="Lista de videos">
+          {visibles.map((clip) => (
+            <TarjetaVideo
+              clip={clip}
+              detalle={clip.detalle || [clip.periodo, nombreDeEpoca(clip.epoca)]}
+              onAbrir={() => navigate(clip.ruta)}
+              key={clip.id}
+            />
           ))}
-          {!visibles.length && <p className="plays-vacio">No hay jugadas con esos filtros.</p>}
+          {!visibles.length && <p className="plays-vacio">No hay videos con esos filtros.</p>}
         </section>
       </section>
 
