@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import * as THREE from "three";
@@ -12,10 +11,13 @@ function JuegoFinal() {
     const gameRef = useRef({
         phase: "ready",
         strikes: 0,
+        bolas: 0,
         countdown: 0,
         animation: "Idle"
     });
     const readyTimerRef = useRef(null);
+    const objetivoTimerRef = useRef(null);
+    const inicioCierreCirculoRef = useRef(null);
     const animationTimerRef = useRef(null);
     const startPitchRef = useRef(() => {});
     const startPitcherAnimationRef = useRef(() => {});
@@ -24,49 +26,168 @@ function JuegoFinal() {
     const lanzamientoAnticipadoRef = useRef(false);
     const strikeTerminadoRef = useRef(true);
     const tiempoAntesDeLanzar = 1.7;
+    const TIEMPO_CIRCULO_ANTES_DE_LANZAR = 0.7;
     const [gameState, setGameState] = useState({
         phase: "ready",
         strikes: 0,
+        bolas: 0,
         countdown: 0,
         animation: "Idle"
     });
     const [lanzamientos, setLanzamientos] = useState(0);
 
-    const ZONA_LANZAMIENTO = { columnas: 3, filas: 3, ancho: 180, alto: 180 };
+    // Cuadro real de strike (la cuadrícula 3x3 donde el umpire canta strike si no bateas).
+    // Más pequeño y con proporción real (más alto que ancho, como la zona de strike de verdad).
+    const ZONA_STRIKE = { columnas: 3, filas: 3, ancho: 120, alto: 120};
+    // Margen alrededor del cuadro de strike donde el pitcher puede tirar "bolas malas"
+    const MARGEN_BOLA = 44;
+    // Área total donde puede caer cualquier lanzamiento (strike o bola)
+    const ZONA_TOTAL = {
+        ancho: ZONA_STRIKE.ancho + MARGEN_BOLA * 2,
+        alto: ZONA_STRIKE.alto + MARGEN_BOLA * 2
+    };
+    // Probabilidad de que un lanzamiento sea bola (fuera del cuadro de strike)
+    const PROBABILIDAD_BOLA = 0.35;
+    // Bolas necesarias para que el bateador se gane la base (igual que en beisbol real)
+    const BOLAS_PARA_BASE = 4;
+
+    // ---- BATE DE MADERA (se fija al hueso de la mano derecha de Mixamo) ----
+    // Medidas en unidades del mundo (el jugador mide 0.3 de alto, ver alturaJugador).
+    const BATE_LONGITUD = .8;
+    // Radio (ancho) de la parte SUPERIOR del bate (el barril, donde se golpea la pelota).
+    const BATE_ANCHO_SUPERIOR = 0.0196;
+    // Radio (ancho) de la parte INFERIOR del bate (el mango que se agarra).
+    // Mantén el superior mayor que el inferior para que el bate se ensanche hacia la punta.
+    const BATE_ANCHO_INFERIOR = 0.0030;
+    // Punto del mango (0 = perilla, 1 = punta) que queda dentro del puño.
+    const BATE_PUNTO_AGARRE = 0.14;
+    // Si el bate te queda con la punta hacia el lado contrario, cambia a true.
+    const BATE_INVERTIR = true;
+    // Ajuste fino en el espacio local del hueso de la mano (x, y, z) y giro extra (radianes).
+    const BATE_AJUSTE_POSICION = [0, 15, 0];
+    const BATE_AJUSTE_ROTACION = [0, 0, 0];
+    const PROBABILIDAD_LANZAMIENTO_CURVO = 0.75;
+    const DESVIACION_MAXIMA_CURVA = 0.65;
+    const FACTOR_CURVA = 12;
+
     const RADIO_CIRCULO_OBJETIVO = 34;
+    const TAMANO_CIRCULO_MAX = 210;
+    const TAMANO_CIRCULO_MIN = 50;
+    const MULTIPLICADOR_CIERRE_CIRCULO = 2;
     const RADIO_PUNTO_CONTACTO = 9;
-    const VELOCIDAD_JOYSTICK = 150;
+    const VELOCIDAD_JOYSTICK = 400;
+
+    // ---- Mapeo del punto 2D (círculo de predicción) a una posición 3D real ----
+    // Altura a la que vive el centro de la zona de strike: la altura real
+    // aproximada de la zona de bateo (entre la rodilla y el pecho del bateador).
+    const ALTURA_ZONA_STRIKE_CENTRO = 0.85;
+    // Medio ancho / medio alto reales (unidades del mundo 3D) que representan el
+    // borde del cuadro de strike. Una bola (fuera del cuadro 2D) se traduce en un
+    // desplazamiento mayor a estos valores, así que el lanzamiento se ve claramente
+    // más arriba, más abajo, más a la izquierda o más a la derecha.
+    const MEDIO_ANCHO_ZONA_3D = 0.42;
+    const MEDIO_ALTO_ZONA_3D = 0.5;
+    // Profundidad (eje Z) donde el bate realmente contacta la pelota, y de dónde
+    // parte/hasta dónde llega su trayectoria.
+    const Z_LANZAMIENTO = 0.5;
+    const Z_CONTACTO = 8.0;
+    const Z_LLEGADA = 14.2;
+    // Altura a la que el pitcher suelta la pelota (hombro), para que el
+    // lanzamiento baje realmente hacia la zona en vez de ir en línea recta.
+    const ALTURA_LIBERACION_PITCHER = 1.55;
+
+    // ---- PELOTA EN LA MANO DEL PITCHER (durante el pre-lanzamiento) ----
+    // Radio de la pelota que sostiene en la mano (unidades del mundo; el pitcher mide 0.3).
+    const PELOTA_MANO_RADIO = 0.045;
+    // Que tan adentro de la palma queda (0 = en la muñeca, 1 = en la linea de los nudillos).
+    const PELOTA_MANO_PROFUNDIDAD = .7;
+    // Ajuste fino en unidades del mundo, sobre los ejes del hueso de la mano [x, y, z].
+    const PELOTA_MANO_AJUSTE = [.025, 0, .035];
+
+    // Convierte el punto 2D del círculo de predicción (en px, dentro de
+    // ZONA_TOTAL) en la posición 3D real donde la pelota debe cruzar el plato.
+    function calcularPuntoContactoDesdeObjetivo(objetivo2D) {
+        const centroX = ZONA_TOTAL.ancho / 2;
+        const centroY = ZONA_TOTAL.alto / 2;
+        const offsetXNorm = (objetivo2D.x - centroX) / (ZONA_STRIKE.ancho / 2);
+        const offsetYNorm = (objetivo2D.y - centroY) / (ZONA_STRIKE.alto / 2);
+
+        return new THREE.Vector3(
+            offsetXNorm * MEDIO_ANCHO_ZONA_3D,
+            // En pantalla Y crece hacia abajo; en Three.js Y crece hacia arriba, se invierte.
+            ALTURA_ZONA_STRIKE_CENTRO - offsetYNorm * MEDIO_ALTO_ZONA_3D,
+            Z_CONTACTO
+        );
+    }
 
     const puntoContactoRef = useRef(null);
     const circuloObjetivoRef = useRef(null);
     const joystickBaseRef = useRef(null);
     const joystickStickRef = useRef(null);
     const contactoPosRef = useRef({
-        x: ZONA_LANZAMIENTO.ancho / 2,
-        y: ZONA_LANZAMIENTO.alto / 2
+        x: ZONA_TOTAL.ancho / 2,
+        y: ZONA_TOTAL.alto / 2
     });
     const objetivoPosRef = useRef({
-        x: ZONA_LANZAMIENTO.ancho / 2,
-        y: ZONA_LANZAMIENTO.alto / 2
+        x: ZONA_TOTAL.ancho / 2,
+        y: ZONA_TOTAL.alto / 2
     });
+    // Marca si el lanzamiento actual es una bola (cae fuera del cuadro de strike) o no
+    const pitchEsBolaRef = useRef(false);
     const joystickVectorRef = useRef({ x: 0, y: 0 });
     const joystickActivoRef = useRef(false);
 
     function generarObjetivoAleatorio() {
-        const { columnas, filas, ancho, alto } = ZONA_LANZAMIENTO;
-        const col = Math.floor(Math.random() * columnas);
-        const fila = Math.floor(Math.random() * filas);
-        const x = (ancho / columnas) * col + ancho / columnas / 2;
-        const y = (alto / filas) * fila + alto / filas / 2;
+        // Si ya hay 3 bolas, el siguiente lanzamiento SIEMPRE es strike:
+        // el pitcher no puede dar la 4ta bola y el jugador debe batear.
+        const bolasActuales = gameRef.current.bolas;
+        const puedeSerBola = bolasActuales < BOLAS_PARA_BASE - 1;
+        const esBola = puedeSerBola && Math.random() < PROBABILIDAD_BOLA;
+        pitchEsBolaRef.current = esBola;
+
+        let x;
+        let y;
+
+        if (!esBola) {
+            // Lanzamiento dentro de la zona de strike: se elige una celda al azar de la cuadrícula 3x3
+            const { columnas, filas, ancho, alto } = ZONA_STRIKE;
+            const col = Math.floor(Math.random() * columnas);
+            const fila = Math.floor(Math.random() * filas);
+            x = MARGEN_BOLA + (ancho / columnas) * col + ancho / columnas / 2;
+            y = MARGEN_BOLA + (alto / filas) * fila + alto / filas / 2;
+        } else {
+            // Bola: se sortean puntos dentro del área total hasta que caiga
+            // fuera del rectángulo del cuadro de strike.
+            do {
+                x = Math.random() * ZONA_TOTAL.ancho;
+                y = Math.random() * ZONA_TOTAL.alto;
+            } while (
+                x >= MARGEN_BOLA &&
+                x <= MARGEN_BOLA + ZONA_STRIKE.ancho &&
+                y >= MARGEN_BOLA &&
+                y <= MARGEN_BOLA + ZONA_STRIKE.alto
+            );
+        }
+
         objetivoPosRef.current = { x, y };
+        inicioCierreCirculoRef.current = null;
         if (circuloObjetivoRef.current) {
             circuloObjetivoRef.current.style.left = `${x}px`;
             circuloObjetivoRef.current.style.top = `${y}px`;
-            circuloObjetivoRef.current.style.opacity = "1";
+            circuloObjetivoRef.current.style.width = `${TAMANO_CIRCULO_MAX}px`;
+            circuloObjetivoRef.current.style.height = `${TAMANO_CIRCULO_MAX}px`;
+            circuloObjetivoRef.current.style.opacity = "0";
         }
+
+        console.log("[JuegoFinal] Nuevo lanzamiento generado.", {
+            esBola,
+            x,
+            y
+        });
     }
 
     function ocultarObjetivo() {
+        inicioCierreCirculoRef.current = null;
         if (circuloObjetivoRef.current) circuloObjetivoRef.current.style.opacity = "0";
     }
 
@@ -79,8 +200,8 @@ function JuegoFinal() {
 
     function reiniciarContacto() {
         contactoPosRef.current = {
-            x: ZONA_LANZAMIENTO.ancho / 2,
-            y: ZONA_LANZAMIENTO.alto / 2
+            x: ZONA_TOTAL.ancho / 2,
+            y: ZONA_TOTAL.alto / 2
         };
         if (puntoContactoRef.current) {
             puntoContactoRef.current.style.left = `${contactoPosRef.current.x}px`;
@@ -123,7 +244,9 @@ function JuegoFinal() {
         navigate(`/finales/${finalId}/resultado`, {
             state: {
                 ganada: gameRef.current.phase === "won",
-                lanzamientos
+                lanzamientos,
+                strikes: gameRef.current.strikes,
+                bolas: gameRef.current.bolas
             }
         });
     }
@@ -136,10 +259,29 @@ function JuegoFinal() {
     function prepararLanzamiento() {
         if (gameRef.current.phase !== "ready") return;
 
+        if (objetivoTimerRef.current) {
+            window.clearTimeout(objetivoTimerRef.current);
+        }
+
         startPitcherAnimationRef.current();
         lanzamientoPendienteRef.current = true;
         reiniciarContacto();
         generarObjetivoAleatorio();
+        const esperaParaMostrarObjetivo = Math.max(
+            0,
+            tiempoAntesDeLanzar - TIEMPO_CIRCULO_ANTES_DE_LANZAR
+        );
+        objetivoTimerRef.current = window.setTimeout(() => {
+            objetivoTimerRef.current = null;
+            if (
+                lanzamientoPendienteRef.current &&
+                gameRef.current.phase !== "lost" &&
+                circuloObjetivoRef.current
+            ) {
+                circuloObjetivoRef.current.style.opacity = "1";
+                inicioCierreCirculoRef.current = performance.now();
+            }
+        }, esperaParaMostrarObjetivo * 1000);
         updateGameState({
             phase: "countdown",
             countdown: tiempoAntesDeLanzar,
@@ -267,15 +409,41 @@ function JuegoFinal() {
         stadium.add(ball);                                  
 
 
-        //donde empieza y donde termina la pelota
-        const pitchStart = new THREE.Vector3(0, 0.7, 0.5);
-        const pitchEnd = new THREE.Vector3(0, 0.7, 14.2);
+        // Punto fijo de liberación del pitcher (arriba, como un brazo real).
+        const pitchStart = new THREE.Vector3(0, ALTURA_LIBERACION_PITCHER, Z_LANZAMIENTO);
+        // pitchEnd y puntoContactoPelota se recalculan en cada lanzamiento
+        // (ver startPitchRef.current) según hacia dónde apunte el círculo de
+        // predicción, para que la pelota realmente vaya más arriba, más abajo,
+        // más a la izquierda o más a la derecha, y pase por ese punto exacto.
+        let pitchEnd = new THREE.Vector3(0, ALTURA_ZONA_STRIKE_CENTRO, Z_LLEGADA);
+        let puntoContactoPelota = new THREE.Vector3(0, ALTURA_ZONA_STRIKE_CENTRO, Z_CONTACTO);
 
         ball.position.copy(pitchStart);
         ball.visible = false;
 
         const pitchSpeed = 0.8; // Velocidad de la pelota (ajustable)
         let pitchProgress = 0;
+        const duracionCierreCirculo = .8;
+        const progresoContacto =
+            (Z_CONTACTO - pitchStart.z) / (Z_LLEGADA - pitchStart.z);
+        let curvaLanzamiento = { eje: null, direccion: 0, intensidad: 0 };
+
+        function calcularPosicionPelota(progreso) {
+            const posicion = new THREE.Vector3().lerpVectors(
+                pitchStart,
+                pitchEnd,
+                progreso
+            );
+
+            if (curvaLanzamiento.eje) {
+                const desviacion = progreso * (1 - progreso) *
+                    (progreso - progresoContacto) * FACTOR_CURVA *
+                    curvaLanzamiento.direccion * curvaLanzamiento.intensidad;
+                posicion[curvaLanzamiento.eje] += desviacion;
+            }
+
+            return posicion;
+        }
 
         const clock = new THREE.Clock();
 
@@ -297,6 +465,8 @@ function JuegoFinal() {
         const animationActions = {};
         const animationMeshes = new Map();
         let skinnedMeshes = [];
+        // Bates fijados a los huesos de la mano: { bate, mallas }
+        const batesAdjuntos = [];
 
         const swingDuration = 0.20;
         const hitDistance = 1.0;
@@ -484,7 +654,7 @@ function JuegoFinal() {
 
         const homeMaterial =
             new THREE.MeshStandardMaterial({
-                color: 0xffffff
+                color: 0x404040
             });
 
         const home =
@@ -518,6 +688,9 @@ function JuegoFinal() {
         let pitcherMixer = null;
         const pitcherAnimationActions = {};
         const pitcherAnimationMeshes = new Map();
+        // Pelotas fijadas a la mano derecha del pitcher: { pelota, mallas }
+        const pelotasEnMano = [];
+        let pelotaEnManoActiva = false;
         let pitcherSkinnedMeshes = [];
         let componentUnmounted = false;
 
@@ -539,6 +712,141 @@ function JuegoFinal() {
 
             preparedClip.blendMode = clip.blendMode;
             return preparedClip;
+        }
+
+        // Bate de madera: perfil torneado (perilla, mango delgado, barril grueso).
+        function crearMeshBate() {
+            const L = BATE_LONGITUD;
+            const sup = BATE_ANCHO_SUPERIOR;
+            const inf = BATE_ANCHO_INFERIOR;
+
+            // Perilla y mango (ancho inferior)
+            const perfil = [
+                [0.0, 0],
+                [inf * 1.5, 0],
+                [inf * 1.65, 0.02 * L],
+                [inf * 1.1, 0.045 * L],
+                [inf, 0.12 * L]
+            ];
+
+            // Transicion suave del mango al barril: el radio crece de "inf" a "sup".
+            const pasos = 8;
+            for (let i = 1; i <= pasos; i++) {
+                const t = i / pasos;
+                const suave = t * t * (3 - 2 * t);
+                perfil.push([
+                    inf + (sup - inf) * suave,
+                    (0.12 + (0.94 - 0.12) * t) * L
+                ]);
+            }
+
+            // Punta redondeada del barril (ancho superior)
+            perfil.push([sup * 0.85, 0.995 * L]);
+            perfil.push([0.0, L]);
+
+            const puntosPerfil = perfil.map(([r, y]) => new THREE.Vector2(r, y));
+
+            const geometria = new THREE.LatheGeometry(puntosPerfil, 20);
+            // El origen queda en el punto de agarre, para que sea el que se coloque en el puño.
+            geometria.translate(0, -BATE_PUNTO_AGARRE * L, 0);
+
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xc8934f,
+                roughness: 0.65,
+                metalness: 0.05
+            });
+
+            const bate = new THREE.Mesh(geometria, material);
+            bate.name = "BateMadera";
+            bate.castShadow = true;
+            bate.receiveShadow = true;
+            bate.frustumCulled = false;
+            return bate;
+        }
+
+        // Busca el hueso de la mano derecha de cada esqueleto del modelo (Mixamo puede
+        // traer varios esqueletos con nombres tipo mixamorigRightHand_1) y le fija un bate.
+        function adjuntarBatesAManoDerecha(raiz) {
+            raiz.updateMatrixWorld(true);
+            const yaAdjuntados = new Map();
+
+            skinnedMeshes.forEach((malla) => {
+                const mano = malla.skeleton.bones.find((hueso) =>
+                    /^mixamorigRightHand(_\d+)?$/.test(hueso.name)
+                );
+                if (!mano) return;
+
+                // Varias mallas pueden compartir el mismo esqueleto: un solo bate por hueso.
+                if (yaAdjuntados.has(mano)) {
+                    yaAdjuntados.get(mano).mallas.push(malla);
+                    return;
+                }
+
+                const dedo = (fragmento) =>
+                    mano.children.find((hijo) => hijo.name.includes(fragmento));
+                const indice = dedo("RightHandIndex1");
+                const medio = dedo("RightHandMiddle1");
+                const anular = dedo("RightHandRing1");
+                const menique = dedo("RightHandPinky1");
+
+                const bate = crearMeshBate();
+
+                // Eje del bate = linea de los nudillos (menique -> indice), que es
+                // la direccion en la que un puño cerrado atraviesa un mango.
+                // Posicion = centro de los nudillos. Todo en el espacio local del hueso,
+                // asi el bate acompaña cualquier animacion de la mano.
+                const eje = new THREE.Vector3(-1, 0, 1);
+                const centro = new THREE.Vector3();
+                if (indice && menique) {
+                    eje.copy(indice.position).sub(menique.position).normalize();
+                    const nudillos = [indice, medio, anular, menique].filter(Boolean);
+                    nudillos.forEach((n) => centro.add(n.position));
+                    centro.divideScalar(nudillos.length);
+                } else {
+                    console.warn("[JuegoFinal] No se encontraron los huesos de los dedos; se usa la orientacion por defecto del bate.");
+                }
+                if (BATE_INVERTIR) eje.negate();
+
+                bate.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), eje);
+                bate.quaternion.multiply(
+                    new THREE.Quaternion().setFromEuler(new THREE.Euler(...BATE_AJUSTE_ROTACION))
+                );
+                bate.position.copy(centro).add(new THREE.Vector3(...BATE_AJUSTE_POSICION));
+
+                // Los huesos de Mixamo traen escala (ej. 0.01 o la del modelo). Se compensa
+                // para que el bate mida BATE_LONGITUD en el mundo sin importar el rig.
+                const escalaMano = mano.getWorldScale(new THREE.Vector3());
+                bate.scale.set(
+                    escalaMano.x ? 1 / escalaMano.x : 1,
+                    escalaMano.y ? 1 / escalaMano.y : 1,
+                    escalaMano.z ? 1 / escalaMano.z : 1
+                );
+
+                mano.add(bate);
+
+                const registro = { bate, mallas: [malla] };
+                yaAdjuntados.set(mano, registro);
+                batesAdjuntos.push(registro);
+
+                console.log("[JuegoFinal] Bate fijado al hueso:", mano.name, {
+                    eje: eje.toArray(),
+                    centro: centro.toArray(),
+                    escalaMano: escalaMano.toArray()
+                });
+            });
+
+            if (batesAdjuntos.length === 0) {
+                console.error("[JuegoFinal] No se encontro mixamorigRightHand en el modelo; no se pudo poner el bate.");
+            }
+            sincronizarBates();
+        }
+
+        // El bate solo se ve cuando se ve la malla de su esqueleto
+        // (el modelo intercambia mallas segun la animacion).
+        function sincronizarBates() {
+            batesAdjuntos.forEach(({ bate, mallas }) => {
+                bate.visible = mallas.some((malla) => malla.visible);
+            });
         }
 
         homePlateLoader.load(
@@ -679,6 +987,8 @@ function JuegoFinal() {
                     });
                 });
 
+                adjuntarBatesAManoDerecha(loadedHomePlate);
+
                 stadium.add(loadedHomePlate);
             },
             undefined,
@@ -733,11 +1043,99 @@ function JuegoFinal() {
                     mesh.visible = true;
                 });
             }
+            sincronizarPelotasEnMano();
         }
 
         startPitcherAnimationRef.current = () => {
+            // Empieza el pre-lanzamiento: el pitcher sostiene la pelota en la mano
+            // hasta el momento de soltarla (ver startPitchRef).
+            pelotaEnManoActiva = true;
             reproducirAnimacionPitcher("Pitching");
         };
+
+        // Fija una pelota al hueso de la mano derecha de cada esqueleto del pitcher
+        // (igual que el bate: al ser hija del hueso, sigue toda la animacion de Mixamo).
+        function adjuntarPelotasAManoDerechaPitcher(raiz) {
+            raiz.updateMatrixWorld(true);
+            const yaAdjuntadas = new Map();
+            const geometria = new THREE.SphereGeometry(PELOTA_MANO_RADIO, 24, 24);
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.5
+            });
+
+            pitcherSkinnedMeshes.forEach((malla) => {
+                const mano = malla.skeleton.bones.find((hueso) =>
+                    /^mixamorigRightHand(_\d+)?$/.test(hueso.name)
+                );
+                if (!mano) return;
+
+                // Varias mallas pueden compartir esqueleto: una sola pelota por hueso.
+                if (yaAdjuntadas.has(mano)) {
+                    yaAdjuntadas.get(mano).mallas.push(malla);
+                    return;
+                }
+
+                const escalaMano = mano.getWorldScale(new THREE.Vector3());
+                const inversa = new THREE.Vector3(
+                    escalaMano.x ? 1 / escalaMano.x : 1,
+                    escalaMano.y ? 1 / escalaMano.y : 1,
+                    escalaMano.z ? 1 / escalaMano.z : 1
+                );
+
+                // Centro de la palma: entre la muñeca (origen del hueso) y los nudillos.
+                const nudillos = ["Index1", "Middle1", "Ring1", "Pinky1"]
+                    .map((dedo) =>
+                        mano.children.find((hijo) => hijo.name.includes(`RightHand${dedo}`))
+                    )
+                    .filter(Boolean);
+
+                const centro = new THREE.Vector3();
+                if (nudillos.length > 0) {
+                    nudillos.forEach((n) => centro.add(n.position));
+                    centro.divideScalar(nudillos.length).multiplyScalar(PELOTA_MANO_PROFUNDIDAD);
+                } else {
+                    console.warn("[JuegoFinal] Pitcher: no se encontraron los huesos de los dedos; se usa una posicion aproximada.");
+                    centro.set(0, PELOTA_MANO_RADIO * 1.5 * inversa.y, 0);
+                }
+                centro.add(new THREE.Vector3(...PELOTA_MANO_AJUSTE).multiply(inversa));
+
+                const pelota = new THREE.Mesh(geometria, material);
+                pelota.name = "PelotaEnManoPitcher";
+                pelota.castShadow = true;
+                pelota.frustumCulled = false;
+                pelota.position.copy(centro);
+                // Se compensa la escala del hueso para que mida PELOTA_MANO_RADIO en el mundo.
+                pelota.scale.copy(inversa);
+                pelota.visible = false;
+
+                mano.add(pelota);
+
+                const registro = { pelota, mallas: [malla] };
+                yaAdjuntadas.set(mano, registro);
+                pelotasEnMano.push(registro);
+
+                console.log("[JuegoFinal] Pelota fijada a la mano del pitcher:", mano.name, {
+                    centro: centro.toArray(),
+                    escalaMano: escalaMano.toArray()
+                });
+            });
+
+            if (pelotasEnMano.length === 0) {
+                console.error("[JuegoFinal] No se encontro mixamorigRightHand en el pitcher; no se pudo poner la pelota en su mano.");
+            }
+            sincronizarPelotasEnMano();
+        }
+
+        // La pelota de la mano solo se ve durante el pre-lanzamiento y solo cuando
+        // se ve la malla de su esqueleto (el modelo intercambia mallas por animacion).
+        function sincronizarPelotasEnMano() {
+            const fase = gameRef.current.phase;
+            const permitida = pelotaEnManoActiva && fase !== "lost" && fase !== "won";
+            pelotasEnMano.forEach(({ pelota, mallas }) => {
+                pelota.visible = permitida && mallas.some((malla) => malla.visible);
+            });
+        }
 
         pitcherLoader.load(
             `${import.meta.env.BASE_URL}modelos/Pitcher_anim.glb`,
@@ -826,6 +1224,8 @@ function JuegoFinal() {
                     child.receiveShadow = true;
                 });
 
+                adjuntarPelotasAManoDerechaPitcher(loadedPitcher);
+
                 stadium.add(loadedPitcher);
                 reproducirAnimacionPitcher("Idle_Pitching");
             },
@@ -887,6 +1287,7 @@ function JuegoFinal() {
                 skinnedMeshes.forEach((mesh) => {
                     mesh.visible = visibleMeshes.includes(mesh);
                 });
+                sincronizarBates();
             }
 
             console.log("[JuegoFinal] Estado de accion", {
@@ -920,19 +1321,50 @@ function JuegoFinal() {
             });
         }
 
+        function registrarBola() {
+            const bolas = gameRef.current.bolas + 1;
+
+            console.log("[JuegoFinal] Bola cantada (lanzamiento fuera de zona, sin swing).", {
+                bolas
+            });
+
+            if (bolas >= BOLAS_PARA_BASE) {
+                // Base por bolas: el bateador se gana la base.
+                updateGameState({ phase: "won", bolas });
+                return;
+            }
+
+            updateGameState({ phase: "ball", bolas });
+
+            animationTimerRef.current = window.setTimeout(() => {
+                if (!componentUnmounted && gameRef.current.phase === "ball") {
+                    updateGameState({ phase: "ready" });
+                }
+            }, 1000);
+        }
+
         function resolverPelotaDejadaPasar() {
             ocultarObjetivo();
-            const strikes = gameRef.current.strikes + 1;
+            const esBola = pitchEsBolaRef.current;
 
             ballInFlight = false;
             pitchActive = false;
             strikeTerminadoRef.current = true;
             ball.position.copy(pitchEnd);
 
-            console.log("[JuegoFinal] Pelota dejada pasar: strike sin animacion Strike.", {
+            reproducirAnimacion("Idle");
+
+            if (esBola) {
+                // La pelota cayó fuera del cuadro de strike y el jugador no bateó: BOLA.
+                registrarBola();
+                return;
+            }
+
+            // La pelota cayó dentro del cuadro de strike y el jugador no bateó: STRIKE cantado.
+            const strikes = gameRef.current.strikes + 1;
+            console.log("[JuegoFinal] Pelota dejada pasar dentro de la zona: strike cantado.", {
                 strikes
             });
-            reproducirAnimacion("Idle");
             updateGameState({
                 phase: strikes >= 3 ? "lost" : "strike",
                 strikes
@@ -953,11 +1385,57 @@ function JuegoFinal() {
                 gameRef.current.phase === "lost"
             ) return;
 
+            if (objetivoTimerRef.current) {
+                window.clearTimeout(objetivoTimerRef.current);
+                objetivoTimerRef.current = null;
+            }
+
             lanzamientoPendienteRef.current = false;
 
-            console.log("[JuegoFinal] Lanzamiento iniciado.");
+            const esLanzamientoCurvo =
+                Math.random() < PROBABILIDAD_LANZAMIENTO_CURVO;
+            curvaLanzamiento = esLanzamientoCurvo
+                ? {
+                    eje: Math.random() < 0.5 ? "x" : "y",
+                    direccion: Math.random() < 0.5 ? -1 : 1,
+                    intensidad: 0.45 + Math.random() * 0.55
+                }
+                : { eje: null, direccion: 0, intensidad: 0 };
+
+            // Se traduce el punto del círculo de predicción (2D) a la posición
+            // real en el mundo 3D donde la pelota debe cruzar el plato, y se
+            // extiende esa misma línea (desde donde el pitcher suelta la
+            // pelota) para que la trayectoria completa pase literalmente por
+            // ahí, ya sea que el lanzamiento vaya más arriba, más abajo, más a
+            // la izquierda o más a la derecha.
+            puntoContactoPelota = calcularPuntoContactoDesdeObjetivo(objetivoPosRef.current);
+            const fraccionLlegada =
+                (Z_LLEGADA - pitchStart.z) / (puntoContactoPelota.z - pitchStart.z);
+            pitchEnd = new THREE.Vector3().lerpVectors(
+                pitchStart,
+                puntoContactoPelota,
+                fraccionLlegada
+            );
+
+            console.log("[JuegoFinal] Lanzamiento iniciado.", {
+                esBola: pitchEsBolaRef.current,
+                tipo: curvaLanzamiento.eje === "x"
+                    ? "curva horizontal"
+                    : curvaLanzamiento.eje === "y"
+                        ? "curva vertical"
+                        : "recta",
+                direccionCurva: curvaLanzamiento.direccion,
+                puntoContactoPelota,
+                pitchEnd
+            });
 
             pitchProgress = 0;
+            if (circuloObjetivoRef.current) {
+                circuloObjetivoRef.current.style.opacity = "1";
+            }
+            if (inicioCierreCirculoRef.current === null) {
+                inicioCierreCirculoRef.current = performance.now();
+            }
             setLanzamientos((total) => total + 1);
             hit = false;
             swing = false;
@@ -966,6 +1444,9 @@ function JuegoFinal() {
             ballInFlight = true;
             ball.position.copy(pitchStart);
             ball.visible = true;
+            // La pelota sale de la mano: deja de mostrarse en ella.
+            pelotaEnManoActiva = false;
+            sincronizarPelotasEnMano();
             if (gameRef.current.animation !== "Strike") {
                 reproducirAnimacion("Idle");
             }
@@ -985,12 +1466,10 @@ function JuegoFinal() {
             ) return;
 
             if (gameRef.current.phase === "countdown") {
-                if (readyTimerRef.current) {
-                    window.clearTimeout(readyTimerRef.current);
-                    readyTimerRef.current = null;
-                }
-
-                lanzamientoPendienteRef.current = false;
+                // No se cancela el timer ni se lanza de inmediato: el pitcher
+                // debe completar su lanzamiento en el tiempo que ya estaba
+                // previsto (el mismo timer de prepararLanzamiento se encarga
+                // de llamar a startPitchRef.current() cuando corresponda).
                 lanzamientoAnticipadoRef.current = true;
                 registrarStrike(true);
                 return;
@@ -1001,26 +1480,28 @@ function JuegoFinal() {
             swingTimer = swingDuration;
             pitchActive = false;
 
-            const puntoContacto = new THREE.Vector3(0, 0.7, 8.0);
+            // El punto de contacto real de ESTE lanzamiento (calculado en
+            // startPitchRef a partir del círculo de predicción), no uno fijo,
+            // para que el timing se evalúe contra la trayectoria verdadera.
             const progresoPrevisto = Math.min(
                 1,
                 pitchProgress + pitchSpeed * (retardoLogicaBateo / 1000)
             );
-            const posicionPrevista = new THREE.Vector3().lerpVectors(
-                pitchStart,
-                pitchEnd,
-                progresoPrevisto
-            );
+            const posicionPrevista = calcularPosicionPelota(progresoPrevisto);
             const distanciaPrevista = posicionPrevista.distanceTo(
-                puntoContacto
+                puntoContactoPelota
             );
             const seraHit = distanciaPrevista < hitDistance;
 
+            // Sea bola o strike, si tu punto de contacto cae dentro del círculo
+            // de predicción y el timing es correcto, es hit (igual que en beisbol
+            // real, puedes conectar una bola mala si decides perseguirla).
             const golpeEnCirculo = estaDentroDelCirculo();
             const golpeValido = seraHit && golpeEnCirculo;
 
             reproducirAnimacion(golpeValido ? "Hit" : "Strike");
             console.log("[JuegoFinal] Resultado previsto del bateo", {
+                esBola: pitchEsBolaRef.current,
                 progresoActual: pitchProgress,
                 progresoPrevisto,
                 distanciaPrevista,
@@ -1043,6 +1524,8 @@ function JuegoFinal() {
                     return;
                 }
 
+                // Swing y falla: siempre es strike, sin importar si el
+                // lanzamiento era bola o estaba en la zona.
                 registrarStrike(false);
             }, retardoLogicaBateo);
         };
@@ -1302,10 +1785,31 @@ function JuegoFinal() {
                     animate
                 );
             const delta = clock.getDelta();
+
+            if (
+                inicioCierreCirculoRef.current !== null &&
+                circuloObjetivoRef.current
+            ) {
+                const tiempoTranscurrido =
+                    (performance.now() - inicioCierreCirculoRef.current) / 1000;
+                const progresoCierreCirculo = Math.min(
+                    1,
+                    tiempoTranscurrido / duracionCierreCirculo
+                );
+                const tamanoCirculo = TAMANO_CIRCULO_MAX -
+                    (TAMANO_CIRCULO_MAX - TAMANO_CIRCULO_MIN) * progresoCierreCirculo;
+                circuloObjetivoRef.current.style.width = `${tamanoCirculo}px`;
+                circuloObjetivoRef.current.style.height = `${tamanoCirculo}px`;
+
+                if (progresoCierreCirculo >= 1) {
+                    inicioCierreCirculoRef.current = null;
+                }
+            }
+
             // Mover el punto de contacto según el joystick
             const vector = joystickVectorRef.current;
             if (vector.x !== 0 || vector.y !== 0) {
-                const { ancho, alto } = ZONA_LANZAMIENTO;
+                const { ancho, alto } = ZONA_TOTAL;
                 let nuevaX = contactoPosRef.current.x + vector.x * VELOCIDAD_JOYSTICK * delta;
                 let nuevaY = contactoPosRef.current.y + vector.y * VELOCIDAD_JOYSTICK * delta;
 
@@ -1329,11 +1833,7 @@ function JuegoFinal() {
                     ballInFlight = false;
                 }
 
-                ball.position.lerpVectors(
-                    pitchStart,
-                    pitchEnd,
-                    pitchProgress
-                );
+                ball.position.copy(calcularPosicionPelota(pitchProgress));
 
                 if (pitchProgress >= 1) {
                     if (pitchActive) {
@@ -1379,6 +1879,7 @@ function JuegoFinal() {
 
             if (animationMixer) {
                 animationMixer.update(delta);
+                sincronizarBates();
 
                 if (!mixerUpdateLogged) {
                     mixerUpdateLogged = true;
@@ -1388,6 +1889,7 @@ function JuegoFinal() {
 
             if (pitcherMixer) {
                 pitcherMixer.update(delta);
+                sincronizarPelotasEnMano();
             }
             // Movimiento muy pequeño
             // para dar sensación de cámara viva
@@ -1427,6 +1929,10 @@ function JuegoFinal() {
 
             if (readyTimerRef.current) {
                 window.clearTimeout(readyTimerRef.current);
+            }
+
+            if (objetivoTimerRef.current) {
+                window.clearTimeout(objetivoTimerRef.current);
             }
 
             if (animationTimerRef.current) {
@@ -1515,9 +2021,12 @@ function JuegoFinal() {
                 <div className="marcador-fila">
                     <span className="marcador-label">B</span>
                     <div className="marcador-dots">
-                        <span className="dot bola" />
-                        <span className="dot bola" />
-                        <span className="dot bola" />
+                        {[0, 1, 2, 3].map((i) => (
+                            <span
+                                key={i}
+                                className={`dot bola ${i < gameState.bolas ? "activo" : ""}`}
+                            />
+                        ))}
                     </div>
                 </div>
                 <div className="marcador-fila">
@@ -1541,6 +2050,7 @@ function JuegoFinal() {
                     </button>
                 )}
                 {gameState.phase === "strike" && <p>¡STRIKE!</p>}
+                {gameState.phase === "ball" && <p>¡BOLA!</p>}
                 {gameState.phase === "countdown" || (
                     gameState.phase === "pitching" && !gameState.bateoBloqueado
                 ) ? (
@@ -1559,26 +2069,37 @@ function JuegoFinal() {
             </div>
             <div className="zona-lanzamiento-wrapper">
                 <div
-                    className="zona-lanzamiento"
-                    style={{ width: ZONA_LANZAMIENTO.ancho, height: ZONA_LANZAMIENTO.alto }}
+                    className="zona-lanzamiento-total"
+                    style={{ width: ZONA_TOTAL.ancho, height: ZONA_TOTAL.alto, position: "relative" }}
                 >
-                    {Array.from({ length: ZONA_LANZAMIENTO.columnas * ZONA_LANZAMIENTO.filas }).map((_, i) => (
-                        <div key={i} className="zona-celda" />
-                    ))}
+                    <div
+                        className="zona-lanzamiento"
+                        style={{
+                            position: "absolute",
+                            left: MARGEN_BOLA,
+                            top: MARGEN_BOLA,
+                            width: ZONA_STRIKE.ancho,
+                            height: ZONA_STRIKE.alto
+                        }}
+                    >
+                        {Array.from({ length: ZONA_STRIKE.columnas * ZONA_STRIKE.filas }).map((_, i) => (
+                            <div key={i} className="zona-celda" />
+                        ))}
+                    </div>
                     <div className="zona-circulo-objetivo" ref={circuloObjetivoRef} />
                     <div className="zona-punto-contacto" ref={puntoContactoRef} />
                 </div>
+            </div>
 
-                <div
-                    className="joystick-base"
-                    ref={joystickBaseRef}
-                    onPointerDown={manejarJoystickInicio}
-                    onPointerMove={manejarJoystickMover}
-                    onPointerUp={manejarJoystickFin}
-                    onPointerCancel={manejarJoystickFin}
-                >
-                    <div className="joystick-stick" ref={joystickStickRef} />
-                </div>
+            <div
+                className="joystick-base"
+                ref={joystickBaseRef}
+                onPointerDown={manejarJoystickInicio}
+                onPointerMove={manejarJoystickMover}
+                onPointerUp={manejarJoystickFin}
+                onPointerCancel={manejarJoystickFin}
+            >
+                <div className="joystick-stick" ref={joystickStickRef} />
             </div>
 
             {gameState.phase === "won" && (
@@ -1596,4 +2117,3 @@ function JuegoFinal() {
 }
 
 export default JuegoFinal;
-
