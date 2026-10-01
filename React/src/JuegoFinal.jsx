@@ -20,9 +20,14 @@ function JuegoFinal() {
     const inicioCierreCirculoRef = useRef(null);
     const animationTimerRef = useRef(null);
     const llamadoTimerRef = useRef(null);
+    const llamadoFinRef = useRef(0);
+    const victoriaTimerRef = useRef(null);
+    const derrotaTimerRef = useRef(null);
     const startPitchRef = useRef(() => {});
     const startPitcherAnimationRef = useRef(() => {});
     const batearRef = useRef(() => {});
+    const audiosRef = useRef({});
+    const playBallReproducidoRef = useRef(false);
     const lanzamientoPendienteRef = useRef(false);
     const lanzamientoAnticipadoRef = useRef(false);
     const strikeTerminadoRef = useRef(true);
@@ -37,6 +42,22 @@ function JuegoFinal() {
     });
     const [lanzamientos, setLanzamientos] = useState(0);
     const [llamado, setLlamado] = useState(null);
+    const [victoriaVisible, setVictoriaVisible] = useState(false);
+    const [derrotaVisible, setDerrotaVisible] = useState(false);
+
+    function reproducirAudio(nombre) {
+        let audio = audiosRef.current[nombre];
+        if (!audio) {
+            audio = new Audio(`${import.meta.env.BASE_URL}UI/Sounds_game/${nombre}.mp3`);
+            audio.preload = "auto";
+            audiosRef.current[nombre] = audio;
+        }
+
+        audio.currentTime = 0;
+        audio.play().catch((error) => {
+            console.warn(`[JuegoFinal] No se pudo reproducir el audio ${nombre}.`, error);
+        });
+    }
 
     // Cuadro real de strike (la cuadrícula 3x3 donde el umpire canta strike si no bateas).
     // Más pequeño y con proporción real (más alto que ancho, como la zona de strike de verdad).
@@ -262,11 +283,23 @@ function JuegoFinal() {
         if (llamadoTimerRef.current) {
             window.clearTimeout(llamadoTimerRef.current);
         }
+        llamadoFinRef.current = performance.now() + 1100;
         setLlamado(tipo);
         llamadoTimerRef.current = window.setTimeout(() => {
             llamadoTimerRef.current = null;
             setLlamado(null);
         }, 1100);
+    }
+
+    function mostrarDerrotaAlTerminarLlamado() {
+        const esperaDerrota = Math.max(
+            0,
+            llamadoFinRef.current - performance.now()
+        );
+        derrotaTimerRef.current = window.setTimeout(() => {
+            derrotaTimerRef.current = null;
+            setDerrotaVisible(true);
+        }, esperaDerrota);
     }
 
     function prepararLanzamiento() {
@@ -310,6 +343,11 @@ function JuegoFinal() {
         const container = containerRef.current;
 
         if (!container) return;
+
+        if (!playBallReproducidoRef.current) {
+            playBallReproducidoRef.current = true;
+            reproducirAudio("Play_ball");
+        }
 
         // ==========================================
         // ESCENA
@@ -1315,7 +1353,11 @@ function JuegoFinal() {
 
         function registrarStrike(reproducirStrike = true) {
             const strikes = gameRef.current.strikes + 1;
+            reproducirAudio(`Strike_${strikes}`);
             mostrarLlamado("strike");
+            if (strikes >= 3) {
+                mostrarDerrotaAlTerminarLlamado();
+            }
             console.log(
                 "[JuegoFinal] Strike registrado",
                 { strikes, clipsDisponibles: Object.keys(animationActions) }
@@ -1337,6 +1379,7 @@ function JuegoFinal() {
 
         function registrarBola() {
             const bolas = gameRef.current.bolas + 1;
+            reproducirAudio("Ball");
             mostrarLlamado("ball");
 
             console.log("[JuegoFinal] Bola cantada (lanzamiento fuera de zona, sin swing).", {
@@ -1345,6 +1388,7 @@ function JuegoFinal() {
 
             if (bolas >= BOLAS_PARA_BASE) {
                 // Base por bolas: el bateador se gana la base.
+                setVictoriaVisible(true);
                 updateGameState({ phase: "won", bolas });
                 return;
             }
@@ -1377,7 +1421,11 @@ function JuegoFinal() {
 
             // La pelota cayó dentro del cuadro de strike y el jugador no bateó: STRIKE cantado.
             const strikes = gameRef.current.strikes + 1;
+            reproducirAudio(`Strike_${strikes}`);
             mostrarLlamado("strike");
+            if (strikes >= 3) {
+                mostrarDerrotaAlTerminarLlamado();
+            }
             console.log("[JuegoFinal] Pelota dejada pasar dentro de la zona: strike cantado.", {
                 strikes
             });
@@ -1536,6 +1584,16 @@ function JuegoFinal() {
                     hit = true;
                     ballInFlight = false;
                     hitDirection = (Math.random() - 0.5) * 2;
+                    reproducirAudio("Home_run");
+                    const esperaVictoria = Math.max(
+                        0,
+                        llamadoFinRef.current - performance.now()
+                    );
+                    setVictoriaVisible(false);
+                    victoriaTimerRef.current = window.setTimeout(() => {
+                        victoriaTimerRef.current = null;
+                        setVictoriaVisible(true);
+                    }, esperaVictoria);
                     updateGameState({ phase: "won" });
                     return;
                 }
@@ -1959,6 +2017,14 @@ function JuegoFinal() {
                 window.clearTimeout(llamadoTimerRef.current);
             }
 
+            if (victoriaTimerRef.current) {
+                window.clearTimeout(victoriaTimerRef.current);
+            }
+
+            if (derrotaTimerRef.current) {
+                window.clearTimeout(derrotaTimerRef.current);
+            }
+
             if (bateoTimer) {
                 window.clearTimeout(bateoTimer);
             }
@@ -2087,7 +2153,7 @@ function JuegoFinal() {
                 ) : null}
             </div>
 
-            {gameState.phase === "lost" && (
+            {gameState.phase === "lost" && derrotaVisible && (
                 <div
                     className="juego-final-derrota"
                     role="dialog"
@@ -2144,7 +2210,7 @@ function JuegoFinal() {
                 <div className="joystick-stick" ref={joystickStickRef} />
             </div>
 
-            {gameState.phase === "won" && (
+            {gameState.phase === "won" && victoriaVisible && (
                 <div className="juego-final-victoria" role="dialog" aria-modal="true">
                     <p>ÚLTIMA ENTRADA</p>
                     <h1>¡HOME RUN!</h1>
